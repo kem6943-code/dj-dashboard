@@ -290,7 +290,7 @@ export function Dashboard() {
                 <div className="animate-fade-in mt-16 pb-20">
 
                     {/* 1. 상단: 전사 통합 YTD 요약 (KPI 카드) */}
-                    <div style={{ marginBottom: '50px' }}>
+                    <div style={{ marginBottom: '25px' }}>
                         <h2 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-slate-800 tracking-tight">
                             <BarChart3 className="text-blue-500 w-6 h-6" />
                             {selectedYear}년 전사 통합 경영실적 요약 <span className="text-sm font-semibold text-slate-400 ml-2 tracking-normal">(YTD 기준)</span>
