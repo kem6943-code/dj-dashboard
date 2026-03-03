@@ -13,6 +13,7 @@ interface PLTableProps {
     data: MonthlyPLData[];
     onEditMonth?: (month: number) => void;
     showTarget?: boolean;
+    showYoY?: boolean;
 }
 
 // 값 포맷 (유형에 따라 다르게 표시)
@@ -43,22 +44,30 @@ function getSectionSpans(items: PLItem[]): Map<string, number> {
     return spans;
 }
 
-export function PLTable({ items, labels, data, onEditMonth, showTarget }: PLTableProps) {
+export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY }: PLTableProps) {
     const sectionSpans = getSectionSpans(items);
     const renderedSections = new Set<string>();
+
+    // 토글 조합에 따른 서브컨럼 구성
+    const subColHeaders: string[] = [];
+    if (showYoY) subColHeaders.push("'25실적");
+    if (showTarget) subColHeaders.push('TD목표');
+    subColHeaders.push("'26실적");
+    const colSpan = subColHeaders.length;
+    const hasSubHeaders = colSpan > 1; // 서브헤더가 필요한지 여부
 
     return (
         <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-inner">
             <table className="data-table">
                 <thead>
                     <tr>
-                        <th className="sticky-col-1" rowSpan={showTarget ? 2 : 1} style={{ minWidth: 70, textAlign: 'center' }}>섹션</th>
-                        <th className="sticky-col-2" rowSpan={showTarget ? 2 : 1} style={{ minWidth: 110 }}>구분</th>
+                        <th className="sticky-col-1" rowSpan={hasSubHeaders ? 2 : 1} style={{ minWidth: 70, textAlign: 'center' }}>섹션</th>
+                        <th className="sticky-col-2" rowSpan={hasSubHeaders ? 2 : 1} style={{ minWidth: 110 }}>구분</th>
                         {labels.map((label, i) => (
-                            <th key={i} colSpan={showTarget ? 2 : 1} style={{ minWidth: showTarget ? 150 : 90, textAlign: 'center' }}>
+                            <th key={i} colSpan={colSpan} style={{ minWidth: colSpan > 2 ? 200 : colSpan > 1 ? 150 : 90, textAlign: 'center' }}>
                                 <div className="flex items-center justify-center gap-1">
                                     {label}
-                                    {onEditMonth && !showTarget && (
+                                    {onEditMonth && !hasSubHeaders && (
                                         <button
                                             onClick={() => onEditMonth(i + 1)}
                                             className="opacity-40 hover:opacity-100 transition-opacity"
@@ -71,27 +80,35 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget }: PLTabl
                             </th>
                         ))}
                     </tr>
-                    {showTarget && (
+                    {hasSubHeaders && (
                         <tr className="header-row-2">
-                            {labels.map((label, i) => [
-                                <th key={`t-${i}`} style={{ minWidth: 75, textAlign: 'center', fontSize: '0.75rem', fontWeight: 500, backgroundColor: '#f8fafc', borderTop: 'none' }}>
-                                    TD목표
-                                </th>,
-                                <th key={`a-${i}`} style={{ minWidth: 75, textAlign: 'center', fontSize: '0.75rem', fontWeight: 500, backgroundColor: '#f8fafc', borderTop: 'none', borderLeft: '1px solid var(--border-color)' }}>
-                                    <div className="flex items-center justify-center gap-1">
-                                        실적
-                                        {onEditMonth && (
-                                            <button
-                                                onClick={() => onEditMonth(i + 1)}
-                                                className="opacity-40 hover:opacity-100 transition-opacity"
-                                                title={`${label} 실적 데이터 편집`}
-                                            >
-                                                <PenLine className="w-3 h-3" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </th>
-                            ])}
+                            {labels.map((label, i) =>
+                                subColHeaders.map((subLabel, si) => (
+                                    <th key={`${i}-${si}`} style={{
+                                        minWidth: 65,
+                                        textAlign: 'center',
+                                        fontSize: '0.68rem',
+                                        fontWeight: 600,
+                                        backgroundColor: subLabel === "'25실적" ? '#fef3c7' : subLabel === 'TD목표' ? '#f0f9ff' : '#f0fdf4',
+                                        borderTop: 'none',
+                                        borderLeft: si > 0 ? '1px solid var(--border-color)' : undefined,
+                                        color: subLabel === "'25실적" ? '#92400e' : subLabel === 'TD목표' ? '#1e40af' : '#166534',
+                                    }}>
+                                        <div className="flex items-center justify-center gap-1">
+                                            {subLabel}
+                                            {subLabel === "'26실적" && onEditMonth && (
+                                                <button
+                                                    onClick={() => onEditMonth(i + 1)}
+                                                    className="opacity-40 hover:opacity-100 transition-opacity"
+                                                    title={`${label} 실적 데이터 편집`}
+                                                >
+                                                    <PenLine className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </th>
+                                ))
+                            )}
                         </tr>
                     )}
                 </thead>

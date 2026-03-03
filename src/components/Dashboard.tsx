@@ -45,6 +45,7 @@ export function Dashboard() {
     const [selectedTotalMonth, setSelectedTotalMonth] = useState(1);
     const [selectedSubDiv, setSelectedSubDiv] = useState('all');
     const [showTarget, setShowTarget] = useState(true);
+    const [showYoY, setShowYoY] = useState(false); // '25' 대비 보기 토글
     const [loading, setLoading] = useState(true);
 
     // 초기 데이터 로드
@@ -69,6 +70,11 @@ export function Dashboard() {
     const divData = store ? (selectedDivision === 'total'
         ? consolidateAllDivisions(store, selectedYear)
         : getDivisionData(store, selectedDivision, selectedYear)) : null;
+
+    // 전년도 데이터 (예: 2025)
+    const prevYearDivData = store ? (selectedDivision === 'total'
+        ? consolidateAllDivisions(store, selectedYear - 1)
+        : getDivisionData(store, selectedDivision, selectedYear - 1)) : null;
 
     // P&L 데이터를 기간별로 변환
     const getPeriodData = useCallback((): { baseLabels: string[]; data: MonthlyPLData[] } => {
@@ -129,47 +135,66 @@ export function Dashboard() {
         const buildData = (
             baseLabels: string[],
             actualData: MonthlyPLData[],
-            targetData: MonthlyPLData[]
+            targetData: MonthlyPLData[],
+            prevYearActualData?: MonthlyPLData[]
         ) => {
-            if (!showTarget) return { baseLabels, data: actualData };
+            // 아무 토글도 안 켜져있으면 실적만 표시
+            if (!showTarget && !showYoY) return { baseLabels, data: actualData };
 
             const data: MonthlyPLData[] = [];
             baseLabels.forEach((_, idx) => {
-                data.push(targetData[idx] || ({} as MonthlyPLData));
+                // showYoY가 켜져있으면 전년 실적 먼저
+                if (showYoY) {
+                    data.push(prevYearActualData?.[idx] || ({} as MonthlyPLData));
+                }
+                // showTarget이 켜져있으면 TD목표
+                if (showTarget) {
+                    data.push(targetData[idx] || ({} as MonthlyPLData));
+                }
+                // 현재 년도 실적은 항상 표시
                 data.push(actualData[idx]);
             });
             return { baseLabels, data };
         };
+
+        // 전년도 데이터 준비
+        const prevMonthly = (divisionInfo.subDivisions && divisionInfo.subDivisionMode === 'tabs' && selectedSubDiv !== 'all')
+            ? (prevYearDivData?.subDivMonthly?.[selectedSubDiv] || {})
+            : (prevYearDivData?.monthly || {});
 
         switch (periodType) {
             case 'monthly':
                 return buildData(
                     MONTH_NAMES,
                     MONTH_NAMES.map((_, i) => targetMonthly[i + 1] || ({} as MonthlyPLData)),
-                    MONTH_NAMES.map((_, i) => targetMonthlyGoals[i + 1] || ({} as MonthlyPLData))
+                    MONTH_NAMES.map((_, i) => targetMonthlyGoals[i + 1] || ({} as MonthlyPLData)),
+                    MONTH_NAMES.map((_, i) => prevMonthly[i + 1] || ({} as MonthlyPLData))
                 );
             case 'quarterly':
                 return buildData(
                     QUARTER_NAMES,
                     [1, 2, 3, 4].map(q => aggregateQuarter(targetMonthly, q)),
-                    [1, 2, 3, 4].map(q => aggregateQuarter(targetMonthlyGoals, q))
+                    [1, 2, 3, 4].map(q => aggregateQuarter(targetMonthlyGoals, q)),
+                    [1, 2, 3, 4].map(q => aggregateQuarter(prevMonthly, q))
                 );
             case 'half':
                 return buildData(
                     HALF_NAMES,
                     [1, 2].map(h => aggregateHalf(targetMonthly, h)),
-                    [1, 2].map(h => aggregateHalf(targetMonthlyGoals, h))
+                    [1, 2].map(h => aggregateHalf(targetMonthlyGoals, h)),
+                    [1, 2].map(h => aggregateHalf(prevMonthly, h))
                 );
             case 'yearly':
                 return buildData(
                     [`${selectedYear}년 합계`],
                     [aggregateYear(targetMonthly)],
-                    [aggregateYear(targetMonthlyGoals)]
+                    [aggregateYear(targetMonthlyGoals)],
+                    [aggregateYear(prevMonthly)]
                 );
             default:
                 return { baseLabels: [], data: [] };
         }
-    }, [divData, periodType, selectedYear, divisionInfo, selectedSubDiv, selectedTotalMonth, showTarget]);
+    }, [divData, prevYearDivData, periodType, selectedYear, divisionInfo, selectedSubDiv, selectedTotalMonth, showTarget, showYoY]);
 
     const { baseLabels: periodLabels, data: periodData } = getPeriodData();
 
@@ -428,6 +453,16 @@ export function Dashboard() {
                                     />
                                     <span style={{ color: 'var(--text-secondary)' }}>TD목표 대비 보기</span>
                                 </label>
+
+                                <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-amber-50 px-2 py-1 rounded transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={showYoY}
+                                        onChange={(e) => setShowYoY(e.target.checked)}
+                                        className="rounded text-amber-500 focus:ring-amber-500"
+                                    />
+                                    <span style={{ color: 'var(--text-secondary)' }}>'25년 대비 보기</span>
+                                </label>
                             </div>
 
                             {/* ===== P&L 테이블 ===== */}
@@ -482,6 +517,7 @@ export function Dashboard() {
                                     data={periodData}
                                     onEditMonth={(periodType === 'monthly' && divisionInfo.subDivisionMode !== 'columns') ? handleEditMonth : undefined}
                                     showTarget={showTarget}
+                                    showYoY={showYoY}
                                 />
                             </div>
 
