@@ -247,13 +247,6 @@ export function Dashboard() {
                                 <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
                                 <span className="text-sm font-medium">로그아웃</span>
                             </button>
-                            <button
-                                onClick={() => setShowInputModal(true)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200 flex items-center gap-2 transition-all transform hover:-translate-y-1"
-                            >
-                                <PenLine size={20} />
-                                데이터 직접 입력
-                            </button>
                         </div>
                     </div>
                 </div>
