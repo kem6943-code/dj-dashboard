@@ -78,15 +78,15 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
 }
 
 .data-table th {
   background: #f8fafc;
   color: #64748b;
   font-weight: 700;
-  padding: 18px 20px;
-  font-size: 0.85rem;
+  padding: 6px 10px;
+  font-size: 0.72rem;
   text-align: right;
   white-space: nowrap;
   position: sticky;
@@ -97,7 +97,7 @@ body {
 
 /* 2단 헤더의 두 번째 행은 첫 번째 행의 높이만큼 띄워서 고정 */
 .data-table .header-row-2 th {
-  top: 55px;
+  top: 32px;
 }
 
 .data-table th:first-child {
@@ -110,7 +110,7 @@ body {
 }
 
 .data-table td {
-  padding: 16px 20px;
+  padding: 5px 10px;
   text-align: right;
   border-bottom: 1px solid #f1f5f9;
   white-space: nowrap;

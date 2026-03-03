@@ -48,7 +48,7 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget }: PLTabl
     const renderedSections = new Set<string>();
 
     return (
-        <div className="overflow-auto border border-gray-200 rounded-lg shadow-inner" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-inner">
             <table className="data-table">
                 <thead>
                     <tr>
