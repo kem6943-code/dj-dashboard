@@ -1,0 +1,347 @@
+@import "tailwindcss";
+
+/* ===== 프로페셔널 라이트 테마 (공간감 강조 버전) ===== */
+:root {
+  --bg-primary: #f9fafb;
+  /* 조금 더 밝고 깨끗한 그레이 */
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #ffffff;
+  --text-primary: #111827;
+  /* 텍스트 대비 향상 */
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --accent-blue: #3b82f6;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #ef4444;
+  --accent-purple: #8b5cf6;
+  --border-color: #f3f4f6;
+  /* 더 연한 보더 */
+  --glass-bg: #ffffff;
+  --header-bg: #111827;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 스크롤바 ===== */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ===== 카드 (참고 이미지 스타일: 부드러운 그림자) ===== */
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+/* ===== 데이터 테이블 ===== */
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8rem;
+}
+
+.data-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  padding: 18px 20px;
+  font-size: 0.85rem;
+  text-align: right;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 2px solid var(--border-color);
+}
+
+/* 2단 헤더의 두 번째 행은 첫 번째 행의 높이만큼 띄워서 고정 */
+.data-table .header-row-2 th {
+  top: 55px;
+}
+
+.data-table th:first-child {
+  text-align: left;
+  border-radius: 8px 0 0 0;
+}
+
+.data-table th:last-child {
+  border-radius: 0 8px 0 0;
+}
+
+.data-table td {
+  padding: 16px 20px;
+  text-align: right;
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.data-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.data-table tr:hover td {
+  background: #f8fafc;
+}
+
+/* ===== 열 고정(Sticky) ===== */
+.sticky-col-1 {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background-color: #ffffff;
+}
+
+.sticky-col-2 {
+  position: sticky;
+  left: 70px;
+  /* 첫 번째 컬럼(섹션) 너비만큼 띄움 */
+  z-index: 5;
+  background-color: #ffffff;
+}
+
+/* 헤더 열 고정 시 z-index를 더 높게 설정하여 스크롤 시 위로 올라오도록 함 */
+.data-table th.sticky-col-1,
+.data-table th.sticky-col-2 {
+  z-index: 20;
+  background-color: #f1f5f9;
+}
+
+/* row-header 행의 고정 열 배경색 */
+.data-table .row-header td.sticky-col-1,
+.data-table .row-header td.sticky-col-2 {
+  background-color: #fafbfd;
+}
+
+/* tr:hover 시 고정 열 배경색도 함께 변경되도록 */
+.data-table tr:hover td.sticky-col-1,
+.data-table tr:hover td.sticky-col-2 {
+  background-color: #f8fafc;
+}
+
+/* 고정 열에 우측 다크 보더 추가하여 스크롤 시 시각적 구분 */
+.sticky-col-2::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 100%;
+  background-color: var(--border-color);
+  box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+}
+
+.data-table .row-header {
+  font-weight: 700;
+}
+
+.data-table .row-header td {
+  color: var(--text-primary);
+  background: #fafbfd;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* ===== 값 컬러코딩 ===== */
+.value-positive {
+  color: var(--accent-blue);
+}
+
+.value-negative {
+  color: var(--accent-rose);
+}
+
+.value-neutral {
+  color: var(--text-secondary);
+}
+
+/* ===== 탭 ===== */
+.tab-btn {
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: #f1f5f9;
+}
+
+.tab-btn.active {
+  color: var(--accent-blue);
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  font-weight: 600;
+}
+
+/* ===== 입력 필드 ===== */
+.input-field {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ===== 버튼 ===== */
+.btn-primary {
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-weight: 500;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-secondary:hover {
+  color: var(--text-primary);
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+/* ===== KPI 카드 ===== */
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.kpi-change {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* ===== 애니메이션 ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* ===== 셀렉트 ===== */
+.select-field {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.select-field:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+/* ===== 모달 오버레이 (라이트 버전) ===== */
+.modal-overlay {
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(4px);
+}
