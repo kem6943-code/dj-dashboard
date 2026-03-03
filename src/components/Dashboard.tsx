@@ -25,7 +25,6 @@ import {
     BarChart3,
     TrendingUp,
     GitCompare,
-    PenLine,
     Calendar,
     Target,
     LogOut, // Added
