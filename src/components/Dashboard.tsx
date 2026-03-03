@@ -260,7 +260,7 @@ export function Dashboard() {
             </header>
 
             {/* ===== 메인 뷰 스위처 ===== */}
-            <div className="flex items-center gap-4 mb-14 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap" style={{ marginBottom: '25px' }}>
                 <button
                     className={`tab-btn ${activeView === 'main' ? 'active' : ''}`}
                     onClick={() => setActiveView('main')}
@@ -287,7 +287,7 @@ export function Dashboard() {
             {/* ===== 세부 탭 및 컨텐츠 영역 ===== */}
             {activeView === 'main' ? (
                 /* ===== 메인 대시보드 (프리미엄 요약 뷰) ===== */
-                <div className="animate-fade-in mt-16 pb-20">
+                <div className="animate-fade-in pb-20">
 
                     {/* 1. 상단: 전사 통합 YTD 요약 (KPI 카드) */}
                     <div style={{ marginBottom: '25px' }}>
