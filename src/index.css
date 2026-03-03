@@ -38,21 +38,47 @@ body {
 
 /* ===== 스크롤바 ===== */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f1f5f9;
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: #94a3b8;
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #64748b;
+}
+
+/* PLTable 전용: 가로 스크롤바를 항상 표시 */
+.table-scroll-container {
+  overflow-x: scroll !important;
+  overflow-y: auto;
+}
+
+.table-scroll-container::-webkit-scrollbar {
+  height: 12px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 6px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 6px;
+  border: 2px solid #e2e8f0;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* ===== 카드 (참고 이미지 스타일: 부드러운 그림자) ===== */

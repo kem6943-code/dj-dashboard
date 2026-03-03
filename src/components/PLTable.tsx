@@ -57,7 +57,7 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY 
     const hasSubHeaders = colSpan > 1; // 서브헤더가 필요한지 여부
 
     return (
-        <div className="overflow-auto border border-gray-200 rounded-lg shadow-inner" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+        <div className="table-scroll-container border border-gray-200 rounded-lg shadow-inner" style={{ maxHeight: 'calc(100vh - 260px)' }}>
             <table className="data-table">
                 <thead>
                     <tr>
