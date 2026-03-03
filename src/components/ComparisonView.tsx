@@ -3,9 +3,7 @@
  * - 4개 사업부의 실적을 가로로 나란히 비교
  * - 사업부별 매출/영업이익 비교 Bar Chart
  */
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
+// 차트는 환율 왜곡 방지를 위해 사용하지 않음
 import {
     type DataStore,
     DIVISIONS,
@@ -70,12 +68,6 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
     const { label: periodLabel, data: compData } = getLatestOrAgg();
 
-    // 비교 차트 데이터
-    const chartData = DIVISIONS.map((div, i) => ({
-        name: `${div.flag} ${div.nameEn}`,
-        매출액: Math.round((compData[i]?.plData?.revenue || 0) / 1000000),
-        영업이익: Math.round((compData[i]?.plData?.operatingProfit || 0) / 1000000),
-    }));
 
     // 핵심 비교 항목
     const comparisonItems = [
@@ -89,31 +81,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
     return (
         <div className="animate-fade-in space-y-6">
-            {/* 사업부 비교 차트 */}
-            <div className="glass-card p-5">
-                <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>
-                    📊 사업부별 매출 · 영업이익 비교 ({periodLabel}) (단위: 백만)
-                </h3>
-                <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={chartData} layout="vertical" margin={{ left: 100 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                        <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                        <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} width={120} />
-                        <Tooltip
-                            contentStyle={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: 8,
-                                fontSize: '0.8rem',
-                            }}
-                            formatter={(value: number | undefined) => `${(value || 0).toLocaleString()} 백만`}
-                        />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                        <Bar dataKey="매출액" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="영업이익" fill="#10b981" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
+            {/* 사업부 비교 차트 영역 삭제 (환율 스케일 왜곡 방지 목적으로 테이블만 유지) */}
 
             {/* 비교 테이블 */}
             <div className="glass-card p-5 overflow-x-auto">
