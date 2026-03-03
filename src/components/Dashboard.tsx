@@ -486,10 +486,12 @@ export function Dashboard() {
                                 />
                             </div>
 
-                            {/* ===== 차트 ===== */}
+                            {/* 
+                            ===== 차트 ===== 
                             <div className="mt-12">
                                 <Charts divData={divData} divisionInfo={divisionInfo} year={selectedYear} />
                             </div>
+                            */}
                         </>
                     )}
 
