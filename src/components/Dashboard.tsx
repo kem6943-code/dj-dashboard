@@ -475,7 +475,7 @@ export function Dashboard() {
                             </div>
 
                             {/* ===== P&L 테이블 ===== */}
-                            <div className="glass-card p-8 mb-10 animate-fade-in overflow-x-auto">
+                            <div className="glass-card p-8 mb-10 animate-fade-in">
                                 <div className="flex justify-end mb-4">
                                     <span className="text-xs font-semibold px-3 py-1 bg-gray-200 rounded-full" style={{ color: 'var(--text-primary)' }}>
                                         (단위: {divisionInfo.currency === 'KRW' ? '백만원' : `백만 ${divisionInfo.currency} `})
