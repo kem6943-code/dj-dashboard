@@ -302,7 +302,7 @@ export function Dashboard() {
                     </div>
 
                     {/* 2. 중단: 사업부별 연간 TD목표 달성 진척도 */}
-                    <div>
+                    <div style={{ marginBottom: '25px' }}>
                         <YearlyTargetCards store={store} year={selectedYear} />
                     </div>
 
