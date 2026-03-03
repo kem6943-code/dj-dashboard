@@ -395,10 +395,12 @@ export function Dashboard() {
                                 periodIndex={periodType === 'yearly' ? 1 : selectedTotalMonth}
                             />
 
-                            {/* 차트 */}
+                            {/* 
+                            차트 영역 삭제 (불필요한 정보 단순화)
                             <div className="mt-12">
                                 <Charts divData={divData} divisionInfo={divisionInfo} year={selectedYear} />
-                            </div>
+                            </div> 
+                            */}
                         </>
                     ) : (
                         <>
