@@ -163,13 +163,22 @@ export function Dashboard() {
             : (prevYearDivData?.monthly || {});
 
         switch (periodType) {
-            case 'monthly':
-                return buildData(
-                    MONTH_NAMES,
-                    MONTH_NAMES.map((_, i) => targetMonthly[i + 1] || ({} as MonthlyPLData)),
-                    MONTH_NAMES.map((_, i) => targetMonthlyGoals[i + 1] || ({} as MonthlyPLData)),
-                    MONTH_NAMES.map((_, i) => prevMonthly[i + 1] || ({} as MonthlyPLData))
-                );
+            case 'monthly': {
+                const monthLabels = [...MONTH_NAMES, '누계'];
+                const monthActual = [
+                    ...MONTH_NAMES.map((_, i) => targetMonthly[i + 1] || ({} as MonthlyPLData)),
+                    aggregateYear(targetMonthly),
+                ];
+                const monthTarget = [
+                    ...MONTH_NAMES.map((_, i) => targetMonthlyGoals[i + 1] || ({} as MonthlyPLData)),
+                    aggregateYear(targetMonthlyGoals),
+                ];
+                const monthPrev = [
+                    ...MONTH_NAMES.map((_, i) => prevMonthly[i + 1] || ({} as MonthlyPLData)),
+                    aggregateYear(prevMonthly),
+                ];
+                return buildData(monthLabels, monthActual, monthTarget, monthPrev);
+            }
             case 'quarterly':
                 return buildData(
                     QUARTER_NAMES,
