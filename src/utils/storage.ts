@@ -354,6 +354,16 @@ export async function loadData(): Promise<DataStore> {
             }
         });
 
+        // 마이그레이션: 2025년 데이터가 없으면 자동 주입 (전년 대비 비교 기능용)
+        const divisions2025: DivisionCode[] = ['changwon', 'thailand', 'vietnam', 'mexico'];
+        divisions2025.forEach(code => {
+            const has2025 = parsedStore.divisions.some(d => d.divisionCode === code && d.year === 2025);
+            if (!has2025) {
+                const data2025 = createSampleData(code, 2025);
+                parsedStore.divisions.push(data2025);
+            }
+        });
+
         // 마이그레이션된 데이터 저장
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedStore));
         return parsedStore;
@@ -371,8 +381,12 @@ function createDefaultStore(): DataStore {
 
     const divisions: DivisionCode[] = ['changwon', 'thailand', 'vietnam', 'mexico'];
     divisions.forEach(code => {
-        const yearData = createSampleData(code, 2026);
-        store.divisions.push(yearData);
+        // 2026년 데이터
+        const yearData2026 = createSampleData(code, 2026);
+        store.divisions.push(yearData2026);
+        // 2025년 데이터 (전년 대비 비교용)
+        const yearData2025 = createSampleData(code, 2025);
+        store.divisions.push(yearData2025);
     });
 
     return store;
@@ -388,7 +402,39 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
         targetMonthly: {},
     };
 
-    // 1월 샘플 데이터 (보고서 기준)
+    // >>> 2025년 전용 데이터 (전년 대비 비교용 - 보고서 이미지 기준)
+    if (year === 2025 && code === 'changwon') {
+        // 1월 사업부 실적보고 이미지의 '당월 > 전년' 컨럼 값 (단위: 백만원)
+        const jan2025 = calculateDerivedFields({
+            ...createEmptyPLData(),
+            revenue: 9457000000,          // 매출액 9,457
+            salesFL: 6479000000,          // FL 6,479
+            salesTL: 971000000,           // TL 971
+            salesFridge: 507000000,       // 냉장고 507
+            salesOther: 1500000000,       // 기타 1,500
+            bomMaterialRatio: 77.5,       // BOM재료비율 77.5%
+            purchaseVI: 298000000,        // 구매 VI 298
+            materialLoss: 68000000,       // 재료Loss 금액 68
+            headcount: 256,               // 인원(평균) 256
+            laborCost: 1056000000,        // 인건비 1,056
+            revenuePerHead: 8960000,      // 원당매출액 8.96
+            overhead: 679000000,          // 경비 679
+            electricity: 117200000,       // 전력료 117.2
+            depreciation: 127500000,      // 감가상각비 127.5
+            repair: 7800000,              // 수선비 7.8
+            consumables: 18400000,        // 소모품비 18.4
+            transportation: 65700000,     // 운반비 65.7
+            commission: 17500000,         // 지급수수료 17.5
+            rent: 17000000,               // 지급임차료 17.0
+            overheadOther: 307900000,     // 기타 307.9
+            financeCost: 82000000,        // 금융비용 82
+            nonOpIncome: 26000000,        // 영외수지 (수입-비용 = -56에서 역산)
+        });
+        data.monthly[1] = jan2025;
+        return data;
+    }
+
+    // 1월 샘플 데이터 (보고서 기준) - 2026년 기본
     const sampleByDivision: Partial<Record<DivisionCode, Record<string, number>>> = {
         changwon: {
             revenue: 9559000000,
