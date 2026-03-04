@@ -45,7 +45,7 @@ export function Dashboard() {
     const [selectedTotalMonth, setSelectedTotalMonth] = useState(1);
     const [selectedSubDiv, setSelectedSubDiv] = useState('all');
     const [showTarget, setShowTarget] = useState(true);
-    const [showYoY, setShowYoY] = useState(false); // '25' 대비 보기 토글
+    const [showYoY, setShowYoY] = useState(true); // '25' 대비 보기 토글 (기본 ON)
     const [loading, setLoading] = useState(true);
 
     // 초기 데이터 로드
