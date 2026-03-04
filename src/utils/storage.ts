@@ -434,6 +434,42 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
         return data;
     }
 
+    // >>> 2025년 태국사업부 데이터 (전년 대비 비교용 - 보고서 이미지 기준)
+    if (year === 2025 && code === 'thailand') {
+        // 1월 실적보고 이미지의 '당월 > 전년' 컬럼 값 (단위: 백만바트)
+        const jan2025 = calculateDerivedFields({
+            ...createEmptyPLData(),
+            revenue: 523500000,            // 매출액(순매출액) 523.5
+            salesCoverTop: 439000000,      // Cover Assy, Top 439.0
+            salesTubOuter: 18800000,       // Tub Assy, Outer 18.8
+            salesBaseCab: 0,               // Base Cabinet 25 0
+            salesAir: 5300000,             // Air 5.3
+            salesDryer: 12800000,          // Dryer 12.8
+            salesOther: 47600000,          // 기타 (CKD 외) 47.6
+            bomMaterialRatio: 89.32,       // BOM재료비율 89.32%
+            lossRate: 0.65,                // Loss율 0.65%
+            materialLoss: 2100000,         // 재료Loss 금액 2.1
+            lgImpact: 10300000,            // LG Impact 10.3
+            djVI: 4100000,                 // DJ VI 4.1
+            viGap: -6200000,              // Gap -6.2
+            headcount: 544,                // 인원(평균인원) 544
+            laborCost: 18800000,           // 인건비 18.8
+            overhead: 19100000,            // 경비 19.1
+            techFee: 6200000,              // 기술료 6.2
+            electricity: 4300000,          // 전력비 4.3
+            transportation: 2100000,       // 운반비 2.1
+            importCost: 600000,            // 수입제비용 0.6
+            consumables: 1400000,          // 소모품비 1.4
+            depreciation: 3000000,         // 감가상각비 3.0
+            overheadOther: 1500000,        // 기타 1.5
+            financeCost: 1300000,          // 금융비용 1.3
+            forexGainLoss: 0.8,            // 외환차손익
+            nonOpOther: 1.7,               // 기타 영업외
+        });
+        data.monthly[1] = jan2025;
+        return data;
+    }
+
     // 1월 샘플 데이터 (보고서 기준) - 2026년 기본
     const sampleByDivision: Partial<Record<DivisionCode, Record<string, number>>> = {
         changwon: {
