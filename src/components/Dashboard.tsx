@@ -23,6 +23,7 @@ import { DataInputModal } from './DataInputModal';
 import { ComparisonView } from './ComparisonView';
 import { ConsolidatedTable } from './ConsolidatedTable';
 import { YearlyTargetCards } from './YearlyTargetCards';
+import { DivisionTrendCharts } from './DivisionTrendCharts';
 import {
     BarChart3,
     TrendingUp,
@@ -364,7 +365,12 @@ export function Dashboard() {
                         <YearlyTargetCards store={store} year={selectedYear} />
                     </div>
 
-                    {/* 3. 하단: 전사 통합 월별 실적 트렌드 차트 */}
+                    {/* 3. 하단 1: 각 사업부별 월별 실적 트렌드 그래고 */}
+                    <div style={{ marginBottom: '40px' }}>
+                        <DivisionTrendCharts store={store} year={selectedYear} />
+                    </div>
+
+                    {/* 4. 하단 2: 전사 통합 월별 실적 트렌드 차트 */}
                     <div>
                         <h2 className="text-[22px] font-extrabold mb-10 flex items-center gap-3 text-slate-800 tracking-tight">
                             <TrendingUp className="text-emerald-500 w-7 h-7" />
