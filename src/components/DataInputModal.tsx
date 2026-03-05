@@ -55,10 +55,12 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
     ]);
 
     const handleChange = (key: string, value: string) => {
+        const item = plItems.find(i => i.key === key);
+        const isAmount = !item?.type || item.type === 'amount';
         const numValue = value === '' ? 0 : Number(value);
         if (!isNaN(numValue)) {
-            // 입력된 값에 multiplier를 곱해서 실제 데이터로 저장
-            setFormData(prev => ({ ...prev, [key]: numValue * multiplier }));
+            // 금액인 경우에만 multiplier 적용
+            setFormData(prev => ({ ...prev, [key]: numValue * (isAmount ? multiplier : 1) }));
         }
     };
 
@@ -68,7 +70,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay">
-            <div className="glass-card p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in"
+            <div className="glass-card p-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
                 style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}
             >
                 {/* 헤더 */}
@@ -139,15 +141,18 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 <div className="space-y-4">
                     {plItems.map(item => {
                         const isDisabled = item.isCalculated;
-                        // 화면에 보여줄 때는 배수로 나눈 값 (단, 0일 경우 빈 문자열 처리는 handleChange 등에서 처리하므로 여기선 숫자만)
+                        const isAmount = !item.type || item.type === 'amount';
+                        const currentMultiplier = isAmount ? multiplier : 1;
+
+                        // 화면에 보여줄 때는 배수로 나눈 값 (금액에만)
                         const rawValue = formData[item.key] || 0;
-                        const displayValue = rawValue === 0 ? '' : rawValue / multiplier;
+                        const displayValue = rawValue === 0 ? '' : rawValue / currentMultiplier;
 
                         return (
                             <div key={item.key} className="flex items-center gap-4"
-                                style={{ paddingLeft: `${item.indent * 20}px` }}
+                                style={{ paddingLeft: `${item.indent * 24}px` }}
                             >
-                                <label className="text-sm w-36 flex-shrink-0" style={{
+                                <label className="text-sm w-40 flex-shrink-0" style={{
                                     color: item.isHeader ? 'var(--accent-blue)' : 'var(--text-secondary)',
                                     fontWeight: item.isHeader ? 700 : 500,
                                 }}>
@@ -172,8 +177,8 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                                             fontSize: '15px'
                                         }}
                                     />
-                                    {multiplier === 1000000 && !isDisabled && displayValue !== '' && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                                    {currentMultiplier === 1000000 && !isDisabled && displayValue !== '' && (
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-gray-400 pointer-events-none font-medium">
                                             백만
                                         </div>
                                     )}
