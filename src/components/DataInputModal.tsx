@@ -138,7 +138,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 </div>
 
                 {/* 입력 필드들 */}
-                <div className="space-y-4">
+                <div className="space-y-1">
                     {plItems.map(item => {
                         const isDisabled = item.isCalculated;
                         const isAmount = !item.type || item.type === 'amount';
@@ -149,36 +149,37 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                         const displayValue = rawValue === 0 ? '' : rawValue / currentMultiplier;
 
                         return (
-                            <div key={item.key} className="flex items-center gap-4"
-                                style={{ paddingLeft: `${item.indent * 24}px` }}
+                            <div key={item.key} className="flex items-center justify-between py-2 border-b border-gray-100/50 last:border-0 hover:bg-gray-50/50 transition-colors"
                             >
-                                <label className="text-sm w-40 flex-shrink-0" style={{
+                                <label className="text-sm flex-shrink-0" style={{
+                                    paddingLeft: `${item.indent * 24}px`,
                                     color: item.isHeader ? 'var(--accent-blue)' : 'var(--text-secondary)',
                                     fontWeight: item.isHeader ? 700 : 500,
                                 }}>
                                     {item.label}
                                 </label>
-                                <div className="flex-1 relative">
+                                <div className="relative w-48 flex-shrink-0 flex items-center">
                                     <input
                                         type="number"
-                                        className="input-field w-full"
+                                        className="w-full text-right bg-transparent outline-none transition-all placeholder:text-gray-300"
                                         value={displayValue}
                                         onChange={e => handleChange(item.key, e.target.value)}
                                         disabled={isDisabled}
                                         placeholder="0"
                                         style={{
-                                            opacity: isDisabled ? 0.6 : 1,
-                                            background: isDisabled ? 'var(--bg-card-hover)' : '#ffffff',
-                                            fontWeight: item.isHeader ? 700 : 400,
-                                            color: item.isHeader ? 'var(--accent-blue)' : undefined,
-                                            padding: '10px 14px',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e2e8f0',
+                                            opacity: isDisabled ? 0.5 : 1,
+                                            background: isDisabled ? 'transparent' : '#ffffff',
+                                            fontWeight: item.isHeader ? 700 : 500,
+                                            color: item.isHeader ? 'var(--accent-blue)' : '#374151',
+                                            padding: '8px 12px',
+                                            paddingRight: (currentMultiplier === 1000000 && !isDisabled && displayValue !== '') ? '40px' : '12px',
+                                            borderRadius: '6px',
+                                            border: isDisabled ? '1px solid transparent' : '1px solid #cbd5e1',
                                             fontSize: '15px'
                                         }}
                                     />
                                     {currentMultiplier === 1000000 && !isDisabled && displayValue !== '' && (
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-gray-400 pointer-events-none font-medium">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-gray-400 pointer-events-none font-medium">
                                             백만
                                         </div>
                                     )}
