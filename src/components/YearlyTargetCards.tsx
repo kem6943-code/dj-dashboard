@@ -35,16 +35,23 @@ export function YearlyTargetCards({ store, year }: Props) {
                     const divData = divs.find(d => d.divisionCode === divInfo.code);
                     if (!divData || !divData.yearlyTarget) return null;
 
-                    const targetRev = divData.yearlyTarget.revenue;
-                    const targetOp = divData.yearlyTarget.operatingProfit;
+                    const targetRevRaw = divData.yearlyTarget.revenue;
+                    const targetOpRaw = divData.yearlyTarget.operatingProfit;
 
                     // 연간 누적 실적(YTD)
-                    let actualRev = 0;
-                    let actualOp = 0;
+                    let actualRevRaw = 0;
+                    let actualOpRaw = 0;
                     Object.values(divData.monthly).forEach(m => {
-                        actualRev += m.revenue || 0;
-                        actualOp += m.operatingProfit || 0;
+                        actualRevRaw += m.revenue || 0;
+                        actualOpRaw += m.operatingProfit || 0;
                     });
+
+                    // 경영진 지시사항(원화) 직관적 비교를 위해 전부 KRW 기준으로 변환
+                    const rate = divData.exchangeRate?.[1] || 1;
+                    const actualRev = actualRevRaw * rate;
+                    const actualOp = actualOpRaw * rate;
+                    const targetRev = targetRevRaw * rate;
+                    const targetOp = targetOpRaw * rate;
 
                     const revAchieve = targetRev > 0 ? (actualRev / targetRev) * 100 : 0;
                     const opAchieve = targetOp > 0 ? (actualOp / targetOp) * 100 : 0;
@@ -60,7 +67,7 @@ export function YearlyTargetCards({ store, year }: Props) {
                                     </div>
                                     <div className="flex items-baseline gap-1.5">
                                         <h3 className="text-[15px] font-bold text-gray-800 tracking-tight leading-none">{divInfo.name}</h3>
-                                        <span className="text-[10px] font-medium text-gray-400 font-mono tracking-wider">{divInfo.currency}</span>
+                                        <span className="text-[10px] font-medium text-blue-500 font-mono tracking-wider bg-blue-50 px-1.5 py-0.5 rounded">KRW</span>
                                     </div>
                                 </div>
                             </div>
