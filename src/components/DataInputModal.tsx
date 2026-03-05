@@ -21,6 +21,11 @@ interface DataInputModalProps {
 export function DataInputModal({ divisionInfo, year, month, dataType = 'actual', initialData, initialRate, onSave, onClose }: DataInputModalProps) {
     const [selectedMonth, setSelectedMonth] = useState(month);
     const [exchangeRate, setExchangeRate] = useState(initialRate || 1);
+
+    // 단위 계산 (KRW, VND는 보통 백만 단위로 입력받음)
+    const multiplier = (divisionInfo.currency === 'KRW' || divisionInfo.currency === 'VND') ? 1000000 : 1;
+    const unitText = multiplier === 1000000 ? '백만' : '1';
+
     const [formData, setFormData] = useState<Record<string, number>>(() => {
         return initialData ? { ...initialData } : createEmptyPLData();
     });
@@ -52,7 +57,8 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
     const handleChange = (key: string, value: string) => {
         const numValue = value === '' ? 0 : Number(value);
         if (!isNaN(numValue)) {
-            setFormData(prev => ({ ...prev, [key]: numValue }));
+            // 입력된 값에 multiplier를 곱해서 실제 데이터로 저장
+            setFormData(prev => ({ ...prev, [key]: numValue * multiplier }));
         }
     };
 
@@ -124,39 +130,54 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 )}
 
                 {/* 통화 안내 */}
-                <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-                    💰 금액은 <strong>{divisionInfo.currency}</strong> (현지 통화) 기준으로 입력해주세요
+                <div className="text-sm border-b pb-3 mb-4" style={{ color: 'var(--text-muted)' }}>
+                    💰 금액은 <strong>{divisionInfo.currency} ({unitText})</strong> 단위로 입력해주세요.
+                    {multiplier === 1000000 && " (예: 95억5900만원 -> 9559 입력)"}
                 </div>
 
                 {/* 입력 필드들 */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {plItems.map(item => {
                         const isDisabled = item.isCalculated;
-                        const value = formData[item.key] || 0;
+                        // 화면에 보여줄 때는 배수로 나눈 값 (단, 0일 경우 빈 문자열 처리는 handleChange 등에서 처리하므로 여기선 숫자만)
+                        const rawValue = formData[item.key] || 0;
+                        const displayValue = rawValue === 0 ? '' : rawValue / multiplier;
+
                         return (
-                            <div key={item.key} className="flex items-center gap-3"
-                                style={{ paddingLeft: `${item.indent * 16}px` }}
+                            <div key={item.key} className="flex items-center gap-4"
+                                style={{ paddingLeft: `${item.indent * 20}px` }}
                             >
-                                <label className="text-sm w-28 flex-shrink-0" style={{
+                                <label className="text-sm w-36 flex-shrink-0" style={{
                                     color: item.isHeader ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                                    fontWeight: item.isHeader ? 700 : 400,
+                                    fontWeight: item.isHeader ? 700 : 500,
                                 }}>
                                     {item.label}
                                 </label>
-                                <input
-                                    type="number"
-                                    className="input-field"
-                                    value={value || ''}
-                                    onChange={e => handleChange(item.key, e.target.value)}
-                                    disabled={isDisabled}
-                                    placeholder="0"
-                                    style={{
-                                        opacity: isDisabled ? 0.6 : 1,
-                                        background: isDisabled ? 'var(--bg-card-hover)' : undefined,
-                                        fontWeight: item.isHeader ? 700 : 400,
-                                        color: item.isHeader ? 'var(--accent-blue)' : undefined,
-                                    }}
-                                />
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="number"
+                                        className="input-field w-full"
+                                        value={displayValue}
+                                        onChange={e => handleChange(item.key, e.target.value)}
+                                        disabled={isDisabled}
+                                        placeholder="0"
+                                        style={{
+                                            opacity: isDisabled ? 0.6 : 1,
+                                            background: isDisabled ? 'var(--bg-card-hover)' : '#ffffff',
+                                            fontWeight: item.isHeader ? 700 : 400,
+                                            color: item.isHeader ? 'var(--accent-blue)' : undefined,
+                                            padding: '10px 14px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #e2e8f0',
+                                            fontSize: '15px'
+                                        }}
+                                    />
+                                    {multiplier === 1000000 && !isDisabled && displayValue !== '' && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                                            백만
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
