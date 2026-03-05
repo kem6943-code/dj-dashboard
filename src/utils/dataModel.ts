@@ -72,7 +72,7 @@ export const CHANGWON_ITEMS: PLItem[] = [
     { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
 
     // ===== 재료비 =====
-    { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
+    { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialDiff', label: '차이', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
     { key: 'purchaseVI', label: '구매 VI', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
@@ -121,7 +121,7 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'salesOther', label: '기타 (CKD 외)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
 
     // ===== 재료비 =====
-    { key: 'materialRatio', label: '실적재료비율(%)', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
+    { key: 'materialRatio', label: '실적재료비율(%)', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율(%)', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'lossRate', label: 'Loss율(%)', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
@@ -173,7 +173,7 @@ export const VIETNAM_ITEMS: PLItem[] = [
 
     // ===== 재료비 =====
     { key: 'rawMaterialCost', label: '원재료비', isHeader: true, indent: 0, isCalculated: false, section: '재료비' },
-    { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
+    { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialDiff', label: '차이', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
     { key: 'vvci', label: 'VV/CI', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
@@ -223,7 +223,7 @@ export const MEXICO_ITEMS: PLItem[] = [
     { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
 
     // ===== 재료비 =====
-    { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
+    { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialDiff', label: '차이', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
     { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
