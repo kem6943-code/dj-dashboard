@@ -41,15 +41,15 @@ export async function loadData(): Promise<DataStore> {
         // 데이터 마이그레이션: 기존에 저장된 데이터 중 yearlyTarget이 누락된 항목에 채워넣기
         const yearlyTargets: Record<DivisionCode, { revenue: number, operatingProfit: number }> = {
             changwon: { revenue: 110500000000, operatingProfit: 2500000000 },
-            thailand: { revenue: 4517400000, operatingProfit: 110500000 },
-            vietnam: { revenue: 923808000000, operatingProfit: 97608000000 },
-            mexico: { revenue: 800000000, operatingProfit: 40000000 },
+            thailand: { revenue: 5569620253, operatingProfit: 151898734 },
+            vietnam: { revenue: 909090909091, operatingProfit: 136363636364 },
+            mexico: { revenue: 492000000, operatingProfit: 24666667 },
             total: { revenue: 0, operatingProfit: 0 },
         };
 
         parsedStore.divisions.forEach(div => {
-            // 2026년 데이터이고 yearlyTarget이 없을 때 주입
-            if (div.year === 2026 && !div.yearlyTarget && yearlyTargets[div.divisionCode]) {
+            // 2026년 데이터에 대해 새로운 경영진 지시 목표값으로 무조건 강제 덮어쓰기 (하드코딩된 최신 지시사항 반영)
+            if (div.year === 2026 && yearlyTargets[div.divisionCode]) {
                 div.yearlyTarget = yearlyTargets[div.divisionCode];
             }
 
@@ -836,17 +836,17 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
 
     const exchangeRates: Partial<Record<DivisionCode, number>> = {
         changwon: 1,
-        thailand: 38.5,
-        vietnam: 0.058,
-        mexico: 80.5,
+        thailand: 39.5,
+        vietnam: 0.055,
+        mexico: 75.0,
     };
     data.exchangeRate[1] = exchangeRates[code] || 1;
 
     const yearlyTargets: Partial<Record<DivisionCode, { revenue: number, operatingProfit: number }>> = {
         changwon: { revenue: 110500000000, operatingProfit: 2500000000 },
-        thailand: { revenue: 4517400000, operatingProfit: 110500000 },
-        vietnam: { revenue: 923808000000, operatingProfit: 97608000000 },
-        mexico: { revenue: 800000000, operatingProfit: 40000000 },
+        thailand: { revenue: 5569620253, operatingProfit: 151898734 },
+        vietnam: { revenue: 909090909091, operatingProfit: 136363636364 },
+        mexico: { revenue: 492000000, operatingProfit: 24666667 },
     };
 
     if (yearlyTargets[code]) {
