@@ -113,7 +113,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
     ];
 
     return (
-        <div className="animate-fade-in space-y-6">
+        <div className="animate-fade-in space-y-6" style={{ padding: '24px', boxSizing: 'border-box' }}>
             {/* 환율 적용 안내 (눈에 잘 띄게 배치) */}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6 flex items-center gap-3">
                 <span className="text-xl">💱</span>
@@ -124,7 +124,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
             </div>
 
             {/* 사업부 비교 차트 (원화 통일로 완벽한 1:1 비교 부활) */}
-            <div className="glass-card p-5">
+            <div className="glass-card p-5" style={{ padding: '20px', boxSizing: 'border-box' }}>
                 <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>
                     📊 사업부별 매출 · 영업이익 비교 (원화 환산 기준, {periodLabel})
                     <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>(단위: 백만원)</span>
@@ -151,7 +151,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
             </div>
 
             {/* 비교 테이블 */}
-            <div className="glass-card p-5 overflow-x-auto">
+            <div className="glass-card p-5 overflow-x-auto" style={{ padding: '20px', boxSizing: 'border-box' }}>
                 <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>
                     📋 사업부별 핵심 지표 표 (원화 환산 기준, {periodLabel})
                     <span className="ml-2 text-xs font-bold text-blue-600">(단위: 백만원)</span>

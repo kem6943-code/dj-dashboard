@@ -277,7 +277,7 @@ export function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen p-12 max-w-[1920px] mx-auto bg-[#fafafa]">
+        <div className="min-h-screen p-12 max-w-[1920px] mx-auto bg-[#fafafa]" style={{ padding: '48px', boxSizing: 'border-box' }}>
             {/* ===== 헤더 ===== */}
             <header className="mb-16">
                 <div className="flex items-center justify-between">
@@ -376,7 +376,7 @@ export function Dashboard() {
                             <TrendingUp className="text-emerald-500 w-7 h-7" />
                             전사 월별 실적 트렌드
                         </h2>
-                        <div className="glass-card p-6 shadow-sm border border-gray-100">
+                        <div className="glass-card p-6 shadow-sm border border-gray-100" style={{ padding: '24px', boxSizing: 'border-box' }}>
                             <Charts
                                 divData={consolidateAllDivisions(store, selectedYear)}
                                 prevYearData={consolidateAllDivisions(store, selectedYear - 1)}
@@ -514,7 +514,7 @@ export function Dashboard() {
                             </div>
 
                             {/* ===== P&L 테이블 ===== */}
-                            <div className="glass-card p-8 mb-10 animate-fade-in">
+                            <div className="glass-card p-8 mb-10 animate-fade-in" style={{ padding: '32px', boxSizing: 'border-box' }}>
                                 <div className="flex justify-end mb-4">
                                     <span className="text-xs font-semibold px-3 py-1 bg-gray-200 rounded-full" style={{ color: 'var(--text-primary)' }}>
                                         (단위: {divisionInfo.currency === 'KRW' ? '백만원' : `백만 ${divisionInfo.currency} `})

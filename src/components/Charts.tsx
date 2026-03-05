@@ -18,8 +18,10 @@ interface ChartsProps {
 export function Charts({ divData, prevYearData }: ChartsProps) {
     if (!divData) {
         return (
-            <div className="glass-card p-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                데이터가 없습니다. "데이터 입력" 버튼을 클릭하여 실적 데이터를 입력해주세요.
+            <div className="animate-fade-in relative min-h-[500px]" style={{ padding: '24px', boxSizing: 'border-box' }}>
+                <div className="glass-card p-8 text-center" style={{ color: 'var(--text-muted)', padding: '32px', boxSizing: 'border-box' }}>
+                    데이터가 없습니다. "데이터 입력" 버튼을 클릭하여 실적 데이터를 입력해주세요.
+                </div>
             </div>
         );
     }

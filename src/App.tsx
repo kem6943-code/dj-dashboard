@@ -5,7 +5,9 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 function App() {
   return (
     <ErrorBoundary>
-      <Dashboard />
+      <div style={{ padding: '24px', boxSizing: 'border-box', minHeight: '100vh', width: '100%' }}>
+        <Dashboard />
+      </div>
     </ErrorBoundary>
   )
 }

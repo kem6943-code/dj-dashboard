@@ -97,7 +97,7 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
     const periodLabel = getPeriodLabel(periodType, periodIndex, year);
 
     return (
-        <div className="glass-card p-5 animate-fade-in overflow-x-auto">
+        <div className="glass-card p-5 animate-fade-in overflow-x-auto" style={{ padding: '24px', boxSizing: 'border-box' }}>
             <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>
                 📊 전 사업부 통합 손익계산서 · {periodLabel}
                 <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>(단위: 원화 환산 백만)</span>
