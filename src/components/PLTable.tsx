@@ -11,7 +11,7 @@ interface PLTableProps {
     items: PLItem[];
     labels: string[];
     data: MonthlyPLData[];
-    onEditMonth?: (month: number) => void;
+    onEditMonth?: (month: number, dataType: 'actual' | 'target' | 'prevYear') => void;
     showTarget?: boolean;
     showYoY?: boolean;
 }
@@ -69,7 +69,7 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY 
                                     {label}
                                     {onEditMonth && !hasSubHeaders && (
                                         <button
-                                            onClick={() => onEditMonth(i + 1)}
+                                            onClick={() => onEditMonth(i + 1, 'actual')}
                                             className="opacity-40 hover:opacity-100 transition-opacity"
                                             title={`${label} 실적 데이터 편집`}
                                         >
@@ -83,31 +83,34 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY 
                     {hasSubHeaders && (
                         <tr className="header-row-2">
                             {labels.map((label, i) =>
-                                subColHeaders.map((subLabel, si) => (
-                                    <th key={`${i}-${si}`} style={{
-                                        minWidth: 65,
-                                        textAlign: 'center',
-                                        fontSize: '0.68rem',
-                                        fontWeight: 600,
-                                        backgroundColor: subLabel === "'25실적" ? '#fef3c7' : subLabel === 'TD목표' ? '#f0f9ff' : '#f0fdf4',
-                                        borderTop: 'none',
-                                        borderLeft: si > 0 ? '1px solid var(--border-color)' : undefined,
-                                        color: subLabel === "'25실적" ? '#92400e' : subLabel === 'TD목표' ? '#1e40af' : '#166534',
-                                    }}>
-                                        <div className="flex items-center justify-center gap-1">
-                                            {subLabel}
-                                            {subLabel === "'26실적" && onEditMonth && (
-                                                <button
-                                                    onClick={() => onEditMonth(i + 1)}
-                                                    className="opacity-40 hover:opacity-100 transition-opacity"
-                                                    title={`${label} 실적 데이터 편집`}
-                                                >
-                                                    <PenLine className="w-3 h-3" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </th>
-                                ))
+                                subColHeaders.map((subLabel, si) => {
+                                    const dataType = subLabel === "'25실적" ? 'prevYear' : subLabel === 'TD목표' ? 'target' : 'actual';
+                                    return (
+                                        <th key={`${i}-${si}`} style={{
+                                            minWidth: 65,
+                                            textAlign: 'center',
+                                            fontSize: '0.68rem',
+                                            fontWeight: 600,
+                                            backgroundColor: subLabel === "'25실적" ? '#fef3c7' : subLabel === 'TD목표' ? '#f0f9ff' : '#f0fdf4',
+                                            borderTop: 'none',
+                                            borderLeft: si > 0 ? '1px solid var(--border-color)' : undefined,
+                                            color: subLabel === "'25실적" ? '#92400e' : subLabel === 'TD목표' ? '#1e40af' : '#166534',
+                                        }}>
+                                            <div className="flex items-center justify-center gap-1">
+                                                {subLabel}
+                                                {onEditMonth && label !== '누계' && (
+                                                    <button
+                                                        onClick={() => onEditMonth(i + 1, dataType)}
+                                                        className="opacity-40 hover:opacity-100 transition-opacity"
+                                                        title={`${label} ${subLabel} 데이터 편집`}
+                                                    >
+                                                        <PenLine className="w-3 h-3" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </th>
+                                    );
+                                })
                             )}
                         </tr>
                     )}

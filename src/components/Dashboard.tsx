@@ -11,9 +11,11 @@ import {
     aggregateHalf,
     aggregateYear,
     consolidateAllDivisions,
+    createEmptyPLData,
+    calculateDerivedFields,
     type DataStore,
 } from '../utils/dataModel';
-import { loadData, getDivisionData, updateMonthlyData, saveData } from '../utils/storage';
+import { loadData, getDivisionData, saveData } from '../utils/storage';
 import { PLTable } from './PLTable';
 import { KPICards } from './KPICards';
 import { Charts } from './Charts';
@@ -42,6 +44,7 @@ export function Dashboard() {
     const [activeView, setActiveView] = useState<'main' | 'dashboard' | 'comparison'>('main');
     const [showInputModal, setShowInputModal] = useState(false);
     const [editMonth, setEditMonth] = useState(1);
+    const [editDataType, setEditDataType] = useState<'actual' | 'target' | 'prevYear'>('actual');
     const [selectedTotalMonth, setSelectedTotalMonth] = useState(1);
     const [selectedSubDiv, setSelectedSubDiv] = useState('all');
     const [showTarget, setShowTarget] = useState(true);
@@ -220,26 +223,55 @@ export function Dashboard() {
     }
 
     // 데이터 저장 핸들러 (환율 포함)
-    const handleSaveData = async (month: number, data: Record<string, number>, exchangeRate: number) => {
+    const handleSaveData = async (month: number, data: Record<string, number>, exchangeRate: number, dataType: 'actual' | 'target' | 'prevYear' = 'actual') => {
         if (!store) return;
 
-        const newStore = updateMonthlyData(store, selectedDivision, selectedYear, month, data);
-        // 환율 저장
-        const divIdx = newStore.divisions.findIndex(
-            d => d.divisionCode === selectedDivision && d.year === selectedYear
+        let newStore = { ...store };
+        const targetYear = dataType === 'prevYear' ? selectedYear - 1 : selectedYear;
+
+        let divIdx = newStore.divisions.findIndex(
+            d => d.divisionCode === selectedDivision && d.year === targetYear
         );
-        if (divIdx >= 0) {
-            newStore.divisions[divIdx].exchangeRate[month] = exchangeRate;
+
+        // 연도 데이터가 없으면 새로 생성
+        if (divIdx < 0) {
+            newStore.divisions.push({
+                divisionCode: selectedDivision,
+                year: targetYear,
+                exchangeRate: { [month]: exchangeRate },
+                monthly: {},
+                targetMonthly: {}
+            });
+            divIdx = newStore.divisions.length - 1;
         }
 
+        const divDataToUpdate = newStore.divisions[divIdx];
+        const plData = { ...createEmptyPLData(), ...data };
+
+        if (dataType === 'target') {
+            if (!divDataToUpdate.targetMonthly) divDataToUpdate.targetMonthly = {};
+            divDataToUpdate.targetMonthly[month] = calculateDerivedFields(plData);
+        } else {
+            // actual or prevYear
+            if (!divDataToUpdate.monthly) divDataToUpdate.monthly = {};
+            divDataToUpdate.monthly[month] = calculateDerivedFields(plData);
+        }
+
+        // 환율 저장
+        if (!divDataToUpdate.exchangeRate) divDataToUpdate.exchangeRate = {};
+        divDataToUpdate.exchangeRate[month] = exchangeRate;
+
+        newStore.updatedAt = new Date().toISOString();
+
         await saveData(newStore);
-        setStore({ ...newStore });
+        setStore(newStore);
         setShowInputModal(false);
     };
 
     // 데이터 입력 버튼
-    const handleEditMonth = (month: number) => {
+    const handleEditMonth = (month: number, dataType: 'actual' | 'target' | 'prevYear' = 'actual') => {
         setEditMonth(month);
+        setEditDataType(dataType);
         setShowInputModal(true);
     };
 
@@ -543,11 +575,18 @@ export function Dashboard() {
                     {showInputModal && selectedDivision !== 'total' && (
                         <DataInputModal
                             divisionInfo={divisionInfo}
-                            year={selectedYear}
+                            year={editDataType === 'prevYear' ? selectedYear - 1 : selectedYear}
                             month={editMonth}
-                            initialData={divData?.monthly[editMonth]}
-                            initialRate={divData?.exchangeRate[editMonth]}
-                            onSave={handleSaveData}
+                            dataType={editDataType}
+                            initialData={
+                                editDataType === 'prevYear'
+                                    ? prevYearDivData?.monthly?.[editMonth]
+                                    : editDataType === 'target'
+                                        ? divData?.targetMonthly?.[editMonth]
+                                        : divData?.monthly?.[editMonth]
+                            }
+                            initialRate={divData?.exchangeRate?.[editMonth]}
+                            onSave={(month, data, rate, type) => handleSaveData(month, data, rate, type)}
                             onClose={() => setShowInputModal(false)}
                         />
                     )}

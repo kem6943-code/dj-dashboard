@@ -11,13 +11,14 @@ interface DataInputModalProps {
     divisionInfo: DivisionInfo;
     year: number;
     month: number;
+    dataType?: 'actual' | 'target' | 'prevYear';
     initialData?: MonthlyPLData;
     initialRate?: number; // 현재 환율
-    onSave: (month: number, data: Record<string, number>, exchangeRate: number) => void;
+    onSave: (month: number, data: Record<string, number>, exchangeRate: number, dataType: 'actual' | 'target' | 'prevYear') => void;
     onClose: () => void;
 }
 
-export function DataInputModal({ divisionInfo, year, month, initialData, initialRate, onSave, onClose }: DataInputModalProps) {
+export function DataInputModal({ divisionInfo, year, month, dataType = 'actual', initialData, initialRate, onSave, onClose }: DataInputModalProps) {
     const [selectedMonth, setSelectedMonth] = useState(month);
     const [exchangeRate, setExchangeRate] = useState(initialRate || 1);
     const [formData, setFormData] = useState<Record<string, number>>(() => {
@@ -56,7 +57,7 @@ export function DataInputModal({ divisionInfo, year, month, initialData, initial
     };
 
     const handleSubmit = () => {
-        onSave(selectedMonth, formData, exchangeRate);
+        onSave(selectedMonth, formData, exchangeRate, dataType);
     };
 
     return (
@@ -66,10 +67,21 @@ export function DataInputModal({ divisionInfo, year, month, initialData, initial
             >
                 {/* 헤더 */}
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                        <Calculator className="w-5 h-5 text-blue-400" />
-                        {divisionInfo.flag} {divisionInfo.name} 데이터 입력
-                    </h2>
+                    <div>
+                        <h2 className="text-lg font-bold flex items-center gap-2">
+                            <Calculator className="w-5 h-5 text-blue-400" />
+                            {divisionInfo.flag} {divisionInfo.name} 데이터 입력
+                        </h2>
+                        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                            입력 항목: <strong style={{
+                                color: dataType === 'prevYear' ? '#92400e' : dataType === 'target' ? '#1e40af' : '#166534',
+                                backgroundColor: dataType === 'prevYear' ? '#fef3c7' : dataType === 'target' ? '#f0f9ff' : '#f0fdf4',
+                                padding: '2px 8px', borderRadius: '4px'
+                            }}>
+                                {dataType === 'prevYear' ? "'25실적" : dataType === 'target' ? 'TD목표' : "'26실적"}
+                            </strong>
+                        </p>
+                    </div>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
                         <X className="w-5 h-5" />
                     </button>
