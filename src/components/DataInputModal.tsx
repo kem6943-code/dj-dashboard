@@ -70,7 +70,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay">
-            <div className="glass-card p-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
+            <div className="glass-card px-16 py-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
                 style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}
             >
                 {/* 헤더 */}
@@ -138,7 +138,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 </div>
 
                 {/* 입력 필드들 */}
-                <div className="space-y-0">
+                <div className="space-y-3">
                     {plItems.map(item => {
                         const isDisabled = item.isCalculated;
                         const isAmount = !item.type || item.type === 'amount';
@@ -149,7 +149,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                         const displayValue = rawValue === 0 ? '' : rawValue / currentMultiplier;
 
                         return (
-                            <div key={item.key} className="flex items-center w-full px-4 py-3 border border-t-0 first:border-t border-gray-200 bg-white first:rounded-t-xl last:rounded-b-xl hover:bg-gray-50/50 transition-colors"
+                            <div key={item.key} className="flex items-center gap-6"
                             >
                                 <label className="text-sm w-44 flex-shrink-0" style={{
                                     paddingLeft: `${item.indent * 24}px`,
@@ -161,21 +161,25 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                                 <div className="flex-1 relative flex items-center">
                                     <input
                                         type="number"
-                                        className="w-full text-left bg-transparent outline-none transition-all placeholder:text-gray-300"
+                                        className="w-full text-left bg-transparent outline-none transition-all placeholder:text-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                         value={displayValue}
                                         onChange={e => handleChange(item.key, e.target.value)}
                                         disabled={isDisabled}
                                         placeholder="0"
                                         style={{
                                             opacity: isDisabled ? 0.6 : 1,
+                                            background: isDisabled ? '#f8fafc' : '#ffffff',
                                             fontWeight: item.isHeader ? 700 : 500,
                                             color: item.isHeader ? 'var(--accent-blue)' : '#374151',
-                                            paddingRight: (currentMultiplier === 1000000 && !isDisabled && displayValue !== '') ? '50px' : '0px',
+                                            padding: '10px 16px',
+                                            paddingRight: (currentMultiplier === 1000000 && !isDisabled && displayValue !== '') ? '50px' : '16px',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: '8px',
                                             fontSize: '15px'
                                         }}
                                     />
                                     {currentMultiplier === 1000000 && !isDisabled && displayValue !== '' && (
-                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 text-[13px] text-gray-400 pointer-events-none font-medium">
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-gray-400 pointer-events-none font-medium">
                                             백만
                                         </div>
                                     )}
