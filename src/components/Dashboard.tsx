@@ -379,6 +379,7 @@ export function Dashboard() {
                         <div className="glass-card p-6 shadow-sm border border-gray-100">
                             <Charts
                                 divData={consolidateAllDivisions(store, selectedYear)}
+                                prevYearData={consolidateAllDivisions(store, selectedYear - 1)}
                                 divisionInfo={DIVISIONS_WITH_TOTAL.find(d => d.code === 'total')!}
                                 year={selectedYear}
                             />
