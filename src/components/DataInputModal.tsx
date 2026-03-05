@@ -70,7 +70,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay">
-            <div className="glass-card px-16 py-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
+            <div className="glass-card p-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
                 style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}
             >
                 {/* 헤더 */}
@@ -138,7 +138,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 </div>
 
                 {/* 입력 필드들 */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {plItems.map(item => {
                         const isDisabled = item.isCalculated;
                         const isAmount = !item.type || item.type === 'amount';
@@ -149,32 +149,31 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                         const displayValue = rawValue === 0 ? '' : rawValue / currentMultiplier;
 
                         return (
-                            <div key={item.key} className="flex items-center gap-6"
+                            <div key={item.key} className="flex items-center gap-4"
+                                style={{ paddingLeft: `${item.indent * 24}px` }}
                             >
-                                <label className="text-sm w-44 flex-shrink-0" style={{
-                                    paddingLeft: `${item.indent * 24}px`,
+                                <label className="text-sm w-40 flex-shrink-0" style={{
                                     color: item.isHeader ? 'var(--accent-blue)' : 'var(--text-secondary)',
                                     fontWeight: item.isHeader ? 700 : 500,
                                 }}>
                                     {item.label}
                                 </label>
-                                <div className="flex-1 relative flex items-center">
+                                <div className="flex-1 relative">
                                     <input
                                         type="number"
-                                        className="w-full text-left bg-transparent outline-none transition-all placeholder:text-gray-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        className="input-field w-full"
                                         value={displayValue}
                                         onChange={e => handleChange(item.key, e.target.value)}
                                         disabled={isDisabled}
                                         placeholder="0"
                                         style={{
                                             opacity: isDisabled ? 0.6 : 1,
-                                            background: isDisabled ? '#f8fafc' : '#ffffff',
-                                            fontWeight: item.isHeader ? 700 : 500,
-                                            color: item.isHeader ? 'var(--accent-blue)' : '#374151',
-                                            padding: '10px 16px',
-                                            paddingRight: (currentMultiplier === 1000000 && !isDisabled && displayValue !== '') ? '50px' : '16px',
-                                            border: '1px solid #cbd5e1',
+                                            background: isDisabled ? 'var(--bg-card-hover)' : '#ffffff',
+                                            fontWeight: item.isHeader ? 700 : 400,
+                                            color: item.isHeader ? 'var(--accent-blue)' : undefined,
+                                            padding: '10px 14px',
                                             borderRadius: '8px',
+                                            border: '1px solid #e2e8f0',
                                             fontSize: '15px'
                                         }}
                                     />
