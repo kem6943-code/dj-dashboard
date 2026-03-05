@@ -70,7 +70,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay">
-            <div className="glass-card p-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
+            <div className="glass-card px-5 py-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
                 style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}
             >
                 {/* 헤더 */}
