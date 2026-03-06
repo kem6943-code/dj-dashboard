@@ -329,16 +329,25 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 실적재료비율 및 재료비 산출
     let materialCost = result.rawMaterialCost || 0;
 
-    // 재료비가 없고 비율이 있는 경우 재료비 계산
-    if (materialCost === 0 && revenue > 0) {
-        const ratio = result.materialRatio || (result.bomMaterialRatio || 0) + (result.materialDiff || 0);
-        materialCost = (revenue * ratio) / 100;
-        result.materialRatio = ratio;
+    if (preserveAmounts && result.operatingProfit !== undefined) {
+        // 병합/집계된 데이터의 경우 (수동 입력 OP 등 보존), 재료비와 재료비율을 역산
+        materialCost = revenue - (result.laborCost || 0) - (result.overhead || 0) - result.operatingProfit;
+        result.materialRatio = revenue > 0 ? (materialCost / revenue) * 100 : 0;
+    } else {
+        // 재료비가 없고 비율이 있는 경우 재료비 계산
+        if (materialCost === 0 && revenue > 0) {
+            const ratio = result.materialRatio || (result.bomMaterialRatio || 0) + (result.materialDiff || 0);
+            materialCost = (revenue * ratio) / 100;
+            result.materialRatio = ratio;
+        }
+        // 재료비가 있고 비율이 없는 경우 비율 계산
+        else if (materialCost > 0 && revenue > 0 && (!result.materialRatio || result.materialRatio === 0)) {
+            result.materialRatio = (materialCost / revenue) * 100;
+        }
     }
-    // 재료비가 있고 비율이 없는 경우 비율 계산
-    else if (materialCost > 0 && revenue > 0 && (!result.materialRatio || result.materialRatio === 0)) {
-        result.materialRatio = (materialCost / revenue) * 100;
-    }
+
+    // 계산된 재료비를 명시적으로 저장 (KPICards 등에서 직접 읽을 수 있게 함)
+    result.materialCost = materialCost;
 
     // 차이 = 실적 - BOM
     if (result.bomMaterialRatio && result.materialRatio && (result.materialDiff === undefined || result.materialDiff === 0)) {
