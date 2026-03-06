@@ -30,7 +30,7 @@ export function YearlyTargetCards({ store, year }: Props) {
                 <span className="text-sm font-semibold text-slate-400 ml-2 tracking-normal">(YTD 기준)</span>
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" style={{ padding: '20px 0', boxSizing: 'border-box' }}>
                 {DIVISIONS.map(divInfo => {
                     const divData = divs.find(d => d.divisionCode === divInfo.code);
                     if (!divData || !divData.yearlyTarget) return null;
@@ -90,7 +90,7 @@ export function YearlyTargetCards({ store, year }: Props) {
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-baseline mt-1">
-                                        <span className="text-2xl font-bold text-gray-800 tracking-tight">{formatEok(actualRev)}</span>
+                                        <span className="text-xl font-bold text-gray-800 tracking-tight">{formatEok(actualRev)}</span>
                                         <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetRev)}</span>
                                     </div>
                                 </div>
@@ -116,7 +116,7 @@ export function YearlyTargetCards({ store, year }: Props) {
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-baseline mt-1">
-                                        <span className={`text-2xl font-bold tracking-tight ${actualOp < 0 ? 'text-rose-600' : 'text-gray-800'}`}>{formatEok(actualOp)}</span>
+                                        <span className={`text-xl font-bold tracking-tight ${actualOp < 0 ? 'text-rose-600' : 'text-gray-800'}`}>{formatEok(actualOp)}</span>
                                         <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetOp)}</span>
                                     </div>
                                 </div>
