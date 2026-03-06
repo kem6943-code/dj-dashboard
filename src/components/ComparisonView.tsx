@@ -1,10 +1,11 @@
 /**
  * 사업부 비교 뷰 컴포넌트
  * - 4개 사업부의 실적을 가로로 나란히 비교
- * - 사업부별 매출/영업이익 비교 Bar Chart
+ * - 사업부별 매출/영업이익 비교 월별 꺾은선 추이 차트 및 토글 기능 탑재
  */
+import { useState } from 'react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import {
     type DataStore,
@@ -14,6 +15,7 @@ import {
     aggregateHalf,
     aggregateYear,
     type MonthlyPLData,
+    MONTH_NAMES
 } from '../utils/dataModel';
 import { getDivisionData } from '../utils/storage';
 
@@ -23,10 +25,43 @@ interface ComparisonViewProps {
     periodType: string;
 }
 
-
-
 export function ComparisonView({ store, year, periodType }: ComparisonViewProps) {
-    // 각 사업부의 가장 최근 월 데이터 또는 집계 데이터
+    // 2026 사업계획 기준 표준 환율 (KRW)
+    const FX_RATES: Record<string, number> = {
+        'changwon': 1,      // KRW (원) -> 1배
+        'thailand': 39.5,   // THB (바트) -> 39.5배
+        'vietnam': 0.055,   // VND (동) -> 0.055배 (100동=5.5원)
+        'mexico': 75.0,     // MXN (페소) -> 75.0배
+    };
+
+    const DIV_COLORS: Record<string, string> = {
+        'changwon': '#f97316', // 주황
+        'thailand': '#3b82f6', // 파랑
+        'vietnam': '#10b981',  // 초록
+        'mexico': '#8b5cf6',   // 보라
+    };
+
+    // 토글 상태
+    const [visibleDivs, setVisibleDivs] = useState<Record<string, boolean>>({
+        'changwon': true,
+        'thailand': true,
+        'vietnam': true,
+        'mexico': true
+    });
+
+    const isAllVisible = Object.values(visibleDivs).every(v => v);
+    const toggleAll = () => {
+        const nextState = !isAllVisible;
+        const newVisible: Record<string, boolean> = {};
+        Object.keys(visibleDivs).forEach(k => newVisible[k] = nextState);
+        setVisibleDivs(newVisible);
+    };
+
+    const toggleDiv = (code: string) => {
+        setVisibleDivs(prev => ({ ...prev, [code]: !prev[code] }));
+    };
+
+    // 각 사업부의 가장 최근 월 데이터 또는 집계 데이터 (테이블용)
     const getLatestOrAgg = (): { label: string; data: { division: string; plData: MonthlyPLData }[] } => {
         const results: { division: string; plData: MonthlyPLData }[] = [];
         let label = '';
@@ -43,7 +78,6 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                 plData = aggregateYear(divData.monthly);
                 label = `${year}년 연간`;
             } else if (periodType === 'quarterly') {
-                // 가장 최근 분기
                 for (let q = 4; q >= 1; q--) {
                     const d = aggregateQuarter(divData.monthly, q);
                     if (d.revenue !== 0) { plData = d; label = `Q${q}`; break; }
@@ -55,7 +89,6 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                 if (h2.revenue !== 0) { plData = h2; label = '하반기'; }
                 else { plData = aggregateHalf(divData.monthly, 1); label = '상반기'; }
             } else {
-                // 월별 - 가장 최근 월
                 const months = Object.keys(divData.monthly).map(Number).filter(m => divData.monthly[m]?.revenue !== 0);
                 const latestM = months.length > 0 ? Math.max(...months) : 0;
                 plData = latestM > 0 ? divData.monthly[latestM] : ({} as MonthlyPLData);
@@ -70,22 +103,13 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
     const { label: periodLabel, data: rawCompData } = getLatestOrAgg();
 
-    // 2026 사업계획 기준 표준 환율 (KRW)
-    const FX_RATES: Record<string, number> = {
-        'changwon': 1,      // KRW (원) -> 1배
-        'thailand': 39.5,   // THB (바트) -> 39.5배
-        'vietnam': 0.055,   // VND (동) -> 0.055배 (100동=5.5원)
-        'mexico': 75.0,     // MXN (페소) -> 75.0배
-    };
-
-    // 데이터에 환율 적용 처리 (원화 통일)
+    // 데이터에 환율 적용 처리 (원화 테이블 통일용)
     const compData = rawCompData.map((d, i) => {
         const divCode = DIVISIONS[i].code;
         const rate = FX_RATES[divCode] || 1;
         const convertedPL = { ...d.plData };
 
         Object.keys(convertedPL).forEach(key => {
-            // 이익률(%), 인원수, 원단위 지표에는 환율을 곱하지 않음
             const isRatioOrCount = key.toLowerCase().includes('ratio') || key.toLowerCase().includes('rate') || key === 'headcount' || key === 'revenuePerHead';
             if (!isRatioOrCount && typeof convertedPL[key] === 'number') {
                 convertedPL[key] = convertedPL[key] * rate;
@@ -94,15 +118,28 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
         return { ...d, plData: convertedPL };
     });
 
-    // 비교 차트 데이터 (이제 모두 완벽한 원화(KRW) 스케일로 정렬됨)
-    const chartData = DIVISIONS.map((div, i) => ({
-        name: `${div.flag} ${div.nameEn}`,
-        매출액: Math.round((compData[i]?.plData?.revenue || 0) / 1000000),
-        영업이익: Math.round((compData[i]?.plData?.operatingProfit || 0) / 1000000),
-    }));
+    // 라인 차트용 시계열(1~12월) 데이터 가공 (환산 및 억원/백만원 스케일 조정 - 여기선 억원)
+    const lineChartData = MONTH_NAMES.map((name, i) => {
+        const month = i + 1;
+        const pt: any = { name };
+        DIVISIONS.forEach(div => {
+            const divCode = div.code;
+            const rate = FX_RATES[divCode] || 1;
+            const divData = getDivisionData(store, divCode, year);
+            const pl = divData?.monthly[month];
 
+            if (pl && pl.revenue !== 0) {
+                // 억 단위 환산 후 소수점 1자리 반올림 (금액 * 환율 / 1억)
+                pt[`${divCode}_매출`] = Math.round((pl.revenue * rate) / 100000000 * 10) / 10;
+                pt[`${divCode}_영익`] = Math.round((pl.operatingProfit * rate) / 100000000 * 10) / 10;
+            } else {
+                pt[`${divCode}_매출`] = null;
+                pt[`${divCode}_영익`] = null;
+            }
+        });
+        return pt;
+    });
 
-    // 핵심 비교 항목
     const comparisonItems = [
         { key: 'revenue', label: '매출액' },
         { key: 'materialCost', label: '재료비' },
@@ -114,7 +151,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
     return (
         <div className="animate-fade-in space-y-6" style={{ padding: '24px', boxSizing: 'border-box' }}>
-            {/* 환율 적용 안내 (눈에 잘 띄게 배치) */}
+            {/* 환율 적용 안내 */}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6 flex items-center gap-3">
                 <span className="text-xl">💱</span>
                 <div>
@@ -123,31 +160,110 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                 </div>
             </div>
 
-            {/* 사업부 비교 차트 (원화 통일로 완벽한 1:1 비교 부활) */}
-            <div className="glass-card p-5" style={{ padding: '20px', boxSizing: 'border-box' }}>
-                <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>
-                    📊 사업부별 매출 · 영업이익 비교 (원화 환산 기준, {periodLabel})
-                    <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>(단위: 백만원)</span>
-                </h3>
-                <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={chartData} layout="vertical" margin={{ left: 100 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                        <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                        <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} width={120} />
-                        <Tooltip
-                            contentStyle={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: 8,
-                                fontSize: '0.8rem',
+            {/* 토글 버튼 영역 */}
+            <div className="flex items-center gap-4 flex-wrap bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <span className="text-sm font-bold text-slate-700 mr-2">보기 옵션:</span>
+                <button
+                    onClick={toggleAll}
+                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm ${isAllVisible ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                >
+                    전체
+                </button>
+                <div className="w-px h-6 bg-gray-200 mx-1"></div>
+                {DIVISIONS.map(div => {
+                    const isActive = visibleDivs[div.code];
+                    const color = DIV_COLORS[div.code];
+                    return (
+                        <button
+                            key={div.code}
+                            onClick={() => toggleDiv(div.code)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm flex items-center gap-2`}
+                            style={{
+                                backgroundColor: isActive ? color : '#f1f5f9',
+                                color: isActive ? 'white' : '#64748b',
+                                border: isActive ? 'none' : '1px solid #e2e8f0'
                             }}
-                            formatter={(value: number | undefined) => `${(value || 0).toLocaleString()} 백만원`}
-                        />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                        <Bar dataKey="매출액" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="영업이익" fill="#10b981" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
+                        >
+                            <span className="text-[10px]">{div.flag}</span>
+                            {div.name}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* 듀얼 라인 차트 영역 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* 1. 매출액 비교 차트 */}
+                <div className="glass-card p-5" style={{ padding: '20px', boxSizing: 'border-box' }}>
+                    <div className="flex justify-between items-end mb-4">
+                        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                            📊 법인별 귀속 연간 매출액 추이 (원화)
+                        </h3>
+                        <span className="text-[11px] text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded">단위: 억원</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={lineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                            <Tooltip
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                itemStyle={{ fontSize: '12px' }}
+                                labelStyle={{ fontSize: '13px', fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                            {DIVISIONS.map(div => visibleDivs[div.code] && (
+                                <Line
+                                    key={div.code}
+                                    type="monotone"
+                                    dataKey={`${div.code}_매출`}
+                                    name={div.name}
+                                    stroke={DIV_COLORS[div.code]}
+                                    strokeWidth={3}
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                    connectNulls
+                                />
+                            ))}
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* 2. 영업이익 비교 차트 */}
+                <div className="glass-card p-5" style={{ padding: '20px', boxSizing: 'border-box' }}>
+                    <div className="flex justify-between items-end mb-4">
+                        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                            📊 법인별 귀속 연간 영업이익 추이 (원화)
+                        </h3>
+                        <span className="text-[11px] text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded">단위: 억원</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={lineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                            <Tooltip
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                itemStyle={{ fontSize: '12px' }}
+                                labelStyle={{ fontSize: '13px', fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                            {DIVISIONS.map(div => visibleDivs[div.code] && (
+                                <Line
+                                    key={div.code}
+                                    type="monotone"
+                                    dataKey={`${div.code}_영익`}
+                                    name={div.name}
+                                    stroke={DIV_COLORS[div.code]}
+                                    strokeWidth={3}
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                    connectNulls
+                                />
+                            ))}
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
 
             {/* 비교 테이블 */}
