@@ -133,7 +133,7 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'headcount', label: '인원 (평균인원)', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
     { key: 'laborCost', label: '인건비', isHeader: true, indent: 0, isCalculated: false, section: '노무비' },
     { key: 'laborRatio', label: '인건비율(%)', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'ratio' },
-    { key: 'revenuePerHead', label: '원단생산액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
+    { key: 'revenuePerHead', label: '원당매출액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
@@ -183,7 +183,7 @@ export const VIETNAM_ITEMS: PLItem[] = [
     { key: 'headcount', label: '인원', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
     { key: 'laborCost', label: '인건비', isHeader: true, indent: 0, isCalculated: false, section: '노무비' },
     { key: 'laborRatio', label: '인건비율', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'ratio' },
-    { key: 'revenuePerHead', label: '원단매출액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
+    { key: 'revenuePerHead', label: '원당매출액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
@@ -348,7 +348,7 @@ export function calculateDerivedFields(data: MonthlyPLData): MonthlyPLData {
     // 인건비율 = 인건비 / 매출액 * 100
     result.laborRatio = revenue > 0 ? ((result.laborCost || 0) / revenue) * 100 : 0;
 
-    // 원단(당)매출액 = 수동 입력값이 있으면 유지, 없으면 자동계산(매출액 / 인원)
+    // 원당매출액 = 수동 입력값이 있으면 유지, 없으면 자동계산(매출액 / 인원)
     if (result.revenuePerHead === undefined || result.revenuePerHead === 0) {
         result.revenuePerHead = (result.headcount || 0) > 0
             ? revenue / (result.headcount || 1) : 0;
