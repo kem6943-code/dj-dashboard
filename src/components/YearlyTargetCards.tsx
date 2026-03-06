@@ -27,7 +27,7 @@ export function YearlyTargetCards({ store, year }: Props) {
             <h2 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-slate-800 tracking-tight">
                 <Target className="w-6 h-6 text-emerald-500" />
                 {year}년 사업부별 TD목표 달성 진척도
-                <span className="text-sm font-semibold text-slate-400 ml-2 tracking-normal bg-slate-100/50 px-3 py-1 rounded-md">YTD 기준</span>
+                <span className="text-sm font-semibold text-slate-400 ml-2 tracking-normal">(YTD 기준)</span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
