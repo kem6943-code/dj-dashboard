@@ -161,15 +161,18 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
             </div>
 
             {/* 토글 버튼 영역 */}
-            <div className="flex items-center gap-4 flex-wrap bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <span className="text-sm font-bold text-slate-700 mr-2">보기 옵션:</span>
+            <div className="flex items-center gap-3 flex-wrap bg-slate-50/80 p-3 rounded-2xl shadow-inner border border-gray-100" style={{ marginBottom: '8px' }}>
+                <span className="text-sm font-extrabold text-slate-500 mr-2 flex items-center gap-2">
+                    <div className="w-1.5 h-4 bg-slate-300 rounded-full"></div>비교 필터
+                </span>
                 <button
                     onClick={toggleAll}
-                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm ${isAllVisible ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                    style={{ fontSize: '13px' }}
+                    className={`px-4 py-2 rounded-xl font-bold transition-all border ${isAllVisible ? 'bg-white shadow-sm border-slate-200 text-slate-800' : 'bg-transparent border-transparent text-slate-400 hover:bg-slate-200/50'}`}
                 >
-                    전체
+                    전체 켜기/끄기
                 </button>
-                <div className="w-px h-6 bg-gray-200 mx-1"></div>
+                <div className="w-px h-6 bg-slate-200 mx-2"></div>
                 {DIVISIONS.map(div => {
                     const isActive = visibleDivs[div.code];
                     const color = DIV_COLORS[div.code];
@@ -177,14 +180,22 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                         <button
                             key={div.code}
                             onClick={() => toggleDiv(div.code)}
-                            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm flex items-center gap-2`}
+                            className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all flex items-center gap-2 border`}
                             style={{
-                                backgroundColor: isActive ? color : '#f1f5f9',
-                                color: isActive ? 'white' : '#64748b',
-                                border: isActive ? 'none' : '1px solid #e2e8f0'
+                                backgroundColor: isActive ? '#ffffff' : 'transparent',
+                                color: isActive ? '#334155' : '#94a3b8',
+                                border: isActive ? `1px solid ${color}40` : '1px solid transparent',
+                                boxShadow: isActive ? `0 2px 8px -2px ${color}30` : 'none'
                             }}
                         >
-                            <span className="text-[10px]">{div.flag}</span>
+                            <span
+                                className="w-2.5 h-2.5 rounded-full shadow-sm"
+                                style={{
+                                    backgroundColor: isActive ? color : '#cbd5e1',
+                                    boxShadow: isActive ? `0 0 6px ${color}80` : 'none',
+                                    transition: 'all 0.3s ease'
+                                }}>
+                            </span>
                             {div.name}
                         </button>
                     );
@@ -194,24 +205,30 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
             {/* 듀얼 라인 차트 영역 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* 1. 매출액 비교 차트 */}
-                <div className="glass-card p-5" style={{ padding: '20px', boxSizing: 'border-box' }}>
-                    <div className="flex justify-between items-end mb-4">
-                        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                            📊 법인별 귀속 연간 매출액 추이 (원화)
+                <div className="glass-card p-5 transition-all hover:shadow-lg" style={{ padding: '24px', boxSizing: 'border-box' }}>
+                    <div className="flex justify-between items-end mb-6">
+                        <h3 className="text-sm font-extrabold tracking-tight" style={{ color: '#1e293b' }}>
+                            📈 연간 매출액 성장 추이 비교
                         </h3>
-                        <span className="text-[11px] text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded">단위: 억원</span>
+                        <span className="text-[11px] text-gray-400 font-bold bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-md">단위: 억원 (KRW)</span>
                     </div>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={320}>
                         <LineChart data={lineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                            <defs>
+                                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.08" />
+                                </filter>
+                            </defs>
+                            <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} />
                             <Tooltip
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                itemStyle={{ fontSize: '12px' }}
-                                labelStyle={{ fontSize: '13px', fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}
+                                cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                                itemStyle={{ fontSize: '12px', fontWeight: 700, padding: '2px 0' }}
+                                labelStyle={{ fontSize: '13px', fontWeight: '800', color: '#334155', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '6px' }}
                             />
-                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                            <Legend wrapperStyle={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', paddingTop: '20px' }} iconType="circle" />
                             {DIVISIONS.map(div => visibleDivs[div.code] && (
                                 <Line
                                     key={div.code}
@@ -219,10 +236,11 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                                     dataKey={`${div.code}_매출`}
                                     name={div.name}
                                     stroke={DIV_COLORS[div.code]}
-                                    strokeWidth={3}
-                                    dot={{ r: 4 }}
-                                    activeDot={{ r: 6 }}
+                                    strokeWidth={3.5}
+                                    dot={{ r: 4, strokeWidth: 2, fill: '#fff', stroke: DIV_COLORS[div.code] }}
+                                    activeDot={{ r: 6, strokeWidth: 0, fill: DIV_COLORS[div.code] }}
                                     connectNulls
+                                    filter="url(#shadow)"
                                 />
                             ))}
                         </LineChart>
@@ -230,24 +248,30 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                 </div>
 
                 {/* 2. 영업이익 비교 차트 */}
-                <div className="glass-card p-5" style={{ padding: '20px', boxSizing: 'border-box' }}>
-                    <div className="flex justify-between items-end mb-4">
-                        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                            📊 법인별 귀속 연간 영업이익 추이 (원화)
+                <div className="glass-card p-5 transition-all hover:shadow-lg" style={{ padding: '24px', boxSizing: 'border-box' }}>
+                    <div className="flex justify-between items-end mb-6">
+                        <h3 className="text-sm font-extrabold tracking-tight" style={{ color: '#1e293b' }}>
+                            📉 연간 영업이익 흑자/적자 추이 (원화)
                         </h3>
-                        <span className="text-[11px] text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded">단위: 억원</span>
+                        <span className="text-[11px] text-gray-400 font-bold bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-md">단위: 억원 (KRW)</span>
                     </div>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={320}>
                         <LineChart data={lineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                            <defs>
+                                <filter id="shadow2" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.08" />
+                                </filter>
+                            </defs>
+                            <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} />
                             <Tooltip
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                itemStyle={{ fontSize: '12px' }}
-                                labelStyle={{ fontSize: '13px', fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}
+                                cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                                itemStyle={{ fontSize: '12px', fontWeight: 700, padding: '2px 0' }}
+                                labelStyle={{ fontSize: '13px', fontWeight: '800', color: '#334155', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '6px' }}
                             />
-                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                            <Legend wrapperStyle={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', paddingTop: '20px' }} iconType="circle" />
                             {DIVISIONS.map(div => visibleDivs[div.code] && (
                                 <Line
                                     key={div.code}
@@ -255,10 +279,11 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                                     dataKey={`${div.code}_영익`}
                                     name={div.name}
                                     stroke={DIV_COLORS[div.code]}
-                                    strokeWidth={3}
-                                    dot={{ r: 4 }}
-                                    activeDot={{ r: 6 }}
+                                    strokeWidth={3.5}
+                                    dot={{ r: 4, strokeWidth: 2, fill: '#fff', stroke: DIV_COLORS[div.code] }}
+                                    activeDot={{ r: 6, strokeWidth: 0, fill: DIV_COLORS[div.code] }}
                                     connectNulls
+                                    filter="url(#shadow2)"
                                 />
                             ))}
                         </LineChart>
@@ -267,17 +292,18 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
             </div>
 
             {/* 비교 테이블 */}
-            <div className="glass-card p-5 overflow-x-auto" style={{ padding: '20px', boxSizing: 'border-box' }}>
-                <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>
-                    📋 사업부별 핵심 지표 표 (원화 환산 기준, {periodLabel})
-                    <span className="ml-2 text-xs font-bold text-blue-600">(단위: 백만원)</span>
+            <div className="glass-card p-5 overflow-x-auto" style={{ padding: '24px', boxSizing: 'border-box' }}>
+                <h3 className="text-sm font-extrabold mb-5 flex items-center gap-2" style={{ color: '#1e293b' }}>
+                    <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+                    사업부별 핵심 지표 요약표 ({periodLabel})
+                    <span className="ml-2 text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded">(단위: 백만원)</span>
                 </h3>
                 <table className="data-table">
                     <thead>
                         <tr>
-                            <th>구분</th>
+                            <th style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>구분</th>
                             {DIVISIONS.map(div => (
-                                <th key={div.code}>{div.flag} {div.name}</th>
+                                <th key={div.code} style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>{div.flag} {div.name}</th>
                             ))}
                         </tr>
                     </thead>
@@ -299,15 +325,15 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                             </tr>
                         ))}
                         {/* 영업이익률 */}
-                        <tr className="row-header" style={{ borderTop: '2px solid var(--accent-blue)' }}>
-                            <td><strong>영업이익률 (%)</strong></td>
+                        <tr className="row-header" style={{ borderTop: '2px solid #94a3b8' }}>
+                            <td style={{ backgroundColor: '#f8fafc' }}><strong>영업이익률 (%)</strong></td>
                             {compData.map((d, i) => {
                                 const rev = d.plData?.revenue || 0;
                                 const op = d.plData?.operatingProfit || 0;
                                 const ratio = rev !== 0 ? ((op / rev) * 100).toFixed(1) : '-';
                                 const isPos = Number(ratio) >= 0;
                                 return (
-                                    <td key={i} className={ratio !== '-' ? (isPos ? 'value-positive' : 'value-negative') : ''}>
+                                    <td key={i} className={ratio !== '-' ? (isPos ? 'value-positive' : 'value-negative') : ''} style={{ backgroundColor: '#f8fafc' }}>
                                         <strong>{ratio}{ratio !== '-' ? '%' : ''}</strong>
                                     </td>
                                 );
