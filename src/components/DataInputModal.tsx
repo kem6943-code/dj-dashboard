@@ -22,9 +22,14 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
     const [selectedMonth, setSelectedMonth] = useState(month);
     const [exchangeRate, setExchangeRate] = useState(initialRate || 1);
 
-    // 단위 계산 (KRW, VND는 보통 백만 단위로 입력받음)
-    const multiplier = (divisionInfo.currency === 'KRW' || divisionInfo.currency === 'VND') ? 1000000 : 1;
-    const unitText = multiplier === 1000000 ? '백만' : '1';
+    // 단위 계산 (모든 사업부 백만 단위로 통일 입력 권장)
+    const multiplier = 1000000;
+
+    // 통화 단위 커스텀 텍스트
+    const unitText =
+        divisionInfo.currency === 'KRW' ? '백만원' :
+            divisionInfo.currency === 'VND' ? '백만동' :
+                `백만${divisionInfo.currency}`;
 
     const [formData, setFormData] = useState<Record<string, number>>(() => {
         return initialData ? { ...initialData } : createEmptyPLData();
@@ -113,28 +118,40 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 {divisionInfo.currency !== 'KRW' && (
                     <div className="flex items-center gap-3 mb-6 p-3 rounded-lg" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
                         <label className="text-sm font-medium w-28 flex-shrink-0" style={{ color: '#92400e' }}>
-                            💱 환율
+                            💱 단위 환율
                         </label>
-                        <div className="flex items-center gap-2 flex-1">
-                            <span className="text-xs" style={{ color: '#92400e' }}>1 {divisionInfo.currency} =</span>
+                        <div className="flex items-center gap-2 flex-1 relative group">
+                            <span className="text-xs font-bold" style={{ color: '#92400e' }}>1 {divisionInfo.currency} =</span>
                             <input
                                 type="number"
-                                step="0.01"
-                                className="input-field"
-                                style={{ maxWidth: 120 }}
+                                step="0.001"
+                                className="input-field font-bold text-amber-900 border-amber-300 focus:border-amber-500 focus:ring-amber-200"
+                                style={{ maxWidth: 120, border: '1px solid #fcd34d', backgroundColor: '#fff', padding: '6px 12px' }}
                                 value={exchangeRate || ''}
-                                onChange={e => setExchangeRate(Number(e.target.value) || 0)}
+                                onChange={e => {
+                                    const val = Number(e.target.value);
+                                    if (val >= 0) setExchangeRate(val);
+                                }}
                                 placeholder="0"
                             />
-                            <span className="text-xs" style={{ color: '#92400e' }}>원 (KRW)</span>
+                            <span className="text-xs font-bold" style={{ color: '#92400e' }}>원 (KRW)</span>
+
+                            {/* 환율 툴팁 (기존 상수값 안내) */}
+                            <div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-slate-800 text-white text-[11px] rounded shadow-lg z-10 whitespace-nowrap min-w-max text-center">
+                                권장 기준 환율:<br />
+                                🇹🇭 THB: 39.5원 / 🇻🇳 VND: 0.055원<br />🇲🇽 MXN: 75.0원
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* 통화 안내 */}
                 <div className="text-sm border-b pb-3 mb-4" style={{ color: 'var(--text-muted)' }}>
-                    💰 금액은 <strong>{divisionInfo.currency} ({unitText})</strong> 단위로 입력해주세요.
-                    {multiplier === 1000000 && " (예: 95억5900만원 -> 9559 입력)"}
+                    💰 금액은 <strong>{unitText}</strong> 단위로 입력해주세요.
+                    {divisionInfo.currency === 'KRW' && " (예: 95억5900만원 -> 9559 입력)"}
+                    {divisionInfo.currency === 'THB' && " (예: 1억7400만바트 -> 174 입력)"}
+                    {divisionInfo.currency === 'VND' && " (예: 49억1100만동 -> 4911 입력)"}
+                    {divisionInfo.currency === 'MXN' && " (예: 5100만페소 -> 51 입력)"}
                 </div>
 
                 {/* 입력 필드들 */}
