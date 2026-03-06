@@ -65,14 +65,13 @@ export interface PLItem {
 // 회사 보고서 형식 P&L 항목 목록 — 창원 사업부
 export const CHANGWON_ITEMS: PLItem[] = [
     // ===== 매출/판가 =====
-    { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: false, section: '매출/판가' },
+    { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
     { key: 'salesFL', label: 'FL', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesTL', label: 'TL', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesFridge', label: '냉장고', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
 
     // ===== 재료비 =====
-    { key: 'rawMaterialCost', label: '원재료비', isHeader: true, indent: 0, isCalculated: false, section: '재료비' },
     { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialDiff', label: '차이', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
@@ -113,7 +112,7 @@ export const CHANGWON_ITEMS: PLItem[] = [
 // 회사 보고서 형식 P&L 항목 목록 — 태국(DJETR) 사업부
 export const THAILAND_ITEMS: PLItem[] = [
     // ===== 매출/판가 =====
-    { key: 'revenue', label: '매출액 (순매출액)', isHeader: true, indent: 0, isCalculated: false, section: '매출/판가' },
+    { key: 'revenue', label: '매출액 (순매출액)', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
     { key: 'salesCoverTop', label: 'Cover Assy, Top', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesTubOuter', label: 'Tub Assy, Outer', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesBaseCab', label: 'Base Cabinet 25', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
@@ -163,7 +162,7 @@ export const THAILAND_ITEMS: PLItem[] = [
 // 회사 보고서 형식 P&L 항목 목록 — 베트남 사업부
 export const VIETNAM_ITEMS: PLItem[] = [
     // ===== 매출/판가 =====
-    { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: false, section: '매출/판가' },
+    { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
     { key: 'salesWM', label: 'W/M', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesAIO', label: 'AIO', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesREF', label: 'REF', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
@@ -218,7 +217,7 @@ export const VIETNAM_ITEMS: PLItem[] = [
 // 멕시코 사업부 P&L 항목 — 가전/자동차 공통 사용
 export const MEXICO_ITEMS: PLItem[] = [
     // ===== 매출/판가 =====
-    { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: false, section: '매출/판가' },
+    { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
     { key: 'salesFL', label: 'FL', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesTL', label: 'TL', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
@@ -312,6 +311,19 @@ export function createEmptyPLData(): MonthlyPLData {
 // 계산 항목 자동 산출
 export function calculateDerivedFields(data: MonthlyPLData): MonthlyPLData {
     const result = { ...data };
+
+    // 매출액 자동 산출 (하위 항목 - sales로 시작하는 모든 key의 합)
+    let totalRevenue = 0;
+    Object.keys(result).forEach(key => {
+        if (key.startsWith('sales') && typeof result[key] === 'number') {
+            totalRevenue += result[key] as number;
+        }
+    });
+    // 하위 항목이 하나라도 있다면 매출액을 덮어씀 (없으면 기존 값 유지)
+    if (totalRevenue > 0 || Object.keys(result).some(key => key.startsWith('sales'))) {
+        result.revenue = totalRevenue;
+    }
+
     const revenue = result.revenue || 0;
 
     // 실적재료비율 및 재료비 산출
