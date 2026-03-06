@@ -133,7 +133,7 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'headcount', label: '인원 (평균인원)', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
     { key: 'laborCost', label: '인건비', isHeader: true, indent: 0, isCalculated: false, section: '노무비' },
     { key: 'laborRatio', label: '인건비율(%)', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'ratio' },
-    { key: 'revenuePerHead', label: '원단생산액', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'unit' },
+    { key: 'revenuePerHead', label: '원단생산액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
@@ -183,7 +183,7 @@ export const VIETNAM_ITEMS: PLItem[] = [
     { key: 'headcount', label: '인원', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
     { key: 'laborCost', label: '인건비', isHeader: true, indent: 0, isCalculated: false, section: '노무비' },
     { key: 'laborRatio', label: '인건비율', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'ratio' },
-    { key: 'revenuePerHead', label: '원단매출액', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'unit' },
+    { key: 'revenuePerHead', label: '원단매출액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
