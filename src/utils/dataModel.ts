@@ -309,7 +309,7 @@ export function createEmptyPLData(): MonthlyPLData {
 }
 
 // 계산 항목 자동 산출
-export function calculateDerivedFields(data: MonthlyPLData): MonthlyPLData {
+export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boolean = false): MonthlyPLData {
     const result = { ...data };
 
     // 매출액 자동 산출 (하위 항목 - sales로 시작하는 모든 key의 합)
@@ -358,7 +358,9 @@ export function calculateDerivedFields(data: MonthlyPLData): MonthlyPLData {
     result.overheadRatio = revenue > 0 ? ((result.overhead || 0) / revenue) * 100 : 0;
 
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
-    result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);
+    if (!preserveAmounts) {
+        result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);
+    }
 
     // 영업이익률
     result.operatingProfitRatio = revenue > 0 ? (result.operatingProfit / revenue) * 100 : 0;
@@ -369,10 +371,14 @@ export function calculateDerivedFields(data: MonthlyPLData): MonthlyPLData {
     // 베트남: interestIncome, forexGain, interestExpense, forexLoss
     const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
     const nonOpExpense = (result.financeCost || 0) + (result.interestExpense || 0) + (result.forexLoss || 0);
-    result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
+    if (!preserveAmounts) {
+        result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
+    }
 
     // 세전이익 = 영업이익 + 영외수지
-    result.ebt = result.operatingProfit + result.nonOpBalance;
+    if (!preserveAmounts) {
+        result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
+    }
 
     return result;
 }
@@ -412,14 +418,14 @@ export function aggregateQuarter(monthly: { [month: number]: MonthlyPLData }, qu
         const mData = monthly[m];
         if (mData) {
             PL_ITEMS.forEach(item => {
-                if (!item.isCalculated) {
+                if (!item.type || item.type === 'amount' || item.type === 'count') {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
         }
     });
 
-    return calculateDerivedFields(result);
+    return calculateDerivedFields(result, true);
 }
 
 // 반기 데이터 집계
@@ -432,14 +438,14 @@ export function aggregateHalf(monthly: { [month: number]: MonthlyPLData }, half:
         const mData = monthly[m];
         if (mData) {
             PL_ITEMS.forEach(item => {
-                if (!item.isCalculated) {
+                if (!item.type || item.type === 'amount' || item.type === 'count') {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
         }
     });
 
-    return calculateDerivedFields(result);
+    return calculateDerivedFields(result, true);
 }
 
 // 연간 데이터 집계
@@ -449,13 +455,13 @@ export function aggregateYear(monthly: { [month: number]: MonthlyPLData }): Mont
         const mData = monthly[m];
         if (mData) {
             PL_ITEMS.forEach(item => {
-                if (!item.isCalculated) {
+                if (!item.type || item.type === 'amount' || item.type === 'count') {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
         }
     }
-    return calculateDerivedFields(result);
+    return calculateDerivedFields(result, true);
 }
 
 // P&L 데이터를 환율로 원화 환산
@@ -464,9 +470,13 @@ export function convertToKRW(data: MonthlyPLData, exchangeRate: number): Monthly
     if (exchangeRate === 1 || exchangeRate === 0) return data; // KRW이거나 환율 없으면 그대로
     const result = createEmptyPLData();
     PL_ITEMS.forEach(item => {
-        result[item.key] = (data[item.key] || 0) * exchangeRate;
+        if (!item.type || item.type === 'amount') {
+            result[item.key] = (data[item.key] || 0) * exchangeRate;
+        } else {
+            result[item.key] = data[item.key] || 0;
+        }
     });
-    return calculateDerivedFields(result);
+    return calculateDerivedFields(result, true);
 }
 
 // 전 사업부 합산 (원화 환산 후 합산)
@@ -495,8 +505,10 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                 if (mData && (mData.revenue !== 0 || mData.laborCost !== 0)) {
                     hasData = true;
                     PL_ITEMS.forEach(item => {
-                        if (!item.isCalculated) {
+                        if (!item.type || item.type === 'amount') {
                             result[item.key] = (result[item.key] || 0) + ((mData[item.key] || 0) * rate);
+                        } else if (item.type === 'count') {
+                            result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                         }
                     });
                 }
@@ -506,18 +518,20 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                 if (tData && (tData.revenue !== 0 || tData.laborCost !== 0)) {
                     hasTargetData = true;
                     PL_ITEMS.forEach(item => {
-                        if (!item.isCalculated) {
+                        if (!item.type || item.type === 'amount') {
                             targetResult[item.key] = (targetResult[item.key] || 0) + ((tData[item.key] || 0) * rate);
+                        } else if (item.type === 'count') {
+                            targetResult[item.key] = (targetResult[item.key] || 0) + (tData[item.key] || 0);
                         }
                     });
                 }
             });
 
         if (hasData) {
-            consolidated.monthly[m] = calculateDerivedFields(result);
+            consolidated.monthly[m] = calculateDerivedFields(result, true);
         }
         if (hasTargetData) {
-            consolidated.targetMonthly[m] = calculateDerivedFields(targetResult);
+            consolidated.targetMonthly[m] = calculateDerivedFields(targetResult, true);
         }
     }
 

@@ -35,6 +35,9 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
         return initialData ? { ...initialData } : createEmptyPLData();
     });
 
+    // 수동 오버라이드된 항목 추적 (자동 계산 항목을 직접 수정한 경우)
+    const [overrides, setOverrides] = useState<Set<string>>(new Set());
+
     // 자동 계산 필드 업데이트 (입력값 변경 시)
     const plItems = getPLItemsForDivision(divisionInfo.code as any);
     useEffect(() => {
@@ -42,7 +45,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
         setFormData(prev => {
             const updated = { ...prev };
             plItems.forEach(item => {
-                if (item.isCalculated) {
+                if (item.isCalculated && !overrides.has(item.key)) {
                     updated[item.key] = calculated[item.key] || 0;
                 }
             });
@@ -57,6 +60,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
         formData.headcount,
         formData.financeCost,
         formData.nonOpIncome,
+        overrides,
     ]);
 
     const handleChange = (key: string, value: string) => {
@@ -64,6 +68,14 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
         const isAmount = !item?.type || item.type === 'amount';
         const numValue = value === '' ? 0 : Number(value);
         if (!isNaN(numValue)) {
+            if (item?.isCalculated) {
+                setOverrides(prev => {
+                    const next = new Set(prev);
+                    if (value === '') next.delete(key);
+                    else next.add(key);
+                    return next;
+                });
+            }
             // 금액인 경우에만 multiplier 적용
             setFormData(prev => ({ ...prev, [key]: numValue * (isAmount ? multiplier : 1) }));
         }
@@ -157,7 +169,8 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 {/* 입력 필드들 */}
                 <div className="space-y-0 border-t border-gray-200 mt-2">
                     {plItems.map((item, index) => {
-                        const isDisabled = item.isCalculated;
+                        const isOverridden = overrides.has(item.key);
+                        const isAutoCalculated = item.isCalculated && !isOverridden;
                         const isAmount = !item.type || item.type === 'amount';
                         const currentMultiplier = isAmount ? multiplier : 1;
 
@@ -199,18 +212,22 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                                                 }
                                             }
                                         }}
-                                        disabled={isDisabled}
+                                        disabled={false}
                                         placeholder="0"
+                                        title={isAutoCalculated ? "현재 자동 계산 중입니다. 값을 입력하면 수동으로 고정됩니다." : ""}
                                         style={{
-                                            opacity: isDisabled ? 0.6 : 1,
+                                            opacity: 1,
                                             fontWeight: item.isHeader ? 700 : 500,
-                                            color: item.isHeader ? 'var(--accent-blue)' : '#374151',
-                                            padding: '4px 0',
-                                            paddingRight: (currentMultiplier === 1000000 && !isDisabled && displayValue !== '') ? '40px' : '0px',
-                                            fontSize: '15px'
+                                            color: isAutoCalculated ? '#047857' : (item.isHeader ? 'var(--accent-blue)' : '#374151'),
+                                            backgroundColor: isAutoCalculated ? '#f0fdf4' : 'transparent',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            paddingRight: (currentMultiplier === 1000000 && displayValue !== '') ? '40px' : '8px',
+                                            fontSize: '15px',
+                                            transition: 'all 0.2s',
                                         }}
                                     />
-                                    {currentMultiplier === 1000000 && !isDisabled && displayValue !== '' && (
+                                    {currentMultiplier === 1000000 && displayValue !== '' && (
                                         <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[13px] text-gray-400 pointer-events-none font-medium">
                                             백만
                                         </div>
