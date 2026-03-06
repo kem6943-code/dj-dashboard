@@ -139,7 +139,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
 
                 {/* 입력 필드들 */}
                 <div className="space-y-0 border-t border-gray-200 mt-2">
-                    {plItems.map(item => {
+                    {plItems.map((item, index) => {
                         const isDisabled = item.isCalculated;
                         const isAmount = !item.type || item.type === 'amount';
                         const currentMultiplier = isAmount ? multiplier : 1;
@@ -161,9 +161,27 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                                 <div className="flex-1 relative flex items-center">
                                     <input
                                         type="number"
+                                        data-input-index={index} // 엔터키 이동을 위한 인덱스 속성 부여
                                         className="w-full text-left bg-transparent outline-none transition-all placeholder:text-gray-300"
                                         value={displayValue}
                                         onChange={e => handleChange(item.key, e.target.value)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                // 현재 인덱스 기준으로 다음 활성화된 input 찾기
+                                                let nextIndex = index + 1;
+                                                const inputs = document.querySelectorAll('input[data-input-index]');
+                                                while (nextIndex < inputs.length) {
+                                                    const nextInput = document.querySelector(`input[data-input-index="${nextIndex}"]`) as HTMLInputElement | null;
+                                                    if (nextInput && !nextInput.disabled) {
+                                                        nextInput.focus();
+                                                        nextInput.select(); // 포커스 후 전체 텍스트 선택(입력 편의성)
+                                                        break;
+                                                    }
+                                                    nextIndex++;
+                                                }
+                                            }
+                                        }}
                                         disabled={isDisabled}
                                         placeholder="0"
                                         style={{
