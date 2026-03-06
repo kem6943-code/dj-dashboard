@@ -23,11 +23,12 @@ export function KPICards({ divData, divisionInfo }: KPICardsProps) {
 
     const revenue = currentData?.revenue || 0;
     const operatingProfit = currentData?.operatingProfit || 0;
-    const materialCost = currentData?.materialCost || 0;
     const ebt = currentData?.ebt || 0;
 
-    const opMargin = revenue !== 0 ? ((operatingProfit / revenue) * 100).toFixed(1) : '0';
-    const materialRatio = revenue !== 0 ? ((materialCost / revenue) * 100).toFixed(1) : '0';
+    const opMargin = revenue !== 0 ? ((operatingProfit / revenue) * 100).toFixed(1) : '0.0';
+    const materialRatio = currentData?.materialRatio !== undefined
+        ? Number(currentData.materialRatio).toFixed(1)
+        : '0.0';
 
     const kpis = [
         {
