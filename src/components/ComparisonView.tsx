@@ -66,6 +66,22 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
         const results: { division: string; plData: MonthlyPLData }[] = [];
         let label = '';
 
+        // 글로벌 최신 월 계산 (모든 사업부 통틀어 매출이 있는 가장 최신 월)
+        let globalLatestMonth = 0;
+        if (periodType === 'monthly') {
+            DIVISIONS.forEach(div => {
+                const divData = getDivisionData(store, div.code, year);
+                if (divData && divData.monthly) {
+                    const months = Object.keys(divData.monthly).map(Number).filter(m => divData.monthly[m]?.revenue !== 0);
+                    if (months.length > 0) {
+                        const maxMonth = Math.max(...months);
+                        if (maxMonth > globalLatestMonth) globalLatestMonth = maxMonth;
+                    }
+                }
+            });
+            label = globalLatestMonth > 0 ? `${globalLatestMonth}월` : '-';
+        }
+
         DIVISIONS.forEach(div => {
             const divData = getDivisionData(store, div.code, year);
             if (!divData) {
@@ -89,10 +105,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                 if (h2.revenue !== 0) { plData = h2; label = '하반기'; }
                 else { plData = aggregateHalf(divData.monthly, 1); label = '상반기'; }
             } else {
-                const months = Object.keys(divData.monthly).map(Number).filter(m => divData.monthly[m]?.revenue !== 0);
-                const latestM = months.length > 0 ? Math.max(...months) : 0;
-                plData = latestM > 0 ? divData.monthly[latestM] : ({} as MonthlyPLData);
-                label = latestM > 0 ? `${latestM}월` : '-';
+                plData = globalLatestMonth > 0 ? divData.monthly[globalLatestMonth] || ({} as MonthlyPLData) : ({} as MonthlyPLData);
             }
 
             results.push({ division: div.name, plData });
@@ -142,7 +155,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
     const comparisonItems = [
         { key: 'revenue', label: '매출액' },
-        { key: 'materialCost', label: '재료비' },
+        { key: 'materialRatio', label: '재료비율 (%)' },
         { key: 'laborCost', label: '노무비' },
         { key: 'overhead', label: '경비' },
         { key: 'operatingProfit', label: '영업이익' },
@@ -313,6 +326,15 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                                 <td><strong>{item.label}</strong></td>
                                 {compData.map((d, i) => {
                                     const value = d.plData?.[item.key] || 0;
+
+                                    if (item.key === 'materialRatio') {
+                                        return (
+                                            <td key={i}>
+                                                <strong>{value !== 0 ? `${value.toFixed(1)}%` : '-'}</strong>
+                                            </td>
+                                        );
+                                    }
+
                                     const isProfit = ['operatingProfit', 'ebt'].includes(item.key);
                                     let cls = '';
                                     if (isProfit && value !== 0) cls = value > 0 ? 'value-positive' : 'value-negative';
