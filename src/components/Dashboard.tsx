@@ -592,7 +592,11 @@ export function Dashboard() {
                                         ? divData?.targetMonthly?.[editMonth]
                                         : divData?.monthly?.[editMonth]
                             }
-                            initialRate={divData?.exchangeRate?.[editMonth]}
+                            initialRate={
+                                editDataType === 'prevYear'
+                                    ? prevYearDivData?.exchangeRate?.[editMonth]
+                                    : divData?.exchangeRate?.[editMonth]
+                            }
                             onSave={(month, data, rate, type) => handleSaveData(month, data, rate, type)}
                             onClose={() => setShowInputModal(false)}
                         />
