@@ -110,6 +110,14 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
                         const isRatio = label.includes('비율') || label.includes('(%)') || label.includes('차이') || label.includes('율');
                         const isCount = label.includes('인원') || label.includes('단위');
 
+                        const normalizeAmount = (val: number) => {
+                            if (val === 0) return 0;
+                            // 엑셀 내 '원' 단위와 '백만원' 단위 혼용 입력 방어
+                            // 값이 1,000,000 을 넘어가면 이미 원(Raw) 단위로 입력된 것으로 간주
+                            if (Math.abs(val) > 1000000) return val;
+                            return val * 1000000;
+                        };
+
                         if (isRatio) {
                             prevYearData[dataKey] = Number((prevYearVal * 100).toFixed(2));
                             actualData[dataKey] = Number((actualVal * 100).toFixed(2));
@@ -124,9 +132,9 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
                                 actualData[dataKey] = actualVal; // 원당매출액은 그대로
                                 targetData[dataKey] = targetVal;
                             } else {
-                                prevYearData[dataKey] = prevYearVal * 1000000;
-                                actualData[dataKey] = actualVal * 1000000;
-                                targetData[dataKey] = targetVal * 1000000;
+                                prevYearData[dataKey] = normalizeAmount(prevYearVal);
+                                actualData[dataKey] = normalizeAmount(actualVal);
+                                targetData[dataKey] = normalizeAmount(targetVal);
                             }
                         }
                     }
