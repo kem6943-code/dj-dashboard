@@ -74,8 +74,9 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
                 const prevYearData: Partial<MonthlyPLData> = {};
 
                 // 인덱스 기준:
-                // Col 0: 대분류, Col 1: 중분류/항목명, Col 5: 전년 실적, Col 6: 당월 실적, Col 7: 당월 TD목표
-                const COL_PREV_YEAR = 5;
+                // Col 0: 대분류, Col 1: 중분류/항목명, 
+                // Col 4: 전년 동월 실적, Col 5: 전월 실적, Col 6: 당월 실적, Col 7: 당월 TD목표
+                const COL_PREV_YEAR = 4; // 5에서 4로 수정 (5는 '전월', 4가 '전년')
                 const COL_ACTUAL = 6;
                 const COL_TARGET = 7;
 
