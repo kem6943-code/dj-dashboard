@@ -22,35 +22,64 @@ export const ExcelUploader: React.FC<ExcelUploaderProps> = ({ currentStore, onUp
 
         setIsLoading(true);
         try {
-            const { actual, target } = await parseMonthlyExcel(file, selectedMonth, divisionCode);
+            const { actual, target, prevYear } = await parseMonthlyExcel(file, selectedMonth, divisionCode);
 
             // Deep clone store
             const newStore: DataStore = JSON.parse(JSON.stringify(currentStore));
-            const divData = newStore.divisions.find(d => d.divisionCode === divisionCode && d.year === year);
 
-            if (divData) {
-                // Initialize objects if missing
-                if (!divData.monthly) divData.monthly = {};
-                if (!divData.targetMonthly) divData.targetMonthly = {};
-
-                // Merge data
-                divData.monthly[selectedMonth] = {
-                    ...divData.monthly[selectedMonth],
-                    ...actual
-                } as MonthlyPLData;
-
-                divData.targetMonthly[selectedMonth] = {
-                    ...divData.targetMonthly[selectedMonth],
-                    ...target
-                } as MonthlyPLData;
-
-                await saveData(newStore);
-                onUploadSuccess(newStore);
-                setIsOpen(false);
-                alert(`${selectedMonth}월 엑셀 데이터 연동 성공!`);
-            } else {
-                alert('해당 사업부/연도 데이터를 찾을 수 없습니다.');
+            // 1. 당월 연도 데이터 (예: 2026) 업데이트
+            let divData = newStore.divisions.find(d => d.divisionCode === divisionCode && d.year === year);
+            if (!divData) {
+                // 데이터 공간이 없으면 생성
+                divData = {
+                    divisionCode,
+                    year,
+                    monthly: {},
+                    targetMonthly: {},
+                    exchangeRate: {}
+                };
+                newStore.divisions.push(divData);
             }
+
+            if (!divData.monthly) divData.monthly = {};
+            if (!divData.targetMonthly) divData.targetMonthly = {};
+
+            divData.monthly[selectedMonth] = {
+                ...divData.monthly[selectedMonth],
+                ...actual
+            } as MonthlyPLData;
+
+            divData.targetMonthly[selectedMonth] = {
+                ...divData.targetMonthly[selectedMonth],
+                ...target
+            } as MonthlyPLData;
+
+            // 2. 전년도 데이터 (예: 2025) 업데이트
+            const prevYearNum = year - 1;
+            let prevDivData = newStore.divisions.find(d => d.divisionCode === divisionCode && d.year === prevYearNum);
+            if (!prevDivData) {
+                prevDivData = {
+                    divisionCode,
+                    year: prevYearNum,
+                    monthly: {},
+                    targetMonthly: {},
+                    exchangeRate: {}
+                };
+                newStore.divisions.push(prevDivData);
+            }
+
+            if (!prevDivData.monthly) prevDivData.monthly = {};
+
+            // 전년 실적은 actual을 업데이트 하는 개념
+            prevDivData.monthly[selectedMonth] = {
+                ...prevDivData.monthly[selectedMonth],
+                ...prevYear
+            } as MonthlyPLData;
+
+            await saveData(newStore);
+            onUploadSuccess(newStore);
+            setIsOpen(false);
+            alert(`${selectedMonth}월 엑셀 데이터 연동 성공! (전년도 실적 포함)`);
         } catch (error) {
             console.error(error);
             alert('엑셀 연동 중 오류가 발생했습니다. 양식을 확인해주세요.');

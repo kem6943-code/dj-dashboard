@@ -54,7 +54,7 @@ const parseNumber = (value: any): number => {
 };
 
 // 엑셀 파싱 함수
-export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divisionCode: string): Promise<{ actual: Partial<MonthlyPLData>, target: Partial<MonthlyPLData> }> => {
+export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divisionCode: string): Promise<{ actual: Partial<MonthlyPLData>, target: Partial<MonthlyPLData>, prevYear: Partial<MonthlyPLData> }> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -71,10 +71,11 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
 
                 const actualData: Partial<MonthlyPLData> = {};
                 const targetData: Partial<MonthlyPLData> = {};
+                const prevYearData: Partial<MonthlyPLData> = {};
 
-                // 인덱스 기준: "당월"의 실적은 보통 열 인덱스 6, "당월"의 TD목표는 열 인덱스 7 (데이터 구조에 따라 다름)
-                // 현재 분석된 당월 양식 기준: 
-                // Col 0: 대분류, Col 1: 중분류/항목명, Col 6: 당월 실적, Col 7: 당월 TD목표
+                // 인덱스 기준:
+                // Col 0: 대분류, Col 1: 중분류/항목명, Col 5: 전년 실적, Col 6: 당월 실적, Col 7: 당월 TD목표
+                const COL_PREV_YEAR = 5;
                 const COL_ACTUAL = 6;
                 const COL_TARGET = 7;
 
@@ -101,32 +102,29 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
                     const dataKey = LABEL_KEY_MAPPING[mappedKey] || LABEL_KEY_MAPPING[label];
 
                     if (dataKey) {
+                        let prevYearVal = parseNumber(row[COL_PREV_YEAR]);
                         let actualVal = parseNumber(row[COL_ACTUAL]);
                         let targetVal = parseNumber(row[COL_TARGET]);
 
-                        // 단위 변환: 금액 항목(매출, 비용 등)은 백만원 단위이므로 * 1000000
-                        // 비율 항목(이율, 비율 등)은 0.77 형식의 소수점이므로 * 100
-                        // 인원 등 단일 카운트는 그대로 (단, 인원수 등 구분이 필요하나 일괄 처리 후 특정 보정 필요)
-
-                        // 비율 판단 (비율이라는 글자가 있거나, 소수점 단위이면서 매출보다 현저히 작을 때)
+                        // 단위 변환 로직
                         const isRatio = label.includes('비율') || label.includes('(%)') || label.includes('차이') || label.includes('율');
                         const isCount = label.includes('인원') || label.includes('단위');
 
                         if (isRatio) {
-                            // 엑셀에서 넘어오는 값: 0.7744 -> 77.44% 로 변환
+                            prevYearData[dataKey] = Number((prevYearVal * 100).toFixed(2));
                             actualData[dataKey] = Number((actualVal * 100).toFixed(2));
                             targetData[dataKey] = Number((targetVal * 100).toFixed(2));
                         } else if (isCount) {
-                            // 인원은 그대로 (소수점은 반올림)
+                            prevYearData[dataKey] = Math.round(prevYearVal);
                             actualData[dataKey] = Math.round(actualVal);
                             targetData[dataKey] = Math.round(targetVal);
                         } else {
-                            // 기본 금액 백만원 -> 원 단위 변환 (단, 환율/단가 등 특수 속성은 예외처리 필요할 수 있음)
-                            // "원당매출액" 같은 항목은 예외적으로 수정
                             if (dataKey === 'revenuePerHead') {
+                                prevYearData[dataKey] = prevYearVal;
                                 actualData[dataKey] = actualVal; // 원당매출액은 그대로
                                 targetData[dataKey] = targetVal;
                             } else {
+                                prevYearData[dataKey] = prevYearVal * 1000000;
                                 actualData[dataKey] = actualVal * 1000000;
                                 targetData[dataKey] = targetVal * 1000000;
                             }
@@ -134,7 +132,7 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
                     }
                 });
 
-                resolve({ actual: actualData, target: targetData });
+                resolve({ actual: actualData, target: targetData, prevYear: prevYearData });
 
             } catch (error) {
                 console.error("Excel parse error:", error);
