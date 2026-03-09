@@ -152,12 +152,12 @@ export function Dashboard() {
                 if (showYoY) {
                     data.push(prevYearActualData?.[idx] || ({} as MonthlyPLData));
                 }
+                // 실적(현재 년도)은 항상 그 다음
+                data.push(actualData[idx]);
                 // showTarget이 켜져있으면 TD목표
                 if (showTarget) {
                     data.push(targetData[idx] || ({} as MonthlyPLData));
                 }
-                // 현재 년도 실적은 항상 표시
-                data.push(actualData[idx]);
             });
             return { baseLabels, data };
         };

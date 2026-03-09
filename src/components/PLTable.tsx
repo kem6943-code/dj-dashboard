@@ -51,10 +51,10 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY 
     // 토글 조합에 따른 서브컨럼 구성
     const subColHeaders: string[] = [];
     if (showYoY) subColHeaders.push("'25실적");
-    if (showTarget) subColHeaders.push('TD목표');
     subColHeaders.push("'26실적");
+    if (showTarget) subColHeaders.push('TD목표');
     const colSpan = subColHeaders.length;
-    const hasSubHeaders = colSpan > 1; // 서브헤더가 필요한지 여부
+    const hasSubHeaders = colSpan > 1; // 서브헤더가 필요한 여부
 
     return (
         <div className="table-scroll-container border border-gray-200 rounded-lg shadow-inner" style={{ maxHeight: 'calc(100vh - 260px)' }}>
@@ -168,16 +168,20 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY 
                                     }
                                     const formatted = formatValue(value, item);
 
-                                    // 목표/실적 컬럼 구분 스타일 (showTarget이 참일 경우 짝수 인덱스는 목표, 홀수는 실적)
-                                    const isTargetCol = showTarget && i % 2 === 0;
-                                    const isActualCol = showTarget && i % 2 === 1;
+                                    // 하위 컬럼 종류에 따른 스타일 (showTarget, showYoY 등의 배열을 기반)
+                                    let isTargetCol = false;
+                                    let isActualCol = false;
+                                    if (hasSubHeaders) {
+                                        const colType = subColHeaders[i % colSpan];
+                                        isTargetCol = colType === 'TD목표';
+                                        isActualCol = colType === "'26실적";
+                                    }
 
                                     return (
                                         <td key={i} className={colorClass} style={{
                                             fontSize: item.indent > 0 ? '0.75rem' : undefined,
-                                            backgroundColor: isTargetCol ? '#f8fafc' : undefined, // 목표 컬럼 배경을 헤더와 맞춤
-                                            borderRight: isTargetCol ? 'none' : undefined, // 목표와 실적 사이 경계선
-                                            borderLeft: isActualCol ? '1px dashed var(--border-color)' : undefined,
+                                            backgroundColor: isTargetCol ? '#f8fafc' : undefined, // 목표 컬럼 배경
+                                            borderLeft: (isTargetCol || (isActualCol && showYoY)) ? '1px dashed var(--border-color)' : undefined,
                                         }}>
                                             {item.isHeader ? <strong>{formatted}</strong> : formatted}
                                         </td>

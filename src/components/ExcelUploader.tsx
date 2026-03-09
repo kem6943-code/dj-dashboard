@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { parseMonthlyExcel } from '../utils/excelParser';
 import type { DataStore, DivisionCode, MonthlyPLData } from '../utils/dataModel';
+import { calculateDerivedFields } from '../utils/dataModel';
 import { saveData } from '../utils/storage';
 
 interface ExcelUploaderProps {
@@ -44,15 +45,15 @@ export const ExcelUploader: React.FC<ExcelUploaderProps> = ({ currentStore, onUp
             if (!divData.monthly) divData.monthly = {};
             if (!divData.targetMonthly) divData.targetMonthly = {};
 
-            divData.monthly[selectedMonth] = {
+            divData.monthly[selectedMonth] = calculateDerivedFields({
                 ...divData.monthly[selectedMonth],
                 ...actual
-            } as MonthlyPLData;
+            } as MonthlyPLData);
 
-            divData.targetMonthly[selectedMonth] = {
+            divData.targetMonthly[selectedMonth] = calculateDerivedFields({
                 ...divData.targetMonthly[selectedMonth],
                 ...target
-            } as MonthlyPLData;
+            } as MonthlyPLData);
 
             // 2. 전년도 데이터 (예: 2025) 업데이트
             const prevYearNum = year - 1;
@@ -71,10 +72,10 @@ export const ExcelUploader: React.FC<ExcelUploaderProps> = ({ currentStore, onUp
             if (!prevDivData.monthly) prevDivData.monthly = {};
 
             // 전년 실적은 actual을 업데이트 하는 개념
-            prevDivData.monthly[selectedMonth] = {
+            prevDivData.monthly[selectedMonth] = calculateDerivedFields({
                 ...prevDivData.monthly[selectedMonth],
                 ...prevYear
-            } as MonthlyPLData;
+            } as MonthlyPLData);
 
             await saveData(newStore);
             onUploadSuccess(newStore);
