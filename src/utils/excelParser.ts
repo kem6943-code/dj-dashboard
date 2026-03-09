@@ -43,7 +43,7 @@ const LABEL_KEY_MAPPING: Record<string, keyof MonthlyPLData> = {
     '외환차손익': 'forexGainLoss', // 태국
     '기타(영외)': 'nonOpOther', // 태국
     '세전이익': 'ebt',
-    '세전이익 (%)': 'ebt'
+    '세전이익 (%)': 'ebtRatio'
 };
 
 // 숫자 클리닝

@@ -106,7 +106,8 @@ export const CHANGWON_ITEMS: PLItem[] = [
     { key: 'financeCost', label: '금융비용', isHeader: false, indent: 0, isCalculated: false, section: '영업외수지차' },
 
     // ===== 세전이익 =====
-    { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebt', label: '세전이익', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebtRatio', label: '(%)', isHeader: false, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
 // 회사 보고서 형식 P&L 항목 목록 — 태국(DJETR) 사업부
@@ -212,6 +213,7 @@ export const VIETNAM_ITEMS: PLItem[] = [
 
     // ===== 세전이익 =====
     { key: 'ebt', label: '세전이익', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebtRatio', label: '(%)', isHeader: false, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
 // 멕시코 사업부 P&L 항목 — 가전/자동차 공통 사용
@@ -366,8 +368,8 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 경비율 = 경비 / 매출액 * 100
     result.overheadRatio = revenue > 0 ? ((result.overhead || 0) / revenue) * 100 : 0;
 
-    // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
-    if (!preserveAmounts) {
+    // 영업이익 = 매출액 - 재료비 - 노무비 - 경비 (기존 값이 없을 때만)
+    if (!preserveAmounts && (result.operatingProfit === undefined || result.operatingProfit === 0)) {
         result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);
     }
 
@@ -380,14 +382,17 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 베트남: interestIncome, forexGain, interestExpense, forexLoss
     const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
     const nonOpExpense = (result.financeCost || 0) + (result.interestExpense || 0) + (result.forexLoss || 0);
-    if (!preserveAmounts) {
+    if (!preserveAmounts && (result.nonOpBalance === undefined || result.nonOpBalance === 0)) {
         result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
     }
 
     // 세전이익 = 영업이익 + 영외수지
-    if (!preserveAmounts) {
+    if (!preserveAmounts && (result.ebt === undefined || result.ebt === 0)) {
         result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
     }
+
+    // 세전이익률
+    result.ebtRatio = revenue > 0 ? ((result.ebt || 0) / revenue) * 100 : 0;
 
     return result;
 }
