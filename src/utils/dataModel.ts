@@ -157,7 +157,7 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'nonOpOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
 
     // ===== 세전이익 =====
-    { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
 // 회사 보고서 형식 P&L 항목 목록 — 베트남 사업부
@@ -253,7 +253,7 @@ export const MEXICO_ITEMS: PLItem[] = [
     { key: 'forexGainLoss', label: '외환차손익', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
 
     // ===== 세전이익 =====
-    { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
 // 사업부별 P&L 항목 반환
@@ -269,6 +269,14 @@ export function getPLItemsForDivision(code: DivisionCode): PLItem[] {
 
 // 하위 호환용 alias (통합 테이블 등에서 사용)
 export const PL_ITEMS = CHANGWON_ITEMS;
+
+// 모든 사업부의 아이템 맵 (동적 합산/판별용)
+export const ALL_ITEMS_MAP: Record<string, PLItem> = {};
+[...CHANGWON_ITEMS, ...THAILAND_ITEMS, ...VIETNAM_ITEMS, ...MEXICO_ITEMS].forEach(item => {
+    if (!ALL_ITEMS_MAP[item.key]) {
+        ALL_ITEMS_MAP[item.key] = item;
+    }
+});
 
 // 월별 P&L 데이터
 export interface MonthlyPLData {
@@ -306,7 +314,7 @@ export const HALF_NAMES = ['상반기 (1~6월)', '하반기 (7~12월)'];
 // 빈 월별 데이터 생성
 export function createEmptyPLData(): MonthlyPLData {
     const data: MonthlyPLData = {};
-    PL_ITEMS.forEach(item => { data[item.key] = 0; });
+    Object.keys(ALL_ITEMS_MAP).forEach(key => { data[key] = 0; });
     return data;
 }
 
@@ -368,8 +376,11 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 경비율 = 경비 / 매출액 * 100
     result.overheadRatio = revenue > 0 ? ((result.overhead || 0) / revenue) * 100 : 0;
 
-    // 영업이익 = 매출액 - 재료비 - 노무비 - 경비 (기존 값이 없을 때만)
-    if (!preserveAmounts && (result.operatingProfit === undefined || result.operatingProfit === 0)) {
+    // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
+    // preserveAmounts일 때 기존 값이 있으면 유지, 없으면 계산
+    if (preserveAmounts && result.operatingProfit) {
+        // 직접 입력/보존된 영업이익 유지
+    } else {
         result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);
     }
 
@@ -382,14 +393,11 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 베트남: interestIncome, forexGain, interestExpense, forexLoss
     const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
     const nonOpExpense = (result.financeCost || 0) + (result.interestExpense || 0) + (result.forexLoss || 0);
-    if (!preserveAmounts && (result.nonOpBalance === undefined || result.nonOpBalance === 0)) {
-        result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
-    }
+    // 영업외수지는 항상 하위 항목에서 재계산 (정확한 합산을 위해)
+    result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
 
-    // 세전이익 = 영업이익 + 영외수지
-    if (!preserveAmounts && (result.ebt === undefined || result.ebt === 0)) {
-        result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
-    }
+    // 세전이익 = 영업이익 + 영외수지 (항상 재계산)
+    result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
 
     // 세전이익률
     result.ebtRatio = revenue > 0 ? ((result.ebt || 0) / revenue) * 100 : 0;
@@ -431,7 +439,7 @@ export function aggregateQuarter(monthly: { [month: number]: MonthlyPLData }, qu
     months.forEach(m => {
         const mData = monthly[m];
         if (mData) {
-            PL_ITEMS.forEach(item => {
+            Object.values(ALL_ITEMS_MAP).forEach(item => {
                 if (!item.type || item.type === 'amount' || item.type === 'count') {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
@@ -451,7 +459,7 @@ export function aggregateHalf(monthly: { [month: number]: MonthlyPLData }, half:
     months.forEach(m => {
         const mData = monthly[m];
         if (mData) {
-            PL_ITEMS.forEach(item => {
+            Object.values(ALL_ITEMS_MAP).forEach(item => {
                 if (!item.type || item.type === 'amount' || item.type === 'count') {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
@@ -468,7 +476,7 @@ export function aggregateYear(monthly: { [month: number]: MonthlyPLData }): Mont
     for (let m = 1; m <= 12; m++) {
         const mData = monthly[m];
         if (mData) {
-            PL_ITEMS.forEach(item => {
+            Object.values(ALL_ITEMS_MAP).forEach(item => {
                 if (!item.type || item.type === 'amount' || item.type === 'count') {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
@@ -483,7 +491,7 @@ export function aggregateYear(monthly: { [month: number]: MonthlyPLData }): Mont
 export function convertToKRW(data: MonthlyPLData, exchangeRate: number): MonthlyPLData {
     if (exchangeRate === 1 || exchangeRate === 0) return data; // KRW이거나 환율 없으면 그대로
     const result = createEmptyPLData();
-    PL_ITEMS.forEach(item => {
+    Object.values(ALL_ITEMS_MAP).forEach(item => {
         if (!item.type || item.type === 'amount') {
             result[item.key] = (data[item.key] || 0) * exchangeRate;
         } else {
@@ -518,7 +526,7 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                 const mData = divData.monthly[m];
                 if (mData && (mData.revenue !== 0 || mData.laborCost !== 0)) {
                     hasData = true;
-                    PL_ITEMS.forEach(item => {
+                    Object.values(ALL_ITEMS_MAP).forEach(item => {
                         if (!item.type || item.type === 'amount') {
                             result[item.key] = (result[item.key] || 0) + ((mData[item.key] || 0) * rate);
                         } else if (item.type === 'count') {
@@ -531,7 +539,7 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                 const tData = divData.targetMonthly?.[m];
                 if (tData && (tData.revenue !== 0 || tData.laborCost !== 0)) {
                     hasTargetData = true;
-                    PL_ITEMS.forEach(item => {
+                    Object.values(ALL_ITEMS_MAP).forEach(item => {
                         if (!item.type || item.type === 'amount') {
                             targetResult[item.key] = (targetResult[item.key] || 0) + ((tData[item.key] || 0) * rate);
                         } else if (item.type === 'count') {

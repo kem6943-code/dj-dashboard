@@ -8,6 +8,7 @@ import {
     type DataStore,
     DIVISIONS,
     PL_ITEMS,
+    ALL_ITEMS_MAP,
     formatAmount,
     createEmptyPLData,
     calculateDerivedFields,
@@ -49,8 +50,8 @@ function getDivisionPeriodData(
     months.forEach(m => {
         const mData = divData.monthly[m];
         if (mData) {
-            PL_ITEMS.forEach(item => {
-                if (!item.isCalculated) {
+            Object.values(ALL_ITEMS_MAP).forEach(item => {
+                if (!item.type || item.type === 'amount' || item.type === 'count') {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
@@ -62,7 +63,7 @@ function getDivisionPeriodData(
     // 평균 환율
     const avgRate = rateCount > 0 ? rateSum / rateCount : (divData.exchangeRate[1] || 1);
 
-    return { data: calculateDerivedFields(result), avgRate };
+    return { data: calculateDerivedFields(result, true), avgRate };
 }
 
 // 기간 라벨
@@ -86,13 +87,13 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
     // 합계: 원화 기준 합산
     const totalData = createEmptyPLData();
     divisionData.forEach(({ dataKRW }) => {
-        PL_ITEMS.forEach(item => {
-            if (!item.isCalculated) {
+        Object.values(ALL_ITEMS_MAP).forEach(item => {
+            if (!item.type || item.type === 'amount' || item.type === 'count') {
                 totalData[item.key] = (totalData[item.key] || 0) + (dataKRW[item.key] || 0);
             }
         });
     });
-    const totalComputed = calculateDerivedFields(totalData);
+    const totalComputed = calculateDerivedFields(totalData, true);
 
     const periodLabel = getPeriodLabel(periodType, periodIndex, year);
 
@@ -138,7 +139,7 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
                         </tr>
                     </thead>
                     <tbody>
-                        {PL_ITEMS.filter(item => ['revenue', 'materialRatio', 'laborCost', 'overhead', 'operatingProfit', 'operatingProfitRatio'].includes(item.key)).map(item => {
+                        {PL_ITEMS.filter(item => ['revenue', 'materialRatio', 'laborCost', 'overhead', 'operatingProfit', 'operatingProfitRatio', 'ebt', 'ebtRatio'].includes(item.key)).map(item => {
                             const isProfit = ['operatingProfit', 'grossProfit', 'ebt'].includes(item.key);
                             const totalVal = totalComputed[item.key] || 0;
 
