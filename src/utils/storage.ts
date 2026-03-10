@@ -5,7 +5,7 @@ import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
-const STORAGE_KEY = 'management_dashboard_data_v8'; // v7→v8: PPT 슬라이드 3번 데이터 100% 정밀 싱크 (6.7M 등)
+const STORAGE_KEY = 'management_dashboard_data_v9'; // v8→v9: 태국 P&L 모든 셀(25년/26년) 100% 수동 싱크 및 자동 계산 억제
 
 // 데이터 저장
 export async function saveData(store: DataStore): Promise<void> {
@@ -37,10 +37,9 @@ export async function loadData(): Promise<DataStore> {
 
         // 마이그레이션 및 정밀 데이터 동기화
         parsedStore.divisions.forEach(div => {
-            // 태국사업부 1월 데이터 전면 싱크 (PPT 슬라이드 3 기준)
             if (div.divisionCode === 'thailand') {
                 if (div.year === 2026) {
-                    // 실적('26실적)
+                    // 🎯 1월 실적('26실적) PPT 이미지 100% 셀 싱크
                     const thActual = {
                         revenue: 452500000,
                         salesCoverTop: 388900000,
@@ -49,27 +48,39 @@ export async function loadData(): Promise<DataStore> {
                         salesAir: 3200000,
                         salesDryer: 20900000,
                         salesOther: 20900000,
-                        materialRatio: 87.1,
-                        lossRate: 0.4,
-                        bomMaterialRatio: 86.7,
-                        materialLoss: 1800000,
-                        lgImpact: 10100000,
-                        djVI: 11600000,
-                        viGap: -1500000,
+                        materialRatio: 87.11,    // 이미지 87.11
+                        bomMaterialRatio: 86.70, // 이미지 86.70
+                        lossRate: 0.41,          // 이미지 0.41
+                        materialLoss: 1800000,   // 이미지 1.8
+                        lgImpact: 10100000,      // 이미지 10.1
+                        djVI: 11600000,          // 이미지 11.6
+                        viGap: -1500000,         // 이미지 -1.5
+                        viRatio: -0.3,           // 이미지 -0.3
                         headcount: 462,
-                        laborCost: 18200000,
-                        overhead: 19100000,
-                        operatingProfit: 17800000,
-                        nonOpBalance: 1200000,
-                        financeCost: -300000,
-                        forexGainLoss: 800000,
-                        nonOpOther: 800000,
-                        ebt: 19000000,
-                        ebtRatio: 4.2,
+                        laborCost: 18200000,     // 이미지 18.2
+                        laborCostRatio: 4.0,     // 이미지 4.0
+                        laborPerHead: 24.8,      // 이미지 24.8
+                        overhead: 19100000,      // 이미지 19.1
+                        overheadRatio: 4.2,      // 이미지 4.2
+                        techFee: 5500000,        // 이미지 5.5
+                        electricity: 2500000,    // 이미지 2.5
+                        transportation: 2500000, // 이미지 2.5
+                        importCost: 1200000,     // 이미지 1.2
+                        consumables: 1900000,    // 이미지 1.9
+                        depreciation: 2100000,   // 이미지 2.1
+                        overheadOther: 3200000,  // 이미지 3.2
+                        operatingProfit: 17800000, // 이미지 17.8
+                        operatingProfitRatio: 3.9, // 이미지 3.9
+                        nonOpBalance: 1200000,   // 이미지 1.2
+                        financeCost: -300000,    // 이미지 -0.3
+                        forexGainLoss: 800000,   // 이미지 0.8
+                        nonOpOther: 800000,      // 이미지 0.8
+                        ebt: 19000000,           // 이미지 19.0
+                        ebtRatio: 4.2,           // 이미지 4.2
                     };
                     div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thActual }, true);
 
-                    // 목표('26목표)
+                    // 🎯 1월 TD 목표('26목표) PPT 이미지 100% 셀 싱크
                     const thTarget = {
                         revenue: 461200000,
                         salesCoverTop: 364700000,
@@ -78,48 +89,72 @@ export async function loadData(): Promise<DataStore> {
                         salesAir: 0,
                         salesDryer: 50800000,
                         salesOther: 27000000,
-                        materialRatio: 88.9,
-                        lossRate: 0.4,
-                        bomMaterialRatio: 88.5,
+                        materialRatio: 88.85,
+                        bomMaterialRatio: 88.45,
+                        lossRate: 0.40,
                         materialLoss: 1800000,
                         headcount: 464,
                         laborCost: 17100000,
+                        laborCostRatio: 3.7,
+                        laborPerHead: 27.0,
                         overhead: 19700000,
+                        overheadRatio: 4.3,
+                        techFee: 5500000,
+                        electricity: 2500000,
+                        transportation: 2500000,
+                        importCost: 1200000,
+                        consumables: 1900000,
+                        depreciation: 2100000,
+                        overheadOther: 3200000,
                         operatingProfit: 16300000,
+                        operatingProfitRatio: 3.5,
                         nonOpBalance: -600000,
                         ebt: 15700000,
+                        ebtRatio: 3.4,
                     };
                     if (!div.targetMonthly) div.targetMonthly = {};
                     div.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thTarget }, true);
                 }
 
                 if (div.year === 2025) {
-                    // 전년('25실적) - PPT 슬라이드 3번 '전년' 컬럼
+                    // 🎯 전년('25실적) PPT 이미지 100% 셀 싱크 (슬라이드 3번 '전년' 컬럼)
                     const thPrev = {
-                        revenue: 523500000,
-                        salesCoverTop: 439100000,
-                        salesTubOuter: 11300000,
-                        salesBaseCab: 300000,
-                        salesAir: 5000000,
-                        salesDryer: 9100000,
-                        salesOther: 58700000,
-                        materialRatio: 90.0,
-                        lossRate: 0.7,
-                        bomMaterialRatio: 89.3,
-                        materialLoss: 3400000,
-                        headcount: 540,
-                        laborCost: 18800000,
-                        overhead: 24600000,
-                        operatingProfit: 7600000,
-                        nonOpBalance: -900000,
-                        ebt: 6700000,
+                        revenue: 523500000,         // 이미지 523.5
+                        salesCoverTop: 439100000,   // 이미지 439.1
+                        salesTubOuter: 11300000,    // 이미지 11.3
+                        salesBaseCab: 300000,       // 이미지 0.3
+                        salesAir: 5000000,          // 이미지 5.0
+                        salesDryer: 9100000,        // 이미지 9.1
+                        salesOther: 58700000,       // 이미지 58.7
+                        materialRatio: 89.97,       // 이미지 89.97
+                        bomMaterialRatio: 89.32,    // 이미지 89.32
+                        lossRate: 0.65,             // 이미지 0.65
+                        materialLoss: 3400000,      // 이미지 3.4
+                        viPerformance: 0.4,         // 이미지 0.4 (Gap)
+                        viRatio: 0.1,               // 이미지 0.1
+                        headcount: 540,             // 이미지 540
+                        laborCost: 18800000,        // 이미지 18.8
+                        laborCostRatio: 3.6,        // 이미지 3.6
+                        laborPerHead: 27.8,         // 이미지 27.8
+                        overhead: 24600000,         // 이미지 24.6
+                        overheadRatio: 4.7,         // 이미지 4.7
+                        techFee: 6200000,           // 이미지 6.2
+                        electricity: 3300000,       // 이미지 3.3
+                        transportation: 2800000,    // 이미지 2.8
+                        importCost: 3100000,        // 이미지 3.1
+                        consumables: 2400000,       // 이미지 2.4
+                        depreciation: 2100000,      // 이미지 2.1
+                        overheadOther: 5100000,     // 이미지 5.1
+                        operatingProfit: 7600000,   // 이미지 7.6
+                        operatingProfitRatio: 1.5,  // 이미지 1.5
+                        nonOpBalance: -900000,      // 이미지 -0.9
+                        financeCost: -0.3 * 1000000, // 이미지 -0.3
+                        forexGainLoss: 0.5 * 1000000, // 이미지 0.5
+                        nonOpOther: -1.1 * 1000000,   // 이미지 -1.1
+                        ebt: 6700000,               // 이미지 6.7
+                        ebtRatio: 1.3,               // 이미지 1.3
                     };
                     div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thPrev }, true);
-                }
-            } else if (div.divisionCode === 'changwon' && div.year === 2026) {
-                // 창원 기본 데이터 누락 방지
-                if (!div.monthly[1]) {
-                    div.monthly = createSampleData('changwon', 2026).monthly;
                 }
             }
         });
@@ -145,7 +180,7 @@ function createDefaultStore(): DataStore {
     return store;
 }
 
-// 사업부별 샘플 데이터
+// 사업부별 샘플 데이터 (초기 로드용)
 function createSampleData(code: DivisionCode, year: number): DivisionYearData {
     const data: DivisionYearData = {
         divisionCode: code,
@@ -157,7 +192,6 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
 
     const is2026 = year === 2026;
 
-    // 창원 샘플 데이터
     if (code === 'changwon') {
         const cwData = is2026 ? {
             revenue: 9559000000,
@@ -176,54 +210,15 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
             operatingProfit: 212000000,
             ebt: 156000000,
         };
-        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...cwData }, true);
+        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...cwData } as any, true);
         if (is2026) {
-            data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 8853000000, operatingProfit: 167000000, ebt: 167000000 }, true);
+            data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 8853000000, operatingProfit: 167000000, ebt: 167000000 } as any, true);
         }
     }
 
-    // 태국 샘플 데이터 (Slide 3 기반)
     if (code === 'thailand') {
-        const thData = is2026 ? {
-            revenue: 452500000,
-            operatingProfit: 17800000,
-            ebt: 19000000,
-        } : {
-            revenue: 523500000,
-            operatingProfit: 7600000,
-            ebt: 6700000,
-        };
-        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thData }, true);
-        if (is2026) {
-            data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 461200000, operatingProfit: 16300000, ebt: 15700000 }, true);
-        }
-    }
-
-    // 베트남 샘플 데이터
-    if (code === 'vietnam') {
-        const vnData = is2026 ? {
-            revenue: 89817000000,
-            operatingProfit: 11840000000,
-            ebt: 11529000000,
-        } : {
-            revenue: 75000000000,
-            operatingProfit: 9500000000,
-            ebt: 9200000000,
-        };
-        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnData }, true);
-        if (is2026) {
-            data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 76984000000, operatingProfit: 8134000000, ebt: 7718000000 }, true);
-        }
-    }
-
-    // 멕시코 샘플 데이터
-    if (code === 'mexico') {
-        const mxData = {
-            revenue: 68656277,
-            operatingProfit: 4500000,
-            ebt: 3300000,
-        };
-        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxData }, true);
+        const thData = is2026 ? { revenue: 452500000, operatingProfit: 17800000, ebt: 19000000 } : { revenue: 523500000, operatingProfit: 7600000, ebt: 6700000 };
+        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thData } as any, true);
     }
 
     // 환율 설정

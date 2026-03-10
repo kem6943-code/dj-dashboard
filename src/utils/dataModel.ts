@@ -352,10 +352,9 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 실적재료비율 및 재료비 산출
     let materialCost = result.rawMaterialCost || 0;
 
-    if (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0) {
-        // 병합/집계된 데이터의 경우 (수동 입력 OP 등 보존), 재료비와 재료비율을 역산
-        materialCost = revenue - (result.laborCost || 0) - (result.overhead || 0) - result.operatingProfit;
-        result.materialRatio = revenue > 0 ? (materialCost / revenue) * 100 : 0;
+    if (preserveAmounts && result.materialRatio !== undefined && result.materialRatio !== 0) {
+        // [V9] 수동 입력된 재료비율을 절대적으로 신뢰 (공식 무시)
+        materialCost = (revenue * result.materialRatio) / 100;
     } else {
         // 재료비가 없고 비율이 있는 경우 재료비 계산
         if (materialCost === 0 && revenue > 0) {
@@ -369,7 +368,7 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
         }
     }
 
-    // 계산된 재료비를 명시적으로 저장 (KPICards 등에서 직접 읽을 수 있게 함)
+    // 계산된 재료비를 명시적으로 저장
     result.materialCost = materialCost;
 
     // 차이 = 실적 - BOM
@@ -378,7 +377,12 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     }
 
     // 인건비율 = 인건비 / 매출액 * 100
-    result.laborRatio = revenue > 0 ? ((result.laborCost || 0) / revenue) * 100 : 0;
+    if (preserveAmounts && result.laborCostRatio !== undefined && result.laborCostRatio !== 0) {
+        // 수동 입력 보존
+    } else {
+        result.laborRatio = revenue > 0 ? ((result.laborCost || 0) / revenue) * 100 : 0;
+        result.laborCostRatio = result.laborRatio; // 필드명 혼용 대응
+    }
 
     // 원당매출액 = 수동 입력값이 있으면 유지, 없으면 자동계산(매출액 / 인원)
     if (result.revenuePerHead === undefined || result.revenuePerHead === 0) {
@@ -387,32 +391,38 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     }
 
     // 경비율 = 경비 / 매출액 * 100
-    result.overheadRatio = revenue > 0 ? ((result.overhead || 0) / revenue) * 100 : 0;
+    if (preserveAmounts && result.overheadRatio !== undefined && result.overheadRatio !== 0) {
+        // 수동 입력 보존
+    } else {
+        result.overheadRatio = revenue > 0 ? ((result.overhead || 0) / revenue) * 100 : 0;
+    }
 
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
-    // preserveAmounts일 때 기존 값이 있으면 유지, 없으면 계산
-    if (preserveAmounts && result.operatingProfit && result.operatingProfit !== 0) {
-        // 직접 입력/보존된 영업이익 유지
+    if (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0) {
+        // [V9] 슬라이드의 공식 불일치를 허용하기 위해 수동 입력값 무조건 유지
     } else {
         result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);
     }
 
     // 영업이익률
-    result.operatingProfitRatio = revenue > 0 ? (result.operatingProfit / revenue) * 100 : 0;
-
-    // 영업외수지 — 사업부별 항목 통합 계산
-    const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
-    const nonOpExpense = (result.financeCost || 0) + (result.interestExpense || 0) + (result.forexLoss || 0);
-
-    if (preserveAmounts && result.nonOpBalance !== undefined && result.nonOpBalance !== 0) {
-        // 영업외수지 수동 입력값 보존
+    if (preserveAmounts && result.operatingProfitRatio !== undefined && result.operatingProfitRatio !== 0) {
+        // 수동 입력 보존
     } else {
+        result.operatingProfitRatio = revenue > 0 ? (result.operatingProfit / revenue) * 100 : 0;
+    }
+
+    // 영업외수지
+    if (preserveAmounts && result.nonOpBalance !== undefined && result.nonOpBalance !== 0) {
+        // 수동 입력값 보존
+    } else {
+        const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
+        const nonOpExpense = (result.financeCost || 0) + (result.interestExpense || 0) + (result.forexLoss || 0);
         result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
     }
 
     // 세전이익 = 영업이익 + 영외수지
     if (preserveAmounts && result.ebt !== undefined && result.ebt !== 0) {
-        // 세전이익 수동 입력값 보존
+        // 수동 입력값 보존
     } else {
         result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
     }

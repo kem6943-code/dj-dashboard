@@ -22,8 +22,11 @@ interface PLTableProps {
 function formatValue(value: number, item: PLItem, currency: string = 'KRW'): string {
     if (item.type === 'ratio') {
         if (value === 0) return '-';
-        // 모든 비율은 소수점 1자리로 통일 (사용자 요청 반영)
-        return `${value.toFixed(1)}%`;
+        // [V9] PPT 슬라이드 3번 행별 소수점 싱크
+        // 재료비 관련은 2자리, 나머지는 1자리
+        const isMaterialDetail = ['materialRatio', 'bomMaterialRatio', 'lossRate'].includes(item.key);
+        const decimals = isMaterialDetail ? 2 : 1;
+        return `${value.toFixed(decimals)}%`;
     }
     if (item.type === 'count') {
         if (value === 0) return '-';
@@ -31,7 +34,8 @@ function formatValue(value: number, item: PLItem, currency: string = 'KRW'): str
     }
     if (item.type === 'unit') {
         if (value === 0) return '-';
-        return (value / 1000000).toFixed(2); // 백만 단위로 소수점 2자리
+        // 원당매출액 등 (이미지: 24.8) -> 소수점 1자리
+        return value.toFixed(1);
     }
     return formatAmount(value, '백만', currency);
 }
