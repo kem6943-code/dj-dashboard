@@ -51,7 +51,7 @@ function getDivisionPeriodData(
         const mData = divData.monthly[m];
         if (mData) {
             Object.values(ALL_ITEMS_MAP).forEach(item => {
-                if (!item.type || item.type === 'amount' || item.type === 'count') {
+                if (!item.isCalculated) {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
@@ -88,7 +88,7 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
     const totalData = createEmptyPLData();
     divisionData.forEach(({ dataKRW }) => {
         Object.values(ALL_ITEMS_MAP).forEach(item => {
-            if (!item.type || item.type === 'amount' || item.type === 'count') {
+            if (!item.isCalculated) {
                 totalData[item.key] = (totalData[item.key] || 0) + (dataKRW[item.key] || 0);
             }
         });

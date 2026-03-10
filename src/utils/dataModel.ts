@@ -440,7 +440,7 @@ export function aggregateQuarter(monthly: { [month: number]: MonthlyPLData }, qu
         const mData = monthly[m];
         if (mData) {
             Object.values(ALL_ITEMS_MAP).forEach(item => {
-                if (!item.type || item.type === 'amount' || item.type === 'count') {
+                if (!item.isCalculated) {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
@@ -460,7 +460,7 @@ export function aggregateHalf(monthly: { [month: number]: MonthlyPLData }, half:
         const mData = monthly[m];
         if (mData) {
             Object.values(ALL_ITEMS_MAP).forEach(item => {
-                if (!item.type || item.type === 'amount' || item.type === 'count') {
+                if (!item.isCalculated) {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
@@ -477,7 +477,7 @@ export function aggregateYear(monthly: { [month: number]: MonthlyPLData }): Mont
         const mData = monthly[m];
         if (mData) {
             Object.values(ALL_ITEMS_MAP).forEach(item => {
-                if (!item.type || item.type === 'amount' || item.type === 'count') {
+                if (!item.isCalculated) {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
@@ -492,10 +492,12 @@ export function convertToKRW(data: MonthlyPLData, exchangeRate: number): Monthly
     if (exchangeRate === 1 || exchangeRate === 0) return data; // KRW이거나 환율 없으면 그대로
     const result = createEmptyPLData();
     Object.values(ALL_ITEMS_MAP).forEach(item => {
-        if (!item.type || item.type === 'amount') {
-            result[item.key] = (data[item.key] || 0) * exchangeRate;
-        } else {
-            result[item.key] = data[item.key] || 0;
+        if (!item.isCalculated) {
+            if (!item.type || item.type === 'amount') {
+                result[item.key] = (data[item.key] || 0) * exchangeRate;
+            } else {
+                result[item.key] = data[item.key] || 0;
+            }
         }
     });
     return calculateDerivedFields(result, true);
@@ -527,10 +529,12 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                 if (mData && (mData.revenue !== 0 || mData.laborCost !== 0)) {
                     hasData = true;
                     Object.values(ALL_ITEMS_MAP).forEach(item => {
-                        if (!item.type || item.type === 'amount') {
-                            result[item.key] = (result[item.key] || 0) + ((mData[item.key] || 0) * rate);
-                        } else if (item.type === 'count') {
-                            result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
+                        if (!item.isCalculated) {
+                            if (!item.type || item.type === 'amount') {
+                                result[item.key] = (result[item.key] || 0) + ((mData[item.key] || 0) * rate);
+                            } else if (item.type === 'count') {
+                                result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
+                            }
                         }
                     });
                 }
@@ -540,10 +544,12 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                 if (tData && (tData.revenue !== 0 || tData.laborCost !== 0)) {
                     hasTargetData = true;
                     Object.values(ALL_ITEMS_MAP).forEach(item => {
-                        if (!item.type || item.type === 'amount') {
-                            targetResult[item.key] = (targetResult[item.key] || 0) + ((tData[item.key] || 0) * rate);
-                        } else if (item.type === 'count') {
-                            targetResult[item.key] = (targetResult[item.key] || 0) + (tData[item.key] || 0);
+                        if (!item.isCalculated) {
+                            if (!item.type || item.type === 'amount') {
+                                targetResult[item.key] = (targetResult[item.key] || 0) + ((tData[item.key] || 0) * rate);
+                            } else if (item.type === 'count') {
+                                targetResult[item.key] = (targetResult[item.key] || 0) + (tData[item.key] || 0);
+                            }
                         }
                     });
                 }
