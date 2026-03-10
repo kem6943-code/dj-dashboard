@@ -149,8 +149,8 @@ export function Dashboard() {
                 data: actualData,
                 rates: actualData.map((_, idx) => {
                     const rs = (periodType === 'monthly' && idx < 12)
-                        ? (divData.exchangeRates[idx + 1] || { actual: 1, target: 1, prev: 1 })
-                        : (divData.exchangeRates[1] || { actual: 1, target: 1, prev: 1 });
+                        ? (divData.exchangeRates?.[idx + 1] || { actual: 1, target: 1, prev: 1 })
+                        : (divData.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 });
                     return rs.actual || 1;
                 })
             };
@@ -159,8 +159,8 @@ export function Dashboard() {
             const rates: number[] = [];
             baseLabels.forEach((_, idx) => {
                 const rs = (periodType === 'monthly' && idx < 12)
-                    ? (divData.exchangeRates[idx + 1] || { actual: 1, target: 1, prev: 1 })
-                    : (divData.exchangeRates[1] || { actual: 1, target: 1, prev: 1 });
+                    ? (divData.exchangeRates?.[idx + 1] || { actual: 1, target: 1, prev: 1 })
+                    : (divData.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 });
 
                 const prs = (periodType === 'monthly' && idx < 12)
                     ? (prevYearDivData?.exchangeRates?.[idx + 1] || { actual: 1, target: 1, prev: 1 })

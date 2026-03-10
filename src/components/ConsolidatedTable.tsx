@@ -160,6 +160,23 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
                         </tr>
                     </thead>
                     <tbody>
+                        {/* [NEW] 환율 전용 행 추가 - 통합 테이블 버전 */}
+                        <tr className="row-header" style={{ backgroundColor: '#fdfcf0', borderBottom: '2px solid #fde68a' }}>
+                            <td className="sticky-col-1" style={{ background: '#fdfcf0', color: '#92400e', fontWeight: 700 }}>
+                                환율 (Exchange Rate)
+                            </td>
+                            {divisionData.map(({ info, avgActualRate, avgTargetRate }) => (
+                                <td key={info.code} style={{ textAlign: 'center', fontWeight: 700, color: '#92400e', fontSize: '11px' }}>
+                                    {info.currency !== 'KRW' ? (
+                                        <div className="flex flex-col">
+                                            <span>실: {avgActualRate.toFixed(2)}</span>
+                                            <span style={{ color: '#1e40af', opacity: 0.8 }}>목: {avgTargetRate.toFixed(2)}</span>
+                                        </div>
+                                    ) : '-'}
+                                </td>
+                            ))}
+                            <td style={{ background: '#eff6ff' }}></td> {/* 합계 컬럼은 환율 비움 */}
+                        </tr>
                         {PL_ITEMS.filter(item => ['revenue', 'materialRatio', 'laborCost', 'overhead', 'operatingProfit', 'operatingProfitRatio', 'ebt', 'ebtRatio'].includes(item.key)).map(item => {
                             const isProfit = ['operatingProfit', 'grossProfit', 'ebt'].includes(item.key);
                             const totalVal = totalComputed[item.key] || 0;
@@ -222,6 +239,6 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div >
     );
 }
