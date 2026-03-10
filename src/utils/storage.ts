@@ -5,7 +5,7 @@ import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
-const STORAGE_KEY = 'management_dashboard_data_v6'; // v5→v6: 태국 데이터 이미지 정밀 싱크 (19.0M 세전익 등) 및 폰트/소수점 반영
+const STORAGE_KEY = 'management_dashboard_data_v7'; // v6→v7: 태국 전년 데이터 정밀 교정 (6.7M 세전익) 및 소수점 1자리 통일
 
 // 데이터 저장
 export async function saveData(store: DataStore): Promise<void> { // Changed to async
@@ -63,25 +63,26 @@ export async function loadData(): Promise<DataStore> {
                             target: 41.78,
                             prev: 41.78
                         };
-                        // 🎯 2025년 1월 데이터를 이미지의 '전월' 컬럼 수치로 강제 싱크
+                        // 🎯 2025년 1월 데이터를 이미지의 '전년' 컬럼 수치로 강제 싱크 (EBT 6.7M)
                         if (m === 1) {
                             const thPrev = {
-                                revenue: 429900000,
-                                salesCoverTop: 355400000,
-                                salesTubOuter: 18800000,
-                                salesAir: 5500000,
-                                salesDryer: 12800000,
-                                salesOther: 37400000,
-                                materialRatio: 87.45,
-                                lossRate: 0.47,
-                                bomMaterialRatio: 86.98,
-                                materialLoss: 2000000,
-                                headcount: 487,
-                                laborCost: 18900000,
-                                overhead: 31800000,
-                                operatingProfit: 800000, // 이미지 0.8
-                                nonOpBalance: 5000000,    // 이미지 5.0 (영업외수지 행)
-                                ebt: 5800000,           // 이미지 5.8
+                                revenue: 523500000,
+                                salesCoverTop: 439100000,
+                                salesTubOuter: 11300000,
+                                salesBaseCab: 300000,
+                                salesAir: 5000000,
+                                salesDryer: 9100000,
+                                salesOther: 58700000,
+                                materialRatio: 89.97,
+                                lossRate: 0.65,
+                                bomMaterialRatio: 89.32,
+                                materialLoss: 3400000,
+                                headcount: 540,
+                                laborCost: 18800000,
+                                overhead: 24600000,
+                                operatingProfit: 7600000, // 이미지 전년 7.6
+                                nonOpBalance: -900000,    // 이미지 전년 -0.9
+                                ebt: 6700000,             // 이미지 전년 6.7
                             };
                             div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thPrev }, true);
                         }

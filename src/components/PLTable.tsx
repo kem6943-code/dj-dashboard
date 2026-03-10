@@ -22,10 +22,8 @@ interface PLTableProps {
 function formatValue(value: number, item: PLItem, currency: string = 'KRW'): string {
     if (item.type === 'ratio') {
         if (value === 0) return '-';
-        // 이미지 싱크: 재료비 관련은 소수점 2자리, 나머지는 1자리
-        const isMaterialRef = item.section === '재료비' || item.key.includes('material') || item.key.includes('loss') || item.key.includes('Gap');
-        const decimals = isMaterialRef ? 2 : 1;
-        return `${value.toFixed(decimals)}%`;
+        // 사용자 피드백 반영: 일관성을 위해 모든 비율은 소수점 1자리로 통일
+        return `${value.toFixed(1)}%`;
     }
     if (item.type === 'count') {
         if (value === 0) return '-';
