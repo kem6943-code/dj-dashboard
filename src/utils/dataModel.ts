@@ -157,7 +157,8 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'nonOpOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
 
     // ===== 세전이익 =====
-    { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
+    { key: 'ebt', label: '세전이익', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebtRatio', label: '%', isHeader: false, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
 // 회사 보고서 형식 P&L 항목 목록 — 베트남 사업부

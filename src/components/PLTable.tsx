@@ -21,7 +21,10 @@ interface PLTableProps {
 function formatValue(value: number, item: PLItem): string {
     if (item.type === 'ratio') {
         if (value === 0) return '-';
-        return `${value.toFixed(1)}%`;
+        // 이미지 싱크: 재료비 관련은 소수점 2자리, 나머지는 1자리
+        const isMaterialRef = item.section === '재료비' || item.key.includes('material') || item.key.includes('loss') || item.key.includes('Gap');
+        const decimals = isMaterialRef ? 2 : 1;
+        return `${value.toFixed(decimals)}%`;
     }
     if (item.type === 'count') {
         if (value === 0) return '-';
@@ -130,7 +133,14 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                     const rateIndex = monthIndex * colSpan + subColIndex;
                                     const rate = rates[rateIndex];
                                     return (
-                                        <td key={`${monthIndex}-${subColIndex}`} style={{ textAlign: 'center', fontWeight: 700, color: '#92400e', fontSize: '0.8rem', backgroundColor: '#fefce8' }}>
+                                        <td key={`${monthIndex}-${subColIndex}`} style={{
+                                            textAlign: 'center',
+                                            fontWeight: 600,
+                                            color: '#92400e',
+                                            fontSize: '0.7rem',
+                                            backgroundColor: '#fefce8',
+                                            borderLeft: subColIndex > 0 ? '1px dashed #fde68a' : undefined
+                                        }}>
                                             {rate && rate !== 1 ? rate.toFixed(2) : '-'}
                                         </td>
                                     );
