@@ -5,7 +5,7 @@ import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
-const STORAGE_KEY = 'management_dashboard_data_v2'; // Changed
+const STORAGE_KEY = 'management_dashboard_data_v3'; // v2→v3: EBT 수정 및 TD목표 매출액 반영
 
 // 데이터 저장
 export async function saveData(store: DataStore): Promise<void> { // Changed to async
