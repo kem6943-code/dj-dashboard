@@ -14,6 +14,7 @@ interface PLTableProps {
     onEditMonth?: (month: number, dataType: 'actual' | 'target' | 'prevYear') => void;
     showTarget?: boolean;
     showYoY?: boolean;
+    rates?: number[]; // 각 데이터 컬럼에 대응하는 환율 리스트
 }
 
 // 값 포맷 (유형에 따라 다르게 표시)
@@ -44,7 +45,7 @@ function getSectionSpans(items: PLItem[]): Map<string, number> {
     return spans;
 }
 
-export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY }: PLTableProps) {
+export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY, rates }: PLTableProps) {
     const sectionSpans = getSectionSpans(items);
     const renderedSections = new Set<string>();
 
@@ -108,6 +109,11 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY 
                                                     </button>
                                                 )}
                                             </div>
+                                            {rates && rates[i * colSpan + si] !== undefined && rates[i * colSpan + si] !== 1 && (
+                                                <div className="text-[9px] font-normal opacity-70 mt-0.5">
+                                                    @{rates[i * colSpan + si].toFixed(2)}
+                                                </div>
+                                            )}
                                         </th>
                                     );
                                 })

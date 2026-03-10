@@ -82,8 +82,8 @@ export function Dashboard() {
         : getDivisionData(store, selectedDivision, selectedYear - 1)) : null;
 
     // P&L 데이터를 기간별로 변환
-    const getPeriodData = useCallback((): { baseLabels: string[]; data: MonthlyPLData[] } => {
-        if (!divData) return { baseLabels: [], data: [] };
+    const getPeriodData = useCallback((): { baseLabels: string[]; data: MonthlyPLData[]; rates: number[] } => {
+        if (!divData) return { baseLabels: [], data: [], rates: [] };
 
         // 서브디비전 컬럼 모드 (예: 멕시코 가전/자동차 합계)
         if (divisionInfo.subDivisions && divisionInfo.subDivisionMode === 'columns') {
@@ -125,7 +125,7 @@ export function Dashboard() {
                 data.push(totalAct);
             }
 
-            return { baseLabels, data };
+            return { baseLabels, data, rates: data.map(() => 1) }; // 서브디비전 컬럼 모드는 일단 1로 (필요시 추후 확장)
         }
 
         // 서브디비전 탭 모드 (예: 베트남 생산실별)
@@ -142,24 +142,45 @@ export function Dashboard() {
             actualData: MonthlyPLData[],
             targetData: MonthlyPLData[],
             prevYearActualData?: MonthlyPLData[]
-        ) => {
+        ): { baseLabels: string[]; data: MonthlyPLData[]; rates: number[] } => {
             // 아무 토글도 안 켜져있으면 실적만 표시
-            if (!showTarget && !showYoY) return { baseLabels, data: actualData };
+            if (!showTarget && !showYoY) return {
+                baseLabels,
+                data: actualData,
+                rates: actualData.map((_, idx) => {
+                    const rs = (periodType === 'monthly' && idx < 12)
+                        ? (divData.exchangeRates[idx + 1] || { actual: 1, target: 1, prev: 1 })
+                        : (divData.exchangeRates[1] || { actual: 1, target: 1, prev: 1 });
+                    return rs.actual || 1;
+                })
+            };
 
             const data: MonthlyPLData[] = [];
+            const rates: number[] = [];
             baseLabels.forEach((_, idx) => {
+                const rs = (periodType === 'monthly' && idx < 12)
+                    ? (divData.exchangeRates[idx + 1] || { actual: 1, target: 1, prev: 1 })
+                    : (divData.exchangeRates[1] || { actual: 1, target: 1, prev: 1 });
+
+                const prs = (periodType === 'monthly' && idx < 12)
+                    ? (prevYearDivData?.exchangeRates?.[idx + 1] || { actual: 1, target: 1, prev: 1 })
+                    : (prevYearDivData?.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 });
+
                 // showYoY가 켜져있으면 전년 실적 먼저
                 if (showYoY) {
                     data.push(prevYearActualData?.[idx] || ({} as MonthlyPLData));
+                    rates.push(prs.actual || 1);
                 }
                 // 실적(현재 년도)은 항상 그 다음
                 data.push(actualData[idx]);
+                rates.push(rs.actual || 1);
                 // showTarget이 켜져있으면 TD목표
                 if (showTarget) {
                     data.push(targetData[idx] || ({} as MonthlyPLData));
+                    rates.push(rs.target || 1);
                 }
             });
-            return { baseLabels, data };
+            return { baseLabels, data, rates };
         };
 
         // 전년도 데이터 준비
@@ -206,11 +227,11 @@ export function Dashboard() {
                     [aggregateYear(prevMonthly)]
                 );
             default:
-                return { baseLabels: [], data: [] };
+                return { baseLabels: [], data: [], rates: [] };
         }
     }, [divData, prevYearDivData, periodType, selectedYear, divisionInfo, selectedSubDiv, selectedTotalMonth, showTarget, showYoY]);
 
-    const { baseLabels: periodLabels, data: periodData } = getPeriodData();
+    const { baseLabels: periodLabels, data: periodData, rates: periodRates } = getPeriodData();
 
     // 데이터 로딩 중 표시 (모든 Hook 호출 이후에 렌더링을 차단해야 Rule of Hooks 에러 #310을 방지함)
     if (loading || !store || !divData) {
@@ -578,6 +599,7 @@ export function Dashboard() {
                                     items={getPLItemsForDivision(selectedDivision)}
                                     labels={periodLabels}
                                     data={periodData}
+                                    rates={periodRates}
                                     onEditMonth={(periodType === 'monthly' && divisionInfo.subDivisionMode !== 'columns') ? handleEditMonth : undefined}
                                     showTarget={showTarget}
                                     showYoY={showYoY}
