@@ -138,26 +138,27 @@ export const THAILAND_ITEMS: PLItem[] = [
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
-    { key: 'overheadRatio', label: '경비율(%)', isHeader: false, indent: 0, isCalculated: true, section: '경비', type: 'ratio' },
-    { key: 'techFee', label: '기술료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'electricity', label: '전력비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'transportation', label: '운반비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'importCost', label: '수입제비용', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'consumables', label: '소모품비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'depreciation', label: '감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'overheadOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'overheadRatio', label: '경비율 (%)', isHeader: false, indent: 0, isCalculated: true, section: '경비', type: 'ratio' },
+    { key: 'techFee', label: '1) 기술료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'electricity', label: '2) 전력비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'transportation', label: '3) 운반비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'importCost', label: '4) 수입제비용', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'consumables', label: '5) 소모품비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'depreciation', label: '6) 감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'overheadOther', label: '7) 기타', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
 
     // ===== 영업이익 =====
     { key: 'operatingProfit', label: '영업이익', isHeader: true, indent: 0, isCalculated: true, section: '영업이익' },
     { key: 'operatingProfitRatio', label: '%', isHeader: false, indent: 0, isCalculated: true, section: '영업이익', type: 'ratio' },
 
     // ===== 영업외 수지 =====
-    { key: 'financeCost', label: '금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
-    { key: 'forexGainLoss', label: '외환차손익', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
-    { key: 'nonOpOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
+    { key: 'nonOpBalance', label: '영업외수지', isHeader: true, indent: 0, isCalculated: false, section: '영업외수지' },
+    { key: 'financeCost', label: '1) 금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
+    { key: 'forexGainLoss', label: '2) 외환차손익', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
+    { key: 'nonOpOther', label: '3) 기타', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
 
     // ===== 세전이익 =====
-    { key: 'ebt', label: '세전이익', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebt', label: '세전이익', isHeader: true, indent: 0, isCalculated: false, section: '세전이익' },
     { key: 'ebtRatio', label: '%', isHeader: false, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
@@ -397,19 +398,28 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     result.operatingProfitRatio = revenue > 0 ? (result.operatingProfit / revenue) * 100 : 0;
 
     // 영업외수지 — 사업부별 항목 통합 계산
-    // 창원: nonOpBalance = nonOpIncome - financeCost
-    // 태국: forexGainLoss, nonOpOther, financeCost
-    // 베트남: interestIncome, forexGain, interestExpense, forexLoss
     const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
     const nonOpExpense = (result.financeCost || 0) + (result.interestExpense || 0) + (result.forexLoss || 0);
-    // 영업외수지는 항상 하위 항목에서 재계산 (정확한 합산을 위해)
-    result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
 
-    // 세전이익 = 영업이익 + 영외수지 (항상 재계산)
-    result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
+    if (preserveAmounts && result.nonOpBalance !== undefined && result.nonOpBalance !== 0) {
+        // 영업외수지 수동 입력값 보존
+    } else {
+        result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
+    }
+
+    // 세전이익 = 영업이익 + 영외수지
+    if (preserveAmounts && result.ebt !== undefined && result.ebt !== 0) {
+        // 세전이익 수동 입력값 보존
+    } else {
+        result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
+    }
 
     // 세전이익률
-    result.ebtRatio = revenue > 0 ? ((result.ebt || 0) / revenue) * 100 : 0;
+    if (preserveAmounts && result.ebtRatio !== undefined && result.ebtRatio !== 0) {
+        // 수동 입력 보존
+    } else {
+        result.ebtRatio = revenue > 0 ? ((result.ebt || 0) / revenue) * 100 : 0;
+    }
 
     return result;
 }
@@ -420,12 +430,20 @@ export function calcRatio(value: number, revenue: number): number {
     return (value / revenue) * 100;
 }
 
-// 금액 포맷
-export function formatAmount(value: number, unit: '백만' | '천' | '원' = '백만'): string {
+// 금액 포맷 (currency에 따라 소수점 처리 다름)
+export function formatAmount(value: number, unit: '백만' | '천' | '원' = '백만', currency: string = 'KRW'): string {
     if (value === 0) return '-';
     const divider = unit === '백만' ? 1000000 : unit === '천' ? 1000 : 1;
-    const formatted = (value / divider).toFixed(0);
-    return Number(formatted).toLocaleString();
+    const val = value / divider;
+
+    // 외화(THB 등)는 백만 단위일 때 소수점 1자리 표시 (이미지 싱크: 452.5)
+    // KRW은 소수점 없이 정수로 표시
+    const decimals = (currency !== 'KRW' && unit === '백만') ? 1 : 0;
+
+    return val.toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
 }
 
 // 증감 포맷

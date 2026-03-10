@@ -600,6 +600,7 @@ export function Dashboard() {
                                     labels={periodLabels}
                                     data={periodData}
                                     rates={periodRates}
+                                    currency={divisionInfo.currency}
                                     onEditMonth={(periodType === 'monthly' && divisionInfo.subDivisionMode !== 'columns') ? handleEditMonth : undefined}
                                     showTarget={showTarget}
                                     showYoY={showYoY}

@@ -15,10 +15,11 @@ interface PLTableProps {
     showTarget?: boolean;
     showYoY?: boolean;
     rates?: number[]; // 각 데이터 컬럼에 대응하는 환율 리스트
+    currency?: string; // 현재 테이블의 통화 코드 (KRW, THB 등)
 }
 
 // 값 포맷 (유형에 따라 다르게 표시)
-function formatValue(value: number, item: PLItem): string {
+function formatValue(value: number, item: PLItem, currency: string = 'KRW'): string {
     if (item.type === 'ratio') {
         if (value === 0) return '-';
         // 이미지 싱크: 재료비 관련은 소수점 2자리, 나머지는 1자리
@@ -34,7 +35,7 @@ function formatValue(value: number, item: PLItem): string {
         if (value === 0) return '-';
         return (value / 1000000).toFixed(2); // 백만 단위로 소수점 2자리
     }
-    return formatAmount(value);
+    return formatAmount(value, '백만', currency);
 }
 
 // 섹션별 행 수 계산 (rowspan용)
@@ -48,7 +49,7 @@ function getSectionSpans(items: PLItem[]): Map<string, number> {
     return spans;
 }
 
-export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY, rates }: PLTableProps) {
+export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY, rates, currency = 'KRW' }: PLTableProps) {
     const sectionSpans = getSectionSpans(items);
     const renderedSections = new Set<string>();
 
@@ -198,7 +199,7 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                     if (isProfit && value !== 0) {
                                         colorClass = value > 0 ? 'value-positive' : 'value-negative';
                                     }
-                                    const formatted = formatValue(value, item);
+                                    const formatted = formatValue(value, item, currency);
 
                                     // 하위 컬럼 종류에 따른 스타일 (showTarget, showYoY 등의 배열을 기반)
                                     let isTargetCol = false;

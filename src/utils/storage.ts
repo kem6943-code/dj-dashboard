@@ -5,7 +5,7 @@ import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
-const STORAGE_KEY = 'management_dashboard_data_v5'; // v4→v5: 태국 다중 환율 (실적 46.61, 목표 41.78, 전년 42.42) 반영
+const STORAGE_KEY = 'management_dashboard_data_v6'; // v5→v6: 태국 데이터 이미지 정밀 싱크 (19.0M 세전익 등) 및 폰트/소수점 반영
 
 // 데이터 저장
 export async function saveData(store: DataStore): Promise<void> { // Changed to async
@@ -56,14 +56,35 @@ export async function loadData(): Promise<DataStore> {
             // 태국사업부 다중 환율 마이그레이션 (실적 46.61, 목표 41.78, 전년 42.42)
             if (div.divisionCode === 'thailand') {
                 if (!div.exchangeRates) div.exchangeRates = {};
-                // 모든 월에 대해 동일하게 적용 (샘플/기본값)
                 for (let m = 1; m <= 12; m++) {
                     if (div.year === 2025) {
                         div.exchangeRates[m] = {
-                            actual: 42.42, // [FIX] 2025년 실적 환율
+                            actual: 42.42,
                             target: 41.78,
-                            prev: 41.78 // 2024년 실적 환율 (기본값)
+                            prev: 41.78
                         };
+                        // 🎯 2025년 1월 데이터를 이미지의 '전월' 컬럼 수치로 강제 싱크
+                        if (m === 1) {
+                            const thPrev = {
+                                revenue: 429900000,
+                                salesCoverTop: 355400000,
+                                salesTubOuter: 18800000,
+                                salesAir: 5500000,
+                                salesDryer: 12800000,
+                                salesOther: 37400000,
+                                materialRatio: 87.45,
+                                lossRate: 0.47,
+                                bomMaterialRatio: 86.98,
+                                materialLoss: 2000000,
+                                headcount: 487,
+                                laborCost: 18900000,
+                                overhead: 31800000,
+                                operatingProfit: 800000, // 이미지 0.8
+                                nonOpBalance: 5000000,    // 이미지 5.0 (영업외수지 행)
+                                ebt: 5800000,           // 이미지 5.8
+                            };
+                            div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thPrev }, true);
+                        }
                     } else {
                         div.exchangeRates[m] = {
                             actual: 46.61,
@@ -102,45 +123,59 @@ export async function loadData(): Promise<DataStore> {
                 }
             }
 
-            // 태국사업부 1월 데이터 보정... (이하 기존 로직 유지)
-            if (div.year === 2026 && div.divisionCode === 'thailand') {
-                if (!div.targetMonthly) div.targetMonthly = {};
-                if (!div.targetMonthly[1] || div.targetMonthly[1].revenue === 0) {
-                    const thTarget = {
-                        revenue: 461200000,
-                        operatingProfit: 16300000,
-                        materialRatio: 88.85,
-                        laborCost: 17100000,
-                        overhead: 19700000,
-                    };
-                    div.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thTarget });
-                }
-                // 실적 데이터도 최신 이미지 기준으로 보정 (이미 데이터가 있을 수 있으므로)
-                if (div.monthly[1] && (div.monthly[1].revenue === 452500000 || div.monthly[1].revenue === 0)) {
-                    const thActual = {
-                        revenue: 452500000,
-                        salesCoverTop: 388900000,
-                        salesTubOuter: 18600000,
-                        salesBaseCab: 0,
-                        salesAir: 3200000,
-                        salesDryer: 20900000,
-                        salesOther: 20900000,
-                        bomMaterialRatio: 86.70,
-                        materialRatio: 87.82, // [MOD] OP 17.8 맞춤용 (이미지는 87.11이나 역산 시 87.82가 실무 데이터 싱크)
-                        lossRate: 0.41,
-                        materialLoss: 1800000,
-                        lgImpact: 10100000,
-                        djVI: 11600000,
-                        viGap: -1500000,
-                        headcount: 462,
-                        laborCost: 18200000,
-                        overhead: 19100000,
-                        financeCost: 900000, // [MOD] -0.9 (Expense 0.9)
-                        forexGainLoss: 500000, // [MOD] 0.5
-                        nonOpOther: 1600000,   // [MOD] 1.6
-                    };
-                    div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thActual });
-                }
+            // 🎯 1월 실적 데이터 이미지 100% 싱크 (반올림 오차 무시하고 텍스트 그대로 보존)
+            if (div.monthly[1]) {
+                const thActual = {
+                    revenue: 452500000,
+                    salesCoverTop: 388900000,
+                    salesTubOuter: 18600000,
+                    salesBaseCab: 0,
+                    salesAir: 3200000,
+                    salesDryer: 20900000,
+                    salesOther: 20900000,
+                    bomMaterialRatio: 86.70,
+                    materialRatio: 87.11, // 이미지 텍스트 그대로
+                    lossRate: 0.41,
+                    materialLoss: 1800000,
+                    lgImpact: 10100000,
+                    djVI: 11600000,
+                    viGap: -1500000,
+                    headcount: 462,
+                    laborCost: 18200000,
+                    overhead: 19100000,
+                    operatingProfit: 17800000, // 이미지 17.8
+                    nonOpBalance: 1200000,     // 이미지 1.2
+                    financeCost: -300000,      // 금융비용 실적 -0.3
+                    forexGainLoss: 800000,    // 외환 실적 0.8
+                    nonOpOther: 800000,       // 기타 실적 0.8
+                    ebt: 19000000,             // 이미지 19.0
+                    ebtRatio: 4.2,             // 이미지 4.2%
+                };
+                div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thActual }, true);
+            }
+
+            // 🎯 1월 TD 목표 데이터 이미지 싱크
+            if (div.targetMonthly) {
+                const thTarget = {
+                    revenue: 461200000,
+                    salesCoverTop: 364700000,
+                    salesTubOuter: 18600000,
+                    salesBaseCab: 0,
+                    salesAir: 0,
+                    salesDryer: 50800000,
+                    salesOther: 27000000,
+                    bomMaterialRatio: 88.45,
+                    materialRatio: 88.85,
+                    lossRate: 0.40,
+                    materialLoss: 1800000,
+                    headcount: 464,
+                    laborCost: 17100000,
+                    overhead: 19700000,
+                    operatingProfit: 16300000,
+                    nonOpBalance: -600000,
+                    ebt: 15700000,
+                };
+                div.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thTarget }, true);
             }
             // 베트남사업부 1월 데이터 강제 주입 (이미지 기반)
             if (div.year === 2026 && div.divisionCode === 'vietnam') {
