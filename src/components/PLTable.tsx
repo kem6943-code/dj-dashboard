@@ -109,11 +109,6 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                                     </button>
                                                 )}
                                             </div>
-                                            {rates && rates[i * colSpan + si] !== undefined && rates[i * colSpan + si] !== 1 && (
-                                                <div className="text-[9px] font-normal opacity-70 mt-0.5">
-                                                    @{rates[i * colSpan + si].toFixed(2)}
-                                                </div>
-                                            )}
                                         </th>
                                     );
                                 })
@@ -122,6 +117,27 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                     )}
                 </thead>
                 <tbody>
+                    {/* [NEW] 환율 전용 행 추가 - 레퍼런스 이미지 스타일 반영 */}
+                    {rates && rates.length > 0 && rates.some(r => r !== 1) && (
+                        <tr className="row-header" style={{ backgroundColor: '#fdfcf0', borderBottom: '2px solid #fde68a' }}>
+                            <td className="sticky-col-1" style={{ background: '#fdfcf0' }}></td>
+                            <td className="sticky-col-2" style={{ background: '#fdfcf0', color: '#92400e', fontWeight: 700, textAlign: 'center' }}>
+                                환율
+                            </td>
+                            {labels.map((_, monthIndex) => {
+                                // 현재 라벨(월/누계)에 해당하는 서브 컬럼들 렌더링
+                                return subColHeaders.map((_, subColIndex) => {
+                                    const rateIndex = monthIndex * colSpan + subColIndex;
+                                    const rate = rates[rateIndex];
+                                    return (
+                                        <td key={`${monthIndex}-${subColIndex}`} style={{ textAlign: 'center', fontWeight: 700, color: '#92400e', fontSize: '0.8rem', backgroundColor: '#fefce8' }}>
+                                            {rate && rate !== 1 ? rate.toFixed(2) : '-'}
+                                        </td>
+                                    );
+                                });
+                            })}
+                        </tr>
+                    )}
                     {items.map(item => {
                         const section = item.section || '';
                         const isFirstInSection = !renderedSections.has(section);
