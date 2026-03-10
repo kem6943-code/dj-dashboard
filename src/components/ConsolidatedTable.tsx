@@ -31,9 +31,9 @@ interface ConsolidatedTableProps {
 function getDivisionPeriodData(
     store: DataStore, code: DivisionCode, year: number,
     periodType: PeriodType, periodIndex: number
-): { data: MonthlyPLData; avgRate: number } {
+): { actualData: MonthlyPLData; targetData: MonthlyPLData; avgActualRate: number; avgTargetRate: number } {
     const divData = getDivisionData(store, code, year);
-    if (!divData) return { data: createEmptyPLData(), avgRate: 1 };
+    if (!divData) return { actualData: createEmptyPLData(), targetData: createEmptyPLData(), avgActualRate: 1, avgTargetRate: 1 };
 
     let months: number[];
     switch (periodType) {
@@ -44,26 +44,46 @@ function getDivisionPeriodData(
     }
 
     // 해당 월들 합산 (현지 화폐 기준)
-    const result = createEmptyPLData();
-    let rateSum = 0;
+    const actualResult = createEmptyPLData();
+    const targetResult = createEmptyPLData();
+    let actualRateSum = 0;
+    let targetRateSum = 0;
     let rateCount = 0;
+
     months.forEach(m => {
         const mData = divData.monthly[m];
         if (mData) {
             Object.values(ALL_ITEMS_MAP).forEach(item => {
                 if (!item.isCalculated) {
-                    result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
+                    actualResult[item.key] = (actualResult[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
         }
-        const r = divData.exchangeRate[m];
-        if (r) { rateSum += r; rateCount++; }
+
+        const tData = divData.targetMonthly?.[m];
+        if (tData) {
+            Object.values(ALL_ITEMS_MAP).forEach(item => {
+                if (!item.isCalculated) {
+                    targetResult[item.key] = (targetResult[item.key] || 0) + (tData[item.key] || 0);
+                }
+            });
+        }
+
+        const rs = divData.exchangeRates[m] || { actual: 1, target: 1, prev: 1 };
+        actualRateSum += rs.actual || 1;
+        targetRateSum += rs.target || 1;
+        rateCount++;
     });
 
-    // 평균 환율
-    const avgRate = rateCount > 0 ? rateSum / rateCount : (divData.exchangeRate[1] || 1);
+    const avgActualRate = rateCount > 0 ? actualRateSum / rateCount : (divData.exchangeRates[1]?.actual || 1);
+    const avgTargetRate = rateCount > 0 ? targetRateSum / rateCount : (divData.exchangeRates[1]?.target || 1);
 
-    return { data: calculateDerivedFields(result, true), avgRate };
+    return {
+        actualData: calculateDerivedFields(actualResult, true),
+        targetData: calculateDerivedFields(targetResult, true),
+        avgActualRate,
+        avgTargetRate
+    };
 }
 
 // 기간 라벨
@@ -79,9 +99,10 @@ function getPeriodLabel(periodType: PeriodType, periodIndex: number, year: numbe
 export function ConsolidatedTable({ store, year, periodType, periodIndex }: ConsolidatedTableProps) {
     // 각 사업부의 해당 기간 데이터 (현지화폐 + 환율)
     const divisionData = DIVISIONS.map(div => {
-        const { data, avgRate } = getDivisionPeriodData(store, div.code, year, periodType, periodIndex);
-        const dataKRW = convertToKRW(data, avgRate);
-        return { info: div, dataLocal: data, dataKRW, avgRate };
+        const { actualData, targetData, avgActualRate, avgTargetRate } = getDivisionPeriodData(store, div.code, year, periodType, periodIndex);
+        const dataKRW = convertToKRW(actualData, avgActualRate);
+        const targetKRW = convertToKRW(targetData, avgTargetRate);
+        return { info: div, dataLocal: actualData, dataKRW, targetKRW, avgActualRate, avgTargetRate };
     });
 
     // 합계: 원화 기준 합산
@@ -106,9 +127,9 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
 
             {/* 환율 정보 표시 */}
             <div className="flex gap-4 mb-3 text-xs flex-wrap" style={{ color: 'var(--text-muted)' }}>
-                {divisionData.filter(d => d.avgRate !== 1).map(d => (
+                {divisionData.filter(d => d.avgActualRate !== 1 || d.avgTargetRate !== 1).map(d => (
                     <span key={d.info.code}>
-                        {d.info.flag} 1 {d.info.currency} = {d.avgRate.toFixed(2)}원
+                        {d.info.flag} 실적환율: {d.avgActualRate.toFixed(2)} | 목표환율: {d.avgTargetRate.toFixed(2)}
                     </span>
                 ))}
             </div>

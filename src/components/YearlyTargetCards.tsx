@@ -47,11 +47,14 @@ export function YearlyTargetCards({ store, year }: Props) {
                     });
 
                     // 경영진 지시사항(원화) 직관적 비교를 위해 전부 KRW 기준으로 변환
-                    const rate = divData.exchangeRate?.[1] || 1;
-                    const actualRev = actualRevRaw * rate;
-                    const actualOp = actualOpRaw * rate;
-                    const targetRev = targetRevRaw * rate;
-                    const targetOp = targetOpRaw * rate;
+                    const rates = divData.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 };
+                    const actualRate = rates.actual || 1;
+                    const targetRate = rates.target || 1;
+
+                    const actualRev = actualRevRaw * actualRate;
+                    const actualOp = actualOpRaw * actualRate;
+                    const targetRev = targetRevRaw * targetRate;
+                    const targetOp = targetOpRaw * targetRate;
 
                     const revAchieve = targetRev > 0 ? (actualRev / targetRev) * 100 : 0;
                     const opAchieve = targetOp > 0 ? (actualOp / targetOp) * 100 : 0;

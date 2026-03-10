@@ -240,7 +240,7 @@ export function Dashboard() {
             newStore.divisions.push({
                 divisionCode: selectedDivision,
                 year: targetYear,
-                exchangeRate: { [month]: exchangeRate },
+                exchangeRates: { [month]: { actual: exchangeRate, target: exchangeRate, prev: exchangeRate } },
                 monthly: {},
                 targetMonthly: {}
             });
@@ -260,8 +260,12 @@ export function Dashboard() {
         }
 
         // 환율 저장
-        if (!divDataToUpdate.exchangeRate) divDataToUpdate.exchangeRate = {};
-        divDataToUpdate.exchangeRate[month] = exchangeRate;
+        if (!divDataToUpdate.exchangeRates) divDataToUpdate.exchangeRates = {};
+        divDataToUpdate.exchangeRates[month] = {
+            actual: exchangeRate,
+            target: exchangeRate,
+            prev: exchangeRate
+        };
 
         newStore.updatedAt = new Date().toISOString();
 
@@ -605,8 +609,10 @@ export function Dashboard() {
                             }
                             initialRate={
                                 editDataType === 'prevYear'
-                                    ? prevYearDivData?.exchangeRate?.[editMonth]
-                                    : divData?.exchangeRate?.[editMonth]
+                                    ? prevYearDivData?.exchangeRates?.[editMonth]?.prev
+                                    : editDataType === 'target'
+                                        ? divData?.exchangeRates?.[editMonth]?.target
+                                        : divData?.exchangeRates?.[editMonth]?.actual
                             }
                             onSave={(month, data, rate, type) => handleSaveData(month, data, rate, type)}
                             onClose={() => setShowInputModal(false)}

@@ -1,11 +1,11 @@
 /**
  * localStorage를 사용한 데이터 저장/로드 유틸리티
  */
-import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
+import type { DataStore, DivisionYearData, DivisionCode, ExchangeRateSet } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
-const STORAGE_KEY = 'management_dashboard_data_v4'; // v3→v4: 태국 환율 41.78 반영
+const STORAGE_KEY = 'management_dashboard_data_v5'; // v4→v5: 태국 다중 환율 (실적 46.61, 목표 41.78, 전년 42.42) 반영
 
 // 데이터 저장
 export async function saveData(store: DataStore): Promise<void> { // Changed to async
@@ -53,13 +53,17 @@ export async function loadData(): Promise<DataStore> {
                 div.yearlyTarget = yearlyTargets[div.divisionCode];
             }
 
-            // 태국사업부 환율 강제 업데이트 (41.78)
+            // 태국사업부 다중 환율 마이그레이션 (실적 46.61, 목표 41.78, 전년 42.42)
             if (div.divisionCode === 'thailand') {
-                div.exchangeRate[1] = 41.78;
-                // 누계 데이터 환율도 업데이트 (있다면)
-                Object.keys(div.exchangeRate).forEach(k => {
-                    div.exchangeRate[Number(k)] = 41.78;
-                });
+                if (!div.exchangeRates) div.exchangeRates = {};
+                // 모든 월에 대해 동일하게 적용 (샘플/기본값)
+                for (let m = 1; m <= 12; m++) {
+                    div.exchangeRates[m] = {
+                        actual: 46.61,
+                        target: 41.78,
+                        prev: 42.42
+                    };
+                }
             }
 
             // 창원사업부 1월 TD목표 데이터 보정 (매출액 누락 방지)
@@ -434,7 +438,7 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
     const data: DivisionYearData = {
         divisionCode: code,
         year,
-        exchangeRate: {},
+        exchangeRates: {},
         monthly: {},
         targetMonthly: {},
     };
@@ -871,13 +875,18 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
         };
     }
 
-    const exchangeRates: Partial<Record<DivisionCode, number>> = {
-        changwon: 1,
-        thailand: 41.78,
-        vietnam: 0.055,
-        mexico: 75.0,
+    const exchangeRatesMap: Partial<Record<DivisionCode, ExchangeRateSet>> = {
+        changwon: { actual: 1, target: 1, prev: 1 },
+        thailand: { actual: 46.61, target: 41.78, prev: 42.42 },
+        vietnam: { actual: 0.055, target: 0.055, prev: 0.055 },
+        mexico: { actual: 75.0, target: 75.0, prev: 75.0 },
     };
-    data.exchangeRate[1] = exchangeRates[code] || 1;
+    data.exchangeRates[1] = exchangeRatesMap[code] || { actual: 1, target: 1, prev: 1 };
+
+    // 12개월 전체에 대해 일단 기본값 설정
+    for (let m = 2; m <= 12; m++) {
+        data.exchangeRates[m] = exchangeRatesMap[code] || { actual: 1, target: 1, prev: 1 };
+    }
 
     const yearlyTargets: Partial<Record<DivisionCode, { revenue: number, operatingProfit: number }>> = {
         changwon: { revenue: 110500000000, operatingProfit: 2500000000 },
@@ -904,14 +913,15 @@ export function updateMonthlyData(
     code: DivisionCode,
     year: number,
     month: number,
-    data: Record<string, number>
+    data: Record<string, number>,
+    exchangeRate: number
 ): DataStore {
     let divData = getDivisionData(store, code, year);
     if (!divData) {
         divData = {
             divisionCode: code,
             year,
-            exchangeRate: {},
+            exchangeRates: {},
             monthly: {},
             targetMonthly: {},
         };
@@ -920,6 +930,16 @@ export function updateMonthlyData(
 
     const plData = { ...createEmptyPLData(), ...data };
     divData.monthly[month] = calculateDerivedFields(plData);
+
+    // 환율 저장 (단일 값이 오면 실적 환율로 저장)
+    if (typeof exchangeRate === 'number') {
+        if (!divData.exchangeRates[month]) {
+            divData.exchangeRates[month] = { actual: exchangeRate, target: exchangeRate, prev: exchangeRate };
+        } else {
+            divData.exchangeRates[month].actual = exchangeRate;
+        }
+    }
+
     store.updatedAt = new Date().toISOString();
 
     return { ...store };

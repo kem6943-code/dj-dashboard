@@ -37,7 +37,7 @@ export const ExcelUploader: React.FC<ExcelUploaderProps> = ({ currentStore, onUp
                     year,
                     monthly: {},
                     targetMonthly: {},
-                    exchangeRate: {}
+                    exchangeRates: {}
                 };
                 newStore.divisions.push(divData);
             }
@@ -64,7 +64,7 @@ export const ExcelUploader: React.FC<ExcelUploaderProps> = ({ currentStore, onUp
                     year: prevYearNum,
                     monthly: {},
                     targetMonthly: {},
-                    exchangeRate: {}
+                    exchangeRates: {}
                 };
                 newStore.divisions.push(prevDivData);
             }

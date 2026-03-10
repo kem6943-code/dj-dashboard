@@ -283,11 +283,18 @@ export interface MonthlyPLData {
     [key: string]: number; // PLItem.key -> 금액
 }
 
+// 월별 환율 세트 (실적, 목표, 전년)
+export interface ExchangeRateSet {
+    actual: number;
+    target: number;
+    prev: number;
+}
+
 // 사업부의 연간 데이터
 export interface DivisionYearData {
     divisionCode: DivisionCode;
     year: number;
-    exchangeRate: { [month: number]: number }; // 월별 환율
+    exchangeRates: { [month: number]: ExchangeRateSet }; // 월별 환율 (다중 환율 대응)
     monthly: { [month: number]: MonthlyPLData }; // 1~12월 실적 (해당 사업부 통합 데이터)
     targetMonthly: { [month: number]: MonthlyPLData }; // 1~12월 목표 (TD목표)
     yearlyTarget?: { // 연간 전체 TD목표 (대시보드 요약 표시용)
@@ -509,7 +516,7 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
     const consolidated: DivisionYearData = {
         divisionCode: 'total',
         year,
-        exchangeRate: {},
+        exchangeRates: {},
         monthly: {},
         targetMonthly: {},
     };
@@ -523,7 +530,9 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
         store.divisions
             .filter(d => d.year === year && d.divisionCode !== 'total')
             .forEach(divData => {
-                const rate = divData.exchangeRate[m] || 1;
+                const rates = divData.exchangeRates[m] || { actual: 1, target: 1, prev: 1 };
+                const actualRate = rates.actual || 1;
+                const targetRate = rates.target || 1;
 
                 // 실적 합산
                 const mData = divData.monthly[m];
@@ -532,7 +541,7 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                     Object.values(ALL_ITEMS_MAP).forEach(item => {
                         if (!item.isCalculated) {
                             if (!item.type || item.type === 'amount') {
-                                result[item.key] = (result[item.key] || 0) + ((mData[item.key] || 0) * rate);
+                                result[item.key] = (result[item.key] || 0) + ((mData[item.key] || 0) * actualRate);
                             } else if (item.type === 'count') {
                                 result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                             }
@@ -547,7 +556,7 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                     Object.values(ALL_ITEMS_MAP).forEach(item => {
                         if (!item.isCalculated) {
                             if (!item.type || item.type === 'amount') {
-                                targetResult[item.key] = (targetResult[item.key] || 0) + ((tData[item.key] || 0) * rate);
+                                targetResult[item.key] = (targetResult[item.key] || 0) + ((tData[item.key] || 0) * targetRate);
                             } else if (item.type === 'count') {
                                 targetResult[item.key] = (targetResult[item.key] || 0) + (tData[item.key] || 0);
                             }
