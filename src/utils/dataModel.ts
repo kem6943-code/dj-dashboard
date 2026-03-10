@@ -123,7 +123,7 @@ export const THAILAND_ITEMS: PLItem[] = [
 
     // ===== 재료비 =====
     { key: 'materialRatio', label: '실적재료비율 (%)', isHeader: true, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
-    { key: 'lossReflected', label: 'Loss 율 반영', isHeader: false, indent: 1, isCalculated: false, section: '재료비', type: 'ratio' },
+    { key: 'lossReflected', label: 'Loss 率 반영', isHeader: false, indent: 1, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율 (%)', isHeader: false, indent: 1, isCalculated: true, section: '재료비', type: 'ratio' },
     { key: 'lossRate', label: 'Loss율 (%)', isHeader: false, indent: 1, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 1, isCalculated: false, section: '재료비' },
@@ -137,18 +137,25 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'headcount', label: '인원 (평균인원)', isHeader: true, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
     { key: 'laborCost', label: '인건비', isHeader: false, indent: 1, isCalculated: false, section: '노무비' },
     { key: 'laborCostRatio', label: '인건비율 (%)', isHeader: false, indent: 1, isCalculated: true, section: '노무비', type: 'ratio' },
-    { key: 'laborPerHead', label: '원단위생산액 (원)', isHeader: false, indent: 1, isCalculated: false, section: '노무비' },
+    { key: 'revenuePerHead', label: '원당생산액 (원)', isHeader: false, indent: 1, isCalculated: false, section: '노무비' },
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
     { key: 'overheadRatio', label: '경비율 (%)', isHeader: false, indent: 0, isCalculated: true, section: '경비', type: 'ratio' },
     { key: 'techFee', label: '1) 기술료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'techFeeRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '경비', type: 'ratio' },
     { key: 'electricity', label: '2) 전력비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'electricityRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '경비', type: 'ratio' },
     { key: 'transportation', label: '3) 운반비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'transportationRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '경비', type: 'ratio' },
     { key: 'importCost', label: '4) 수입제비용', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'importCostRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '경비', type: 'ratio' },
     { key: 'consumables', label: '5) 소모품비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'consumablesRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '경비', type: 'ratio' },
     { key: 'depreciation', label: '6) 감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'depreciationRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '경비', type: 'ratio' },
     { key: 'overheadOther', label: '7) 기타', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'overheadOtherRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '경비', type: 'ratio' },
 
     // ===== 영업이익 =====
     { key: 'operatingProfit', label: '영업이익', isHeader: true, indent: 0, isCalculated: false, section: '영업이익' },
@@ -396,6 +403,15 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     } else {
         result.overheadRatio = revenue > 0 ? ((result.overhead || 0) / revenue) * 100 : 0;
     }
+
+    // [V10] 경비 세부 비율 자동 계산
+    const overheadKeys = ['techFee', 'electricity', 'transportation', 'importCost', 'consumables', 'depreciation', 'overheadOther'];
+    overheadKeys.forEach(key => {
+        const val = result[key] as number;
+        if (typeof val === 'number') {
+            result[`${key}Ratio`] = revenue > 0 ? (val / revenue) * 100 : 0;
+        }
+    });
 
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
     if (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0) {
