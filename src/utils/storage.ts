@@ -94,7 +94,7 @@ export async function loadData(): Promise<DataStore> {
                 }
 
                 if (div.year === 2025) {
-                    // 전년('25실적)
+                    // 전년('25실적) - PPT 슬라이드 3번 '전년' 컬럼
                     const thPrev = {
                         revenue: 523500000,
                         salesCoverTop: 439100000,
@@ -115,6 +115,11 @@ export async function loadData(): Promise<DataStore> {
                         ebt: 6700000,
                     };
                     div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thPrev }, true);
+                }
+            } else if (div.divisionCode === 'changwon' && div.year === 2026) {
+                // 창원 기본 데이터 누락 방지
+                if (!div.monthly[1]) {
+                    div.monthly = createSampleData('changwon', 2026).monthly;
                 }
             }
         });
@@ -150,25 +155,75 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
         targetMonthly: {},
     };
 
-    // 태국 1월 데이터 (레퍼런스 이미지 기준)
+    const is2026 = year === 2026;
+
+    // 창원 샘플 데이터
+    if (code === 'changwon') {
+        const cwData = is2026 ? {
+            revenue: 9559000000,
+            salesFL: 6133000000,
+            salesFridge: 684000000,
+            salesOther: 2742000000,
+            bomMaterialRatio: 76.7,
+            materialRatio: 77.4,
+            headcount: 241,
+            laborCost: 1097000000,
+            overhead: 793000000,
+            operatingProfit: 266000000,
+            ebt: 233000000,
+        } : {
+            revenue: 9457000000,
+            operatingProfit: 212000000,
+            ebt: 156000000,
+        };
+        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...cwData }, true);
+        if (is2026) {
+            data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 8853000000, operatingProfit: 167000000, ebt: 167000000 }, true);
+        }
+    }
+
+    // 태국 샘플 데이터 (Slide 3 기반)
     if (code === 'thailand') {
-        const is2026 = year === 2026;
-        const janData = is2026 ? {
+        const thData = is2026 ? {
             revenue: 452500000,
             operatingProfit: 17800000,
-            nonOpBalance: 1200000,
             ebt: 19000000,
         } : {
             revenue: 523500000,
             operatingProfit: 7600000,
-            nonOpBalance: -900000,
             ebt: 6700000,
         };
-        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...janData }, true);
-
+        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thData }, true);
         if (is2026) {
             data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 461200000, operatingProfit: 16300000, ebt: 15700000 }, true);
         }
+    }
+
+    // 베트남 샘플 데이터
+    if (code === 'vietnam') {
+        const vnData = is2026 ? {
+            revenue: 89817000000,
+            operatingProfit: 11840000000,
+            ebt: 11529000000,
+        } : {
+            revenue: 75000000000,
+            operatingProfit: 9500000000,
+            ebt: 9200000000,
+        };
+        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnData }, true);
+        if (is2026) {
+            data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 76984000000, operatingProfit: 8134000000, ebt: 7718000000 }, true);
+        }
+    }
+
+    // 멕시코 샘플 데이터
+    if (code === 'mexico') {
+        const mxData = {
+            revenue: 68656277,
+            operatingProfit: 4500000,
+            ebt: 3300000,
+        };
+        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxData }, true);
     }
 
     // 환율 설정
