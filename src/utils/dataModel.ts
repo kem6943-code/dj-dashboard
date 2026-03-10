@@ -329,8 +329,9 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
             totalRevenue += result[key] as number;
         }
     });
-    // 하위 항목이 하나라도 있다면 매출액을 덮어씀 (없으면 기존 값 유지)
-    if (totalRevenue > 0 || Object.keys(result).some(key => key.startsWith('sales'))) {
+    // 하위 항목 합계가 실제로 0보다 클 때만 매출액을 덮어씀
+    // (createEmptyPLData가 모든 sales* 키를 0으로 초기화하므로, 존재여부가 아닌 합계값으로 판단)
+    if (totalRevenue > 0) {
         result.revenue = totalRevenue;
     }
 
