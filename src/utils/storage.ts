@@ -5,7 +5,7 @@ import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
-const STORAGE_KEY = 'management_dashboard_data_v3'; // v2→v3: EBT 수정 및 TD목표 매출액 반영
+const STORAGE_KEY = 'management_dashboard_data_v4'; // v3→v4: 태국 환율 41.78 반영
 
 // 데이터 저장
 export async function saveData(store: DataStore): Promise<void> { // Changed to async
@@ -51,6 +51,15 @@ export async function loadData(): Promise<DataStore> {
             // 2026년 데이터에 대해 새로운 경영진 지시 목표값으로 무조건 강제 덮어쓰기 (하드코딩된 최신 지시사항 반영)
             if (div.year === 2026 && yearlyTargets[div.divisionCode]) {
                 div.yearlyTarget = yearlyTargets[div.divisionCode];
+            }
+
+            // 태국사업부 환율 강제 업데이트 (41.78)
+            if (div.divisionCode === 'thailand') {
+                div.exchangeRate[1] = 41.78;
+                // 누계 데이터 환율도 업데이트 (있다면)
+                Object.keys(div.exchangeRate).forEach(k => {
+                    div.exchangeRate[Number(k)] = 41.78;
+                });
             }
 
             // 창원사업부 1월 TD목표 데이터 보정 (매출액 누락 방지)
@@ -864,7 +873,7 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
 
     const exchangeRates: Partial<Record<DivisionCode, number>> = {
         changwon: 1,
-        thailand: 39.5,
+        thailand: 41.78,
         vietnam: 0.055,
         mexico: 75.0,
     };
