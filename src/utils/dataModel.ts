@@ -347,7 +347,7 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 실적재료비율 및 재료비 산출
     let materialCost = result.rawMaterialCost || 0;
 
-    if (preserveAmounts && result.operatingProfit !== undefined) {
+    if (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0) {
         // 병합/집계된 데이터의 경우 (수동 입력 OP 등 보존), 재료비와 재료비율을 역산
         materialCost = revenue - (result.laborCost || 0) - (result.overhead || 0) - result.operatingProfit;
         result.materialRatio = revenue > 0 ? (materialCost / revenue) * 100 : 0;
@@ -386,7 +386,7 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
 
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
     // preserveAmounts일 때 기존 값이 있으면 유지, 없으면 계산
-    if (preserveAmounts && result.operatingProfit) {
+    if (preserveAmounts && result.operatingProfit && result.operatingProfit !== 0) {
         // 직접 입력/보존된 영업이익 유지
     } else {
         result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);

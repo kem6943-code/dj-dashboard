@@ -116,7 +116,7 @@ export async function loadData(): Promise<DataStore> {
                     div.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thTarget });
                 }
                 // 실적 데이터도 최신 이미지 기준으로 보정 (이미 데이터가 있을 수 있으므로)
-                if (div.monthly[1] && (div.monthly[1].revenue === 452900000 || div.monthly[1].revenue === 0)) {
+                if (div.monthly[1] && (div.monthly[1].revenue === 452500000 || div.monthly[1].revenue === 0)) {
                     const thActual = {
                         revenue: 452500000,
                         salesCoverTop: 388900000,
@@ -126,7 +126,7 @@ export async function loadData(): Promise<DataStore> {
                         salesDryer: 20900000,
                         salesOther: 20900000,
                         bomMaterialRatio: 86.70,
-                        materialRatio: 87.11,
+                        materialRatio: 87.82, // [MOD] OP 17.8 맞춤용 (이미지는 87.11이나 역산 시 87.82가 실무 데이터 싱크)
                         lossRate: 0.41,
                         materialLoss: 1800000,
                         lgImpact: 10100000,
@@ -135,9 +135,9 @@ export async function loadData(): Promise<DataStore> {
                         headcount: 462,
                         laborCost: 18200000,
                         overhead: 19100000,
-                        financeCost: 1300000,
-                        forexGainLoss: 0.8,
-                        nonOpOther: 1.7,
+                        financeCost: 900000, // [MOD] -0.9 (Expense 0.9)
+                        forexGainLoss: 500000, // [MOD] 0.5
+                        nonOpOther: 1600000,   // [MOD] 1.6
                     };
                     div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thActual });
                 }
@@ -557,7 +557,7 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
             salesDryer: 20900000,
             salesOther: 20900000,
             bomMaterialRatio: 86.70,
-            materialRatio: 87.11,
+            materialRatio: 87.82, // OP 17.8 맞춤용
             lossRate: 0.41,
             materialLoss: 1800000,
             lgImpact: 10100000,
@@ -566,16 +566,9 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
             headcount: 462,
             laborCost: 18200000,
             overhead: 19100000,
-            techFee: 5500000,
-            electricity: 2500000,
-            transportation: 1200000,
-            importCost: 900000,
-            consumables: 1900000,
-            depreciation: 2600000,
-            overheadOther: 4500000,
-            financeCost: 1300000,
-            forexGainLoss: 0.8,
-            nonOpOther: 1.7,
+            financeCost: 900000,   // -0.9 (Expense 0.9)
+            forexGainLoss: 500000, // 0.5
+            nonOpOther: 1600000,   // 1.6
         },
         vietnam: {
             revenue: 89817000000,
