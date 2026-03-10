@@ -1,7 +1,7 @@
 /**
  * localStorage를 사용한 데이터 저장/로드 유틸리티
  */
-import type { DataStore, DivisionYearData, DivisionCode, ExchangeRateSet } from './dataModel';
+import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
@@ -58,11 +58,19 @@ export async function loadData(): Promise<DataStore> {
                 if (!div.exchangeRates) div.exchangeRates = {};
                 // 모든 월에 대해 동일하게 적용 (샘플/기본값)
                 for (let m = 1; m <= 12; m++) {
-                    div.exchangeRates[m] = {
-                        actual: 46.61,
-                        target: 41.78,
-                        prev: 42.42
-                    };
+                    if (div.year === 2025) {
+                        div.exchangeRates[m] = {
+                            actual: 42.42, // [FIX] 2025년 실적 환율
+                            target: 41.78,
+                            prev: 41.78 // 2024년 실적 환율 (기본값)
+                        };
+                    } else {
+                        div.exchangeRates[m] = {
+                            actual: 46.61,
+                            target: 41.78,
+                            prev: 42.42
+                        };
+                    }
                 }
             }
 
@@ -875,17 +883,18 @@ function createSampleData(code: DivisionCode, year: number): DivisionYearData {
         };
     }
 
-    const exchangeRatesMap: Partial<Record<DivisionCode, ExchangeRateSet>> = {
-        changwon: { actual: 1, target: 1, prev: 1 },
-        thailand: { actual: 46.61, target: 41.78, prev: 42.42 },
-        vietnam: { actual: 0.055, target: 0.055, prev: 0.055 },
-        mexico: { actual: 75.0, target: 75.0, prev: 75.0 },
-    };
-    data.exchangeRates[1] = exchangeRatesMap[code] || { actual: 1, target: 1, prev: 1 };
-
-    // 12개월 전체에 대해 일단 기본값 설정
-    for (let m = 2; m <= 12; m++) {
-        data.exchangeRates[m] = exchangeRatesMap[code] || { actual: 1, target: 1, prev: 1 };
+    // 환율 설정
+    for (let m = 1; m <= 12; m++) {
+        if (code === 'thailand') {
+            if (year === 2025) {
+                data.exchangeRates[m] = { actual: 42.42, target: 41.78, prev: 41.78 };
+            } else {
+                data.exchangeRates[m] = { actual: 46.61, target: 41.78, prev: 42.42 };
+            }
+        } else {
+            const defaultRate = (code === 'vietnam' ? 0.055 : code === 'mexico' ? 75.0 : 1);
+            data.exchangeRates[m] = { actual: defaultRate, target: defaultRate, prev: defaultRate };
+        }
     }
 
     const yearlyTargets: Partial<Record<DivisionCode, { revenue: number, operatingProfit: number }>> = {
