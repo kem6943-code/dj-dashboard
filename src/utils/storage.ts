@@ -53,6 +53,34 @@ export async function loadData(): Promise<DataStore> {
                 div.yearlyTarget = yearlyTargets[div.divisionCode];
             }
 
+            // 창원사업부 1월 TD목표 데이터 보정 (매출액 누락 방지)
+            if (div.year === 2026 && div.divisionCode === 'changwon') {
+                if (!div.targetMonthly) div.targetMonthly = {};
+                if (!div.targetMonthly[1] || div.targetMonthly[1].revenue === 0) {
+                    const cwTarget = {
+                        revenue: 8853000000,
+                        materialRatio: 78.5,
+                        headcount: 247,
+                        laborCost: 988000000,
+                        revenuePerHead: 8960000,
+                        overhead: 749000000,
+                        electricity: 112200000,
+                        depreciation: 162600000,
+                        repair: 19200000,
+                        consumables: 41900000,
+                        transportation: 57400000,
+                        commission: 17900000,
+                        rent: 13200000,
+                        overheadOther: 324400000,
+                        operatingProfit: 167000000,
+                        financeCost: 0,
+                        nonOpIncome: 0,
+                        ebt: 167000000,
+                    };
+                    div.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...cwTarget });
+                }
+            }
+
             // 태국사업부 1월 데이터 보정... (이하 기존 로직 유지)
             if (div.year === 2026 && div.divisionCode === 'thailand') {
                 if (!div.targetMonthly) div.targetMonthly = {};
