@@ -112,8 +112,8 @@ export const CHANGWON_ITEMS: PLItem[] = [
 
 // 회사 보고서 형식 P&L 항목 목록 — 태국(DJETR) 사업부
 export const THAILAND_ITEMS: PLItem[] = [
-    // ===== 매출/판가 =====
-    { key: 'revenue', label: '매출액 (순매출액)', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
+    // ===== 매출액 =====
+    { key: 'revenue', label: '매출액 (순매출액)', isHeader: true, indent: 0, isCalculated: false, section: '매출/판가' },
     { key: 'salesCoverTop', label: 'Cover Assy, Top', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesTubOuter', label: 'Tub Assy, Outer', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesBaseCab', label: 'Base Cabinet 25', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
@@ -122,19 +122,22 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'salesOther', label: '기타 (CKD 외)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
 
     // ===== 재료비 =====
-    { key: 'materialRatio', label: '실적재료비율(%)', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
-    { key: 'bomMaterialRatio', label: 'BOM재료비율(%)', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
-    { key: 'lossRate', label: 'Loss율(%)', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
-    { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
-    { key: 'lgImpact', label: 'LG Impact', isHeader: false, indent: 1, isCalculated: false, section: '재료비' },
-    { key: 'djVI', label: 'DJ VI', isHeader: false, indent: 1, isCalculated: false, section: '재료비' },
-    { key: 'viGap', label: 'Gap', isHeader: false, indent: 1, isCalculated: false, section: '재료비' },
+    { key: 'materialRatio', label: '실적재료비율 (%)', isHeader: true, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
+    { key: 'lossReflected', label: 'Loss 율 반영', isHeader: false, indent: 1, isCalculated: false, section: '재료비', type: 'ratio' },
+    { key: 'bomMaterialRatio', label: 'BOM재료비율 (%)', isHeader: false, indent: 1, isCalculated: true, section: '재료비', type: 'ratio' },
+    { key: 'lossRate', label: 'Loss율 (%)', isHeader: false, indent: 1, isCalculated: false, section: '재료비', type: 'ratio' },
+    { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 1, isCalculated: false, section: '재료비' },
+    { key: 'viPerformance', label: 'VI실적', isHeader: true, indent: 1, isCalculated: false, section: '재료비' },
+    { key: 'lgImpact', label: 'LG Impact', isHeader: false, indent: 2, isCalculated: false, section: '재료비' },
+    { key: 'djVI', label: 'DJ VI', isHeader: false, indent: 2, isCalculated: false, section: '재료비' },
+    { key: 'viGap', label: 'Gap', isHeader: false, indent: 2, isCalculated: false, section: '재료비' },
+    { key: 'viRatio', label: '%', isHeader: false, indent: 2, isCalculated: true, section: '재료비', type: 'ratio' },
 
     // ===== 노무비 =====
-    { key: 'headcount', label: '인원 (평균인원)', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
-    { key: 'laborCost', label: '인건비', isHeader: true, indent: 0, isCalculated: false, section: '노무비' },
-    { key: 'laborRatio', label: '인건비율(%)', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'ratio' },
-    { key: 'revenuePerHead', label: '원당매출액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
+    { key: 'headcount', label: '인원 (평균인원)', isHeader: true, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
+    { key: 'laborCost', label: '인건비', isHeader: false, indent: 1, isCalculated: false, section: '노무비' },
+    { key: 'laborCostRatio', label: '인건비율 (%)', isHeader: false, indent: 1, isCalculated: true, section: '노무비', type: 'ratio' },
+    { key: 'laborPerHead', label: '원단위생산액 (원)', isHeader: false, indent: 1, isCalculated: false, section: '노무비' },
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
@@ -148,7 +151,7 @@ export const THAILAND_ITEMS: PLItem[] = [
     { key: 'overheadOther', label: '7) 기타', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
 
     // ===== 영업이익 =====
-    { key: 'operatingProfit', label: '영업이익', isHeader: true, indent: 0, isCalculated: true, section: '영업이익' },
+    { key: 'operatingProfit', label: '영업이익', isHeader: true, indent: 0, isCalculated: false, section: '영업이익' },
     { key: 'operatingProfitRatio', label: '%', isHeader: false, indent: 0, isCalculated: true, section: '영업이익', type: 'ratio' },
 
     // ===== 영업외 수지 =====

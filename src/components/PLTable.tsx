@@ -22,7 +22,7 @@ interface PLTableProps {
 function formatValue(value: number, item: PLItem, currency: string = 'KRW'): string {
     if (item.type === 'ratio') {
         if (value === 0) return '-';
-        // 사용자 피드백 반영: 일관성을 위해 모든 비율은 소수점 1자리로 통일
+        // 모든 비율은 소수점 1자리로 통일 (사용자 요청 반영)
         return `${value.toFixed(1)}%`;
     }
     if (item.type === 'count') {
