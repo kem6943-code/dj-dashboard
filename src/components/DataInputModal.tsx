@@ -22,14 +22,17 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
     const [selectedMonth, setSelectedMonth] = useState(month);
     const [exchangeRate, setExchangeRate] = useState(initialRate || 1);
 
-    // 단위 계산 (모든 사업부 백만 단위로 통일 입력 권장)
-    const multiplier = 1000000;
+    // 단위 계산 (MXN은 천 단위, 나머지는 백만 단위)
+    const isMXN = divisionInfo.currency === 'MXN';
+    const multiplier = isMXN ? 1000 : 1000000;
+    const unitLabel = isMXN ? '천' : '백만';
 
     // 통화 단위 커스텀 텍스트
     const unitText =
         divisionInfo.currency === 'KRW' ? '백만원' :
             divisionInfo.currency === 'VND' ? '백만동' :
-                `백만${divisionInfo.currency}`;
+                isMXN ? `천${divisionInfo.currency}` :
+                    `백만${divisionInfo.currency}`;
 
     const [formData, setFormData] = useState<Record<string, number>>(() => {
         return initialData ? { ...initialData } : createEmptyPLData();
@@ -163,7 +166,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                     {divisionInfo.currency === 'KRW' && " (예: 95억5900만원 -> 9559 입력)"}
                     {divisionInfo.currency === 'THB' && " (예: 1억7400만바트 -> 174 입력)"}
                     {divisionInfo.currency === 'VND' && " (예: 49억1100만동 -> 4911 입력)"}
-                    {divisionInfo.currency === 'MXN' && " (예: 5100만페소 -> 51 입력)"}
+                    {divisionInfo.currency === 'MXN' && " (예: 5100만페소 -> 51000 입력)"}
                 </div>
 
                 {/* 입력 필드들 */}
@@ -222,14 +225,14 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                                             backgroundColor: isAutoCalculated ? '#f0fdf4' : 'transparent',
                                             padding: '4px 8px',
                                             borderRadius: '4px',
-                                            paddingRight: (currentMultiplier === 1000000 && displayValue !== '') ? '40px' : '8px',
+                                            paddingRight: (currentMultiplier > 1 && displayValue !== '') ? '40px' : '8px',
                                             fontSize: '15px',
                                             transition: 'all 0.2s',
                                         }}
                                     />
-                                    {currentMultiplier === 1000000 && displayValue !== '' && (
+                                    {currentMultiplier > 1 && displayValue !== '' && (
                                         <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[13px] text-gray-400 pointer-events-none font-medium">
-                                            백만
+                                            {unitLabel}
                                         </div>
                                     )}
                                 </div>
