@@ -2,7 +2,7 @@
  * localStorage를 사용한 데이터 저장/로드 유틸리티
  */
 import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
-import { calculateDerivedFields, createEmptyPLData } from './dataModel';
+import { calculateDerivedFields, createEmptyPLData, ALL_ITEMS_MAP } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
 const STORAGE_KEY = 'management_dashboard_data_v10'; // v9→v10: 태국 P&L 모든 세부 행(경비 % 등) 100% 전수 싱크
@@ -415,6 +415,173 @@ function applyMigrations(store: DataStore): DataStore {
                 if (!div.subDivMonthly) div.subDivMonthly = {};
                 if (!div.subDivMonthly['prod2']) div.subDivMonthly['prod2'] = {};
                 div.subDivMonthly['prod2'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd2Prev } as any, true);
+            }
+
+            // ===== 생산3실(prod3) =====
+            if (div.year === 2026) {
+                // 🎯 생산3실 2026년 1월 실적 — 이미지 100% 셀 싱크
+                const vnProd3Actual = {
+                    revenue: 3274000000,
+                    salesSMAC: 1673000000,
+                    salesSF: 971000000,
+                    salesBallCoat: 630000000,
+                    rawMaterialCost: 914000000,
+                    materialRatio: 27.9,
+                    bomMaterialRatio: 27.4,
+                    materialLoss: 124000000,
+                    headcount: 48,
+                    laborCost: 1266000000,
+                    laborRatio: 38.7,
+                    revenuePerHead: 2.6,
+                    overhead: 1035000000,
+                    overheadRatio: 31.6,
+                    depreciation: 547000000,
+                    techFee: 109000000,
+                    taxDues: 0,
+                    welfare: 216000000,
+                    electricity: 99000000,
+                    rent: 27000000,
+                    repair: 38000000,
+                    commission: 3000000,
+                    transportation: 12000000,
+                    officeSupplies: 5000000,
+                    overheadOther: 77000000,
+                    operatingProfit: 58000000,
+                    operatingProfitRatio: 1.8,
+                    interestIncome: 0,
+                    forexGain: 7000000,
+                    interestExpense: 21000000,
+                    forexLoss: 12000000,
+                    ebt: 39000000,
+                    ebtRatio: 1.2,
+                };
+                if (!div.subDivMonthly) div.subDivMonthly = {};
+                if (!div.subDivMonthly['prod3']) div.subDivMonthly['prod3'] = {};
+                div.subDivMonthly['prod3'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd3Actual } as any, true);
+
+                // 🎯 생산3실 2026년 1월 TD목표 — 이미지 100% 셀 싱크
+                const vnProd3Target = {
+                    revenue: 5111000000,
+                    salesSMAC: 1108000000,
+                    salesSF: 667000000,
+                    salesKEFICO: 2654000000,
+                    salesBallCoat: 682000000,
+                    rawMaterialCost: 1317000000,
+                    materialRatio: 40.3,
+                    bomMaterialRatio: 39.3,
+                    materialLoss: 102000000,
+                    headcount: 75,
+                    laborCost: 1467000000,
+                    laborRatio: 28.7,
+                    revenuePerHead: 3.48,
+                    overhead: 1562000000,
+                    overheadRatio: 30.6,
+                    depreciation: 814000000,
+                    techFee: 153000000,
+                    taxDues: 31000000,
+                    welfare: 300000000,
+                    electricity: 132000000,
+                    rent: 62000000,
+                    repair: 13000000,
+                    commission: 5000000,
+                    transportation: 8000000,
+                    officeSupplies: 7000000,
+                    overheadOther: 53000000,
+                    operatingProfit: -217000000,
+                    operatingProfitRatio: -4.2,
+                    interestIncome: 0,
+                    forexGain: 7000000,
+                    interestExpense: 14000000,
+                    forexLoss: 0,
+                    ebt: -229000000,
+                    ebtRatio: -4.5,
+                };
+                if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
+                if (!div.subDivTargetMonthly['prod3']) div.subDivTargetMonthly['prod3'] = {};
+                div.subDivTargetMonthly['prod3'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd3Target } as any, true);
+            }
+
+            if (div.year === 2025) {
+                // 🎯 생산3실 전년 — 당월(26.01월) '전년' 컬럼 100% 셀 싱크
+                const vnProd3Prev = {
+                    revenue: 4217000000,
+                    salesSMAC: 1881000000,
+                    salesSF: 1385000000,
+                    salesKEFICO: 0,
+                    salesBallCoat: 951000000,
+                    rawMaterialCost: 1317000000,
+                    materialRatio: 31.2,
+                    bomMaterialRatio: 30.8,
+                    materialLoss: 181000000,
+                    headcount: 48,
+                    laborCost: 1540000000,
+                    laborRatio: 36.5,
+                    revenuePerHead: 3.4,
+                    overhead: 1392000000,
+                    overheadRatio: 33.0,
+                    depreciation: 503000000,
+                    techFee: 109000000,
+                    taxDues: 41000000,
+                    welfare: 316000000,
+                    electricity: 101000000,
+                    rent: 99000000,
+                    repair: 10000000,
+                    commission: 45000000,
+                    transportation: 6000000,
+                    officeSupplies: 5000000,
+                    overheadOther: 139000000,
+                    operatingProfit: -32000000,
+                    operatingProfitRatio: -0.8,
+                    interestIncome: 0,
+                    forexGain: 7000000,
+                    interestExpense: 28000000,
+                    forexLoss: 43000000,
+                    ebt: -94000000,
+                    ebtRatio: -2.2,
+                };
+                if (!div.subDivMonthly) div.subDivMonthly = {};
+                if (!div.subDivMonthly['prod3']) div.subDivMonthly['prod3'] = {};
+                div.subDivMonthly['prod3'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd3Prev } as any, true);
+            }
+
+            // ===== 전체(all) = prod1 + prod2 + prod3 자동 합산 =====
+            const subKeys = ['prod1', 'prod2', 'prod3'];
+            // 실적 합산
+            if (div.subDivMonthly) {
+                const totalActual = createEmptyPLData();
+                let hasData = false;
+                subKeys.forEach(key => {
+                    const subData = div.subDivMonthly?.[key]?.[1];
+                    if (subData) {
+                        hasData = true;
+                        Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
+                            if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
+                                totalActual[k] = (totalActual[k] || 0) + (subData[k] || 0);
+                            }
+                        });
+                    }
+                });
+                if (hasData) div.monthly[1] = calculateDerivedFields(totalActual, false);
+            }
+            // 목표 합산
+            if (div.subDivTargetMonthly) {
+                const totalTarget = createEmptyPLData();
+                let hasData = false;
+                subKeys.forEach(key => {
+                    const subData = div.subDivTargetMonthly?.[key]?.[1];
+                    if (subData) {
+                        hasData = true;
+                        Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
+                            if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
+                                totalTarget[k] = (totalTarget[k] || 0) + (subData[k] || 0);
+                            }
+                        });
+                    }
+                });
+                if (hasData) {
+                    if (!div.targetMonthly) div.targetMonthly = {};
+                    div.targetMonthly[1] = calculateDerivedFields(totalTarget, false);
+                }
             }
         }
     });
