@@ -590,7 +590,7 @@ function applyMigrations(store: DataStore): DataStore {
             } // closes if (div.divisionCode === 'vietnam')
         } // closes if (!store._migrated_v10)
 
-        if (!store._migrated_v11) {
+        if (!store._migrated_v12) {
             if (div.divisionCode === 'mexico') {
                 if (div.year === 2026) {
                     div.exchangeRates[1] = {
@@ -733,7 +733,7 @@ function applyMigrations(store: DataStore): DataStore {
                     }
                 }
             } // closes if (div.divisionCode === 'mexico')
-        } // closes if (!store._migrated_v11)
+        } // closes if (!store._migrated_v12)
     });
 
 

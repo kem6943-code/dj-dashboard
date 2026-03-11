@@ -274,7 +274,7 @@ export const MEXICO_ITEMS: PLItem[] = [
     { key: 'financeCost', label: '-금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
 
     // ===== 세전이익 =====
-    { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
+    { key: 'ebtRatio', label: '세전이익(%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
 // 사업부별 P&L 항목 반환
