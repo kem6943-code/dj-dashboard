@@ -271,13 +271,69 @@ export function Dashboard() {
         const divDataToUpdate = newStore.divisions[divIdx];
         const plData = { ...createEmptyPLData(), ...data };
 
-        if (dataType === 'target') {
-            if (!divDataToUpdate.targetMonthly) divDataToUpdate.targetMonthly = {};
-            divDataToUpdate.targetMonthly[month] = calculateDerivedFields(plData, true);
+        if (selectedSubDiv !== 'all') {
+            if (dataType === 'target') {
+                if (!divDataToUpdate.subDivTargetMonthly) divDataToUpdate.subDivTargetMonthly = {};
+                if (!divDataToUpdate.subDivTargetMonthly[selectedSubDiv]) divDataToUpdate.subDivTargetMonthly[selectedSubDiv] = {};
+                divDataToUpdate.subDivTargetMonthly[selectedSubDiv][month] = calculateDerivedFields(plData, true);
+
+                // 베트남 전체(all) 타겟 합산 재계산 로직
+                const totalTarget = createEmptyPLData();
+                let hasData = false;
+                divisionInfo.subDivisions?.forEach(sub => {
+                    if (sub.key === 'all') return;
+                    const subData = divDataToUpdate.subDivTargetMonthly?.[sub.key]?.[month];
+                    if (subData) {
+                        hasData = true;
+                        Object.entries(plData).forEach(([k]) => {
+                            // 금액/카운트 항목만 단순 합산 (ALL_ITEMS_MAP이 Dashboard에 없으므로 대략적으로 합산)
+                            const val = subData[k];
+                            if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                totalTarget[k] = (totalTarget[k] || 0) + val;
+                            }
+                        });
+                    }
+                });
+                if (hasData) {
+                    if (!divDataToUpdate.targetMonthly) divDataToUpdate.targetMonthly = {};
+                    divDataToUpdate.targetMonthly[month] = calculateDerivedFields(totalTarget, false);
+                }
+            } else {
+                // actual or prevYear
+                if (!divDataToUpdate.subDivMonthly) divDataToUpdate.subDivMonthly = {};
+                if (!divDataToUpdate.subDivMonthly[selectedSubDiv]) divDataToUpdate.subDivMonthly[selectedSubDiv] = {};
+                divDataToUpdate.subDivMonthly[selectedSubDiv][month] = calculateDerivedFields(plData, true);
+
+                // 베트남 전체(all) 실적 합산 재계산 로직
+                const totalActual = createEmptyPLData();
+                let hasData = false;
+                divisionInfo.subDivisions?.forEach(sub => {
+                    if (sub.key === 'all') return;
+                    const subData = divDataToUpdate.subDivMonthly?.[sub.key]?.[month];
+                    if (subData) {
+                        hasData = true;
+                        Object.entries(plData).forEach(([k]) => {
+                            const val = subData[k];
+                            if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                totalActual[k] = (totalActual[k] || 0) + val;
+                            }
+                        });
+                    }
+                });
+                if (hasData) {
+                    if (!divDataToUpdate.monthly) divDataToUpdate.monthly = {};
+                    divDataToUpdate.monthly[month] = calculateDerivedFields(totalActual, false);
+                }
+            }
         } else {
-            // actual or prevYear
-            if (!divDataToUpdate.monthly) divDataToUpdate.monthly = {};
-            divDataToUpdate.monthly[month] = calculateDerivedFields(plData, true);
+            if (dataType === 'target') {
+                if (!divDataToUpdate.targetMonthly) divDataToUpdate.targetMonthly = {};
+                divDataToUpdate.targetMonthly[month] = calculateDerivedFields(plData, true);
+            } else {
+                // actual or prevYear
+                if (!divDataToUpdate.monthly) divDataToUpdate.monthly = {};
+                divDataToUpdate.monthly[month] = calculateDerivedFields(plData, true);
+            }
         }
 
         // 환율 저장
@@ -625,10 +681,10 @@ export function Dashboard() {
                             dataType={editDataType}
                             initialData={
                                 editDataType === 'prevYear'
-                                    ? prevYearDivData?.monthly?.[editMonth]
+                                    ? (selectedSubDiv !== 'all' ? prevYearDivData?.subDivMonthly?.[selectedSubDiv]?.[editMonth] : prevYearDivData?.monthly?.[editMonth])
                                     : editDataType === 'target'
-                                        ? divData?.targetMonthly?.[editMonth]
-                                        : divData?.monthly?.[editMonth]
+                                        ? (selectedSubDiv !== 'all' ? divData?.subDivTargetMonthly?.[selectedSubDiv]?.[editMonth] : divData?.targetMonthly?.[editMonth])
+                                        : (selectedSubDiv !== 'all' ? divData?.subDivMonthly?.[selectedSubDiv]?.[editMonth] : divData?.monthly?.[editMonth])
                             }
                             initialRate={
                                 editDataType === 'prevYear'
