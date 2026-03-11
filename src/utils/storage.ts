@@ -657,7 +657,7 @@ export function updateMonthlyData(
         divData = { divisionCode: code, year, exchangeRates: {}, monthly: {}, targetMonthly: {} };
         store.divisions.push(divData);
     }
-    divData.monthly[month] = calculateDerivedFields({ ...createEmptyPLData(), ...data });
+    divData.monthly[month] = calculateDerivedFields({ ...createEmptyPLData(), ...data }, true);
     if (typeof exchangeRate === 'number') {
         if (!divData.exchangeRates[month]) divData.exchangeRates[month] = { actual: exchangeRate, target: exchangeRate, prev: exchangeRate };
         else divData.exchangeRates[month].actual = exchangeRate;
