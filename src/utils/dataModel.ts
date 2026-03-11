@@ -40,10 +40,11 @@ export const DIVISIONS: DivisionInfo[] = [
     {
         code: 'mexico', name: '멕시코사업부', nameEn: 'Mexico (MM)', flag: '🇲🇽', currency: 'MXN',
         subDivisions: [
+            { key: 'all', name: '전체' },
             { key: 'homeAppliance', name: '가전' },
             { key: 'automotive', name: '자동차' },
         ],
-        subDivisionMode: 'columns',
+        subDivisionMode: 'tabs',
     },
 ];
 
