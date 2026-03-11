@@ -273,11 +273,11 @@ export function Dashboard() {
 
         if (dataType === 'target') {
             if (!divDataToUpdate.targetMonthly) divDataToUpdate.targetMonthly = {};
-            divDataToUpdate.targetMonthly[month] = calculateDerivedFields(plData);
+            divDataToUpdate.targetMonthly[month] = calculateDerivedFields(plData, true);
         } else {
             // actual or prevYear
             if (!divDataToUpdate.monthly) divDataToUpdate.monthly = {};
-            divDataToUpdate.monthly[month] = calculateDerivedFields(plData);
+            divDataToUpdate.monthly[month] = calculateDerivedFields(plData, true);
         }
 
         // 환율 저장
