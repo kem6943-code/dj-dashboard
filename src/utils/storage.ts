@@ -19,7 +19,7 @@ export async function saveData(store: DataStore): Promise<void> {
 
 // 🔧 데이터 마이그레이션 — 어떤 소스(클라우드/로컬/기본)든 플래그가 없으면 1회만 적용
 function applyMigrations(store: DataStore): DataStore {
-    if (store._migrated_v12) return store;
+    if (store._migrated_v13) return store;
 
     store.divisions.forEach(div => {
         if (!store._migrated_v10) {
