@@ -37,7 +37,8 @@ function formatValue(value: number, item: PLItem, currency: string = 'KRW'): str
         // 원당매출액 등 (이미지: 24.8) -> 소수점 1자리
         return value.toFixed(1);
     }
-    return formatAmount(value, '백만', currency);
+    const unit = currency === 'MXN' ? '천' : '백만';
+    return formatAmount(value, unit, currency);
 }
 
 // 섹션별 행 수 계산 (rowspan용)

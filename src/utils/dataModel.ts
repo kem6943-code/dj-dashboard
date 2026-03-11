@@ -332,6 +332,7 @@ export interface DataStore {
     divisions: DivisionYearData[];
     _migrated_v10?: boolean; // v10 하드코딩 데이터 1회 마이그레이션 적용 여부 플래그
     _migrated_v11?: boolean; // v11 멕시코 데이터 1회 마이그레이션 적용 여부 플래그
+    _migrated_v12?: boolean; // v12 멕시코 금액 수정 마이그레이션 플래그
 }
 
 // ===== 유틸 함수들 =====

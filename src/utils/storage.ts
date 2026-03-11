@@ -19,7 +19,7 @@ export async function saveData(store: DataStore): Promise<void> {
 
 // 🔧 데이터 마이그레이션 — 어떤 소스(클라우드/로컬/기본)든 플래그가 없으면 1회만 적용
 function applyMigrations(store: DataStore): DataStore {
-    if (store._migrated_v11) return store;
+    if (store._migrated_v12) return store;
 
     store.divisions.forEach(div => {
         if (!store._migrated_v10) {
@@ -600,35 +600,35 @@ function applyMigrations(store: DataStore): DataStore {
                     };
 
                     const mxHomeActual = {
-                        revenue: 28648,
-                        salesFridge: 28463,
-                        salesOven: 176,
-                        salesOther: 9,
+                        revenue: 28648000,
+                        salesFridge: 28463000,
+                        salesOven: 176000,
+                        salesOther: 9000,
                         materialRatio: 68.0,
                         bomMaterialRatio: 66.3,
                         headcount: 143,
-                        laborCost: 5314,
+                        laborCost: 5314000,
                         laborRatio: 18.6,
-                        overhead: 4837,
+                        overhead: 4837000,
                         overheadRatio: 16.9,
-                        electricity: 1037,
-                        techFee: 859,
-                        depreciation: 376,
-                        welfare: 400,
-                        repair: 313,
-                        factoryRent: 263,
-                        transportation: 477,
-                        commission: 560,
-                        consumables: 156,
-                        packaging: 184,
-                        rent: 30,
-                        importCost: 10,
-                        taxDues: 11,
-                        overheadOther: 158,
-                        operatingProfit: -989,
+                        electricity: 1037000,
+                        techFee: 859000,
+                        depreciation: 376000,
+                        welfare: 400000,
+                        repair: 313000,
+                        factoryRent: 263000,
+                        transportation: 477000,
+                        commission: 560000,
+                        consumables: 156000,
+                        packaging: 184000,
+                        rent: 30000,
+                        importCost: 10000,
+                        taxDues: 11000,
+                        overheadOther: 158000,
+                        operatingProfit: -989000,
                         operatingProfitRatio: -3.5,
-                        nonOpBalance: 449,
-                        financeCost: -324,
+                        nonOpBalance: 449000,
+                        financeCost: -324000,
                         ebtRatio: -5.0
                     };
                     if (!div.subDivMonthly) div.subDivMonthly = {};
@@ -636,20 +636,20 @@ function applyMigrations(store: DataStore): DataStore {
                     div.subDivMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomeActual } as any, true);
 
                     const mxHomeTarget = {
-                        revenue: 27083,
-                        salesFridge: 26041,
-                        salesOven: 1042,
+                        revenue: 27083000,
+                        salesFridge: 26041000,
+                        salesOven: 1042000,
                         salesOther: 0,
                         materialRatio: 66.3,
                         bomMaterialRatio: 66.3,
-                        laborCost: 5201,
+                        laborCost: 5201000,
                         laborRatio: 19.2,
-                        overhead: 4685,
+                        overhead: 4685000,
                         overheadRatio: 17.3,
-                        operatingProfit: -758,
+                        operatingProfit: -758000,
                         operatingProfitRatio: -2.8,
-                        nonOpBalance: 318,
-                        financeCost: -318,
+                        nonOpBalance: 318000,
+                        financeCost: -318000,
                         ebtRatio: -4.0
                     };
                     if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
@@ -659,35 +659,35 @@ function applyMigrations(store: DataStore): DataStore {
 
                 if (div.year === 2025) {
                     const mxHomePrev = {
-                        revenue: 34775,
-                        salesFridge: 34228,
-                        salesOven: 546,
-                        salesOther: 1,
+                        revenue: 34775000,
+                        salesFridge: 34228000,
+                        salesOven: 546000,
+                        salesOther: 1000,
                         materialRatio: 67.6,
                         bomMaterialRatio: 67.6,
                         headcount: 121,
-                        laborCost: 5736,
+                        laborCost: 5736000,
                         laborRatio: 16.5,
-                        overhead: 5736,
+                        overhead: 5736000,
                         overheadRatio: 16.5,
-                        electricity: 1959,
-                        techFee: 1049,
-                        depreciation: 538,
-                        welfare: 282,
-                        repair: 517,
-                        factoryRent: 251,
-                        transportation: 53,
-                        commission: 421,
-                        consumables: 277,
-                        packaging: 204,
-                        rent: 31,
+                        electricity: 1959000,
+                        techFee: 1049000,
+                        depreciation: 538000,
+                        welfare: 282000,
+                        repair: 517000,
+                        factoryRent: 251000,
+                        transportation: 53000,
+                        commission: 421000,
+                        consumables: 277000,
+                        packaging: 204000,
+                        rent: 31000,
                         importCost: 0,
                         taxDues: 0,
-                        overheadOther: 154,
-                        operatingProfit: -1899,
+                        overheadOther: 154000,
+                        operatingProfit: -1899000,
                         operatingProfitRatio: -5.5,
-                        nonOpBalance: 1197,
-                        financeCost: -249,
+                        nonOpBalance: 1197000,
+                        financeCost: -249000,
                         ebtRatio: -8.9
                     };
                     if (!div.subDivMonthly) div.subDivMonthly = {};
@@ -740,6 +740,7 @@ function applyMigrations(store: DataStore): DataStore {
     // 마이그레이션 완료 플래그 설정
     store._migrated_v10 = true;
     store._migrated_v11 = true;
+    store._migrated_v12 = true;
     return store;
 }
 
@@ -784,7 +785,8 @@ export function createEmptyStore(): DataStore {
             subDivTargetMonthly: {},
         })),
         _migrated_v10: false,
-        _migrated_v11: false
+        _migrated_v11: false,
+        _migrated_v12: false
     };
 }
 
