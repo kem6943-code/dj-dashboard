@@ -2,7 +2,7 @@
  * localStorage를 사용한 데이터 저장/로드 유틸리티
  */
 import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
-import { calculateDerivedFields, createEmptyPLData, ALL_ITEMS_MAP } from './dataModel';
+import { calculateDerivedFields, createEmptyPLData, ALL_ITEMS_MAP, DIVISIONS_WITH_TOTAL } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
 const STORAGE_KEY = 'management_dashboard_data_v10'; // v9→v10: 태국 P&L 모든 세부 행(경비 % 등) 100% 전수 싱크
@@ -17,8 +17,10 @@ export async function saveData(store: DataStore): Promise<void> {
     }
 }
 
-// 🔧 데이터 마이그레이션 — 어떤 소스(클라우드/로컬/기본)든 항상 적용
+// 🔧 데이터 마이그레이션 — 어떤 소스(클라우드/로컬/기본)든 플래그가 없으면 1회만 적용
 function applyMigrations(store: DataStore): DataStore {
+    if (store._migrated_v10) return store;
+
     store.divisions.forEach(div => {
         if (div.divisionCode === 'thailand') {
             if (div.year === 2026) {
@@ -586,6 +588,9 @@ function applyMigrations(store: DataStore): DataStore {
             }
         }
     });
+
+    // 마이그레이션 완료 플래그 설정
+    store._migrated_v10 = true;
     return store;
 }
 
@@ -601,7 +606,7 @@ export async function loadData(): Promise<DataStore> {
 
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-        const defaultStore = applyMigrations(createDefaultStore());
+        const defaultStore = applyMigrations(createEmptyStore());
         await saveData(defaultStore);
         return defaultStore;
     }
@@ -612,79 +617,28 @@ export async function loadData(): Promise<DataStore> {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
         return migrated;
     } catch {
-        return applyMigrations(createDefaultStore());
+        return applyMigrations(createEmptyStore());
     }
 }
 
 // 기본 데이터 스토어 생성
-function createDefaultStore(): DataStore {
-    const store: DataStore = {
-        divisions: [],
-        updatedAt: new Date().toISOString(),
+export function createEmptyStore(): DataStore {
+    return {
+        lastUpdated: new Date().toISOString(),
+        divisions: DIVISIONS_WITH_TOTAL.map(div => ({
+            divisionCode: div.code,
+            year: 2026,
+            exchangeRates: {},
+            monthly: {},
+            targetMonthly: {},
+            subDivMonthly: {},
+            subDivTargetMonthly: {},
+        })),
+        _migrated_v10: false
     };
-    const divisions: DivisionCode[] = ['changwon', 'thailand', 'vietnam', 'mexico'];
-    divisions.forEach(code => {
-        store.divisions.push(createSampleData(code, 2026));
-        store.divisions.push(createSampleData(code, 2025));
-    });
-    return store;
 }
 
-// 사업부별 샘플 데이터 (초기 로드용)
-function createSampleData(code: DivisionCode, year: number): DivisionYearData {
-    const data: DivisionYearData = {
-        divisionCode: code,
-        year,
-        exchangeRates: {},
-        monthly: {},
-        targetMonthly: {},
-    };
-
-    const is2026 = year === 2026;
-
-    if (code === 'changwon') {
-        const cwData = is2026 ? {
-            revenue: 9559000000,
-            salesFL: 6133000000,
-            salesFridge: 684000000,
-            salesOther: 2742000000,
-            bomMaterialRatio: 76.7,
-            materialRatio: 77.4,
-            headcount: 241,
-            laborCost: 1097000000,
-            overhead: 793000000,
-            operatingProfit: 266000000,
-            ebt: 233000000,
-        } : {
-            revenue: 9457000000,
-            operatingProfit: 212000000,
-            ebt: 156000000,
-        };
-        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...cwData } as any, true);
-        if (is2026) {
-            data.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), revenue: 8853000000, operatingProfit: 167000000, ebt: 167000000 } as any, true);
-        }
-    }
-
-    if (code === 'thailand') {
-        const thData = is2026 ? { revenue: 452500000, operatingProfit: 17800000, ebt: 19000000 } : { revenue: 523500000, operatingProfit: 7600000, ebt: 6700000 };
-        data.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thData } as any, true);
-    }
-
-    // 환율 설정
-    for (let m = 1; m <= 12; m++) {
-        if (code === 'thailand') {
-            data.exchangeRates[m] = (year === 2025)
-                ? { actual: 42.42, target: 41.78, prev: 41.78 }
-                : { actual: 46.61, target: 41.78, prev: 42.42 };
-        } else {
-            const defaultRate = (code === 'vietnam' ? 0.055 : code === 'mexico' ? 75.0 : 1);
-            data.exchangeRates[m] = { actual: defaultRate, target: defaultRate, prev: defaultRate };
-        }
-    }
-
-    return data;
-}
+// 삭제된 샘플 데이터 영역
 
 export function getDivisionData(store: DataStore, code: DivisionCode, year: number): DivisionYearData | undefined {
     return store.divisions.find(d => d.divisionCode === code && d.year === year);
@@ -708,6 +662,6 @@ export function updateMonthlyData(
         if (!divData.exchangeRates[month]) divData.exchangeRates[month] = { actual: exchangeRate, target: exchangeRate, prev: exchangeRate };
         else divData.exchangeRates[month].actual = exchangeRate;
     }
-    store.updatedAt = new Date().toISOString();
+    store.lastUpdated = new Date().toISOString();
     return { ...store };
 }

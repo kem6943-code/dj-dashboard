@@ -319,8 +319,9 @@ export interface DivisionYearData {
 
 // 전체 데이터 스토어
 export interface DataStore {
+    lastUpdated: string;   // ISO date string
     divisions: DivisionYearData[];
-    updatedAt: string;
+    _migrated_v10?: boolean; // v10 하드코딩 데이터 1회 마이그레이션 적용 여부 플래그
 }
 
 // ===== 유틸 함수들 =====

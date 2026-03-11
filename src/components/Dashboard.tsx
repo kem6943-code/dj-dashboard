@@ -288,7 +288,7 @@ export function Dashboard() {
             prev: exchangeRate
         };
 
-        newStore.updatedAt = new Date().toISOString();
+        newStore.lastUpdated = new Date().toISOString();
 
         await saveData(newStore);
         setStore(newStore);
