@@ -253,42 +253,42 @@ function applyMigrations(store: DataStore): DataStore {
             }
 
             if (div.year === 2025) {
-                // 🎯 생산1실 전년('25실적) — 이미지 100% 셀 싱크
+                // 🎯 생산1실 전년 — 당월(26.01월) '전년' 컬럼 100% 셀 싱크
                 const vnProd1Prev = {
-                    revenue: 325117000000,
-                    salesAIO: 93838000000,
-                    salesREF: 231279000000,
-                    rawMaterialCost: 211534000000,
-                    materialRatio: 65.1,
-                    bomMaterialRatio: 63.5,
+                    revenue: 24945000000,        // 24,945
+                    salesAIO: 3225000000,         // 3,225
+                    salesREF: 21720000000,        // 21,720
+                    rawMaterialCost: 17061000000, // 17,061
+                    materialRatio: 68.4,
+                    bomMaterialRatio: 66.8,
                     materialDiff: 1.6,
-                    vvci: 499000000,
-                    materialLoss: 5613000000,
-                    headcount: 221.25,
-                    laborCost: 45530000000,
-                    laborRatio: 14.0,
-                    revenuePerHead: 7.1,
-                    overhead: 62886000000,
-                    overheadRatio: 19.3,
-                    depreciation: 25895000000,
-                    techFee: 9228000000,
-                    taxDues: 2753000000,
-                    welfare: 7226000000,
-                    electricity: 8345000000,
-                    rent: 3495000000,
-                    repair: 1229000000,
-                    commission: 1501000000,
-                    transportation: 118000000,
-                    officeSupplies: 462000000,
-                    overheadOther: 2628000000,
-                    operatingProfit: 5167000000,
-                    operatingProfitRatio: 1.6,
-                    interestIncome: 9000000,
-                    forexGain: 378000000,
-                    interestExpense: 2054000000,
-                    forexLoss: 995000000,
-                    ebt: 2606000000,
-                    ebtRatio: 0.8,
+                    vvci: 435000000,              // 435
+                    materialLoss: 0,
+                    headcount: 228,               // 228
+                    laborCost: 3752000000,         // 3,752
+                    laborRatio: 15.0,
+                    revenuePerHead: 6.6,
+                    overhead: 4633000000,          // 4,633
+                    overheadRatio: 18.6,
+                    depreciation: 1980000000,      // 1,980
+                    techFee: 683000000,            // 683
+                    taxDues: 213000000,            // 213
+                    welfare: 500000000,            // 500
+                    electricity: 534000000,        // 534
+                    rent: 304000000,               // 304
+                    repair: 61000000,              // 61
+                    commission: 38000000,          // 38
+                    transportation: 5000000,       // 5
+                    officeSupplies: 59000000,      // 59
+                    overheadOther: 195000000,      // 195
+                    operatingProfit: -501000000,   // -501
+                    operatingProfitRatio: -2.0,
+                    interestIncome: 1000000,       // 1
+                    forexGain: 51000000,           // 51
+                    interestExpense: 121000000,    // 121
+                    forexLoss: 0,                  // 0
+                    ebt: -571000000,               // -571
+                    ebtRatio: -2.3,
                 };
                 if (!div.subDivMonthly) div.subDivMonthly = {};
                 if (!div.subDivMonthly['prod1']) div.subDivMonthly['prod1'] = {};
