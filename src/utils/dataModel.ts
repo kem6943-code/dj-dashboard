@@ -231,7 +231,8 @@ export const VIETNAM_ITEMS: PLItem[] = [
 // 멕시코 사업부 P&L 항목 — 가전/자동차 공통 사용
 export const MEXICO_ITEMS: PLItem[] = [
     // ===== 매출/판가 =====
-    { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
+    { key: 'revenue', label: '매출액(MXN)', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
+    { key: 'revenueUSD', label: '매출액(천USD)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesFridge', label: '냉장고', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesOven', label: '오븐', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
@@ -240,12 +241,14 @@ export const MEXICO_ITEMS: PLItem[] = [
     { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialDiff', label: '차이', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
-    { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
+    { key: 'purchaseVI', label: '구매VI', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
+    { key: 'materialLoss', label: '재료Loss금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
 
     // ===== 노무비 =====
-    { key: 'headcount', label: '인원(평균)', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
+    { key: 'headcount', label: '인원', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
     { key: 'laborCost', label: '인건비', isHeader: true, indent: 0, isCalculated: false, section: '노무비' },
     { key: 'laborRatio', label: '인건비율', isHeader: false, indent: 0, isCalculated: true, section: '노무비', type: 'ratio' },
+    { key: 'revenuePerHead', label: '원당매출액', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'unit' },
 
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
@@ -267,11 +270,11 @@ export const MEXICO_ITEMS: PLItem[] = [
 
     // ===== 영업이익 =====
     { key: 'operatingProfit', label: '영업이익', isHeader: true, indent: 0, isCalculated: true, section: '영업이익' },
-    { key: 'operatingProfitRatio', label: '(%)', isHeader: false, indent: 0, isCalculated: true, section: '영업이익', type: 'ratio' },
+    { key: 'operatingProfitRatio', label: '영업이익율(%)', isHeader: false, indent: 0, isCalculated: true, section: '영업이익', type: 'ratio' },
 
-    // ===== 영업외수지 =====
-    { key: 'nonOpBalance', label: '영업외수지자', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
-    { key: 'financeCost', label: '-금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
+    // ===== 영업외수지차 =====
+    { key: 'nonOpBalance', label: '영외수지', isHeader: false, indent: 1, isCalculated: false, section: '영외수지차' },
+    { key: 'financeCost', label: '-금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영외수지차' },
 
     // ===== 세전이익 =====
     { key: 'ebtRatio', label: '세전이익(%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
@@ -333,6 +336,7 @@ export interface DataStore {
     _migrated_v10?: boolean; // v10 하드코딩 데이터 1회 마이그레이션 적용 여부 플래그
     _migrated_v11?: boolean; // v11 멕시코 데이터 1회 마이그레이션 적용 여부 플래그
     _migrated_v12?: boolean; // v12 멕시코 금액 수정 마이그레이션 플래그
+    _migrated_v13?: boolean; // v13 멕시코 누락 데이터 항목 갱신 마이그레이션 플래그
 }
 
 // ===== 유틸 함수들 =====

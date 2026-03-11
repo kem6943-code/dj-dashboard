@@ -590,7 +590,7 @@ function applyMigrations(store: DataStore): DataStore {
             } // closes if (div.divisionCode === 'vietnam')
         } // closes if (!store._migrated_v10)
 
-        if (!store._migrated_v12) {
+        if (!store._migrated_v13) {
             if (div.divisionCode === 'mexico') {
                 if (div.year === 2026) {
                     div.exchangeRates[1] = {
@@ -601,14 +601,16 @@ function applyMigrations(store: DataStore): DataStore {
 
                     const mxHomeActual = {
                         revenue: 28648000,
+                        revenueUSD: 1621000,
                         salesFridge: 28463000,
                         salesOven: 176000,
                         salesOther: 9000,
                         materialRatio: 68.0,
                         bomMaterialRatio: 66.3,
-                        headcount: 143,
+                        headcount: 143.3,
                         laborCost: 5314000,
                         laborRatio: 18.6,
+                        revenuePerHead: 5.4,
                         overhead: 4837000,
                         overheadRatio: 16.9,
                         electricity: 1037000,
@@ -637,6 +639,7 @@ function applyMigrations(store: DataStore): DataStore {
 
                     const mxHomeTarget = {
                         revenue: 27083000,
+                        revenueUSD: 1470000,
                         salesFridge: 26041000,
                         salesOven: 1042000,
                         salesOther: 0,
@@ -644,6 +647,7 @@ function applyMigrations(store: DataStore): DataStore {
                         bomMaterialRatio: 66.3,
                         laborCost: 5201000,
                         laborRatio: 19.2,
+                        revenuePerHead: 5.2,
                         overhead: 4685000,
                         overheadRatio: 17.3,
                         operatingProfit: -758000,
@@ -660,14 +664,16 @@ function applyMigrations(store: DataStore): DataStore {
                 if (div.year === 2025) {
                     const mxHomePrev = {
                         revenue: 34775000,
+                        revenueUSD: 2036000,
                         salesFridge: 34228000,
                         salesOven: 546000,
                         salesOther: 1000,
                         materialRatio: 67.6,
                         bomMaterialRatio: 67.6,
-                        headcount: 121,
+                        headcount: 121.0,
                         laborCost: 5736000,
                         laborRatio: 16.5,
+                        revenuePerHead: 6.1,
                         overhead: 5736000,
                         overheadRatio: 16.5,
                         electricity: 1959000,
@@ -741,6 +747,7 @@ function applyMigrations(store: DataStore): DataStore {
     store._migrated_v10 = true;
     store._migrated_v11 = true;
     store._migrated_v12 = true;
+    store._migrated_v13 = true;
     return store;
 }
 
@@ -786,7 +793,8 @@ export function createEmptyStore(): DataStore {
         })),
         _migrated_v10: false,
         _migrated_v11: false,
-        _migrated_v12: false
+        _migrated_v12: false,
+        _migrated_v13: false
     };
 }
 
