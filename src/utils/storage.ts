@@ -294,6 +294,128 @@ function applyMigrations(store: DataStore): DataStore {
                 if (!div.subDivMonthly['prod1']) div.subDivMonthly['prod1'] = {};
                 div.subDivMonthly['prod1'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd1Prev } as any, true);
             }
+
+            // ===== 생산2실(prod2) =====
+            if (div.year === 2026) {
+                // 🎯 생산2실 2026년 1월 실적 — 이미지 100% 셀 싱크
+                const vnProd2Actual = {
+                    revenue: 56748000000,
+                    salesWM: 56748000000,
+                    rawMaterialCost: 33391000000,
+                    materialRatio: 58.8,
+                    bomMaterialRatio: 57.6,
+                    materialDiff: 1.2,
+                    materialLoss: 793000000,
+                    headcount: 260,
+                    laborCost: 6837000000,
+                    laborRatio: 12.0,
+                    revenuePerHead: 8.3,
+                    overhead: 5975000000,
+                    overheadRatio: 10.5,
+                    depreciation: 1399000000,
+                    techFee: 1592000000,
+                    taxDues: 0,
+                    welfare: 927000000,
+                    electricity: 1071000000,
+                    rent: 455000000,
+                    repair: 77000000,
+                    commission: 5000000,
+                    transportation: 50000000,
+                    officeSupplies: 45000000,
+                    overheadOther: 355000000,
+                    operatingProfit: 10546000000,
+                    operatingProfitRatio: 18.6,
+                    interestIncome: 3000000,
+                    forexGain: 45000000,
+                    interestExpense: 248000000,
+                    forexLoss: 1000000,
+                    ebt: 10345000000,
+                    ebtRatio: 18.2,
+                };
+                if (!div.subDivMonthly) div.subDivMonthly = {};
+                if (!div.subDivMonthly['prod2']) div.subDivMonthly['prod2'] = {};
+                div.subDivMonthly['prod2'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd2Actual } as any, true);
+
+                // 🎯 생산2실 2026년 1월 TD목표 — 이미지 100% 셀 싱크
+                const vnProd2Target = {
+                    revenue: 53808000000,
+                    salesWM: 53808000000,
+                    rawMaterialCost: 32619000000,
+                    materialRatio: 60.6,
+                    bomMaterialRatio: 58.1,
+                    materialDiff: 2.5,
+                    materialLoss: 2152000000,
+                    headcount: 260,
+                    laborCost: 6424000000,
+                    laborRatio: 11.9,
+                    revenuePerHead: 8.4,
+                    overhead: 5463000000,
+                    overheadRatio: 10.2,
+                    depreciation: 1243000000,
+                    techFee: 1449000000,
+                    taxDues: 220000000,
+                    welfare: 1065000000,
+                    electricity: 854000000,
+                    rent: 292000000,
+                    repair: 88000000,
+                    commission: 1000000,
+                    transportation: 5000000,
+                    officeSupplies: 76000000,
+                    overheadOther: 170000000,
+                    operatingProfit: 9301000000,
+                    operatingProfitRatio: 17.3,
+                    interestIncome: 2000000,
+                    forexGain: 0,
+                    interestExpense: 250000000,
+                    forexLoss: 0,
+                    ebt: 9053000000,
+                    ebtRatio: 16.8,
+                };
+                if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
+                if (!div.subDivTargetMonthly['prod2']) div.subDivTargetMonthly['prod2'] = {};
+                div.subDivTargetMonthly['prod2'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd2Target } as any, true);
+            }
+
+            if (div.year === 2025) {
+                // 🎯 생산2실 전년 — 당월(26.01월) '전년' 컬럼 100% 셀 싱크
+                const vnProd2Prev = {
+                    revenue: 48398000000,
+                    salesWM: 48398000000,
+                    rawMaterialCost: 27616000000,
+                    materialRatio: 57.1,
+                    bomMaterialRatio: 55.7,
+                    materialDiff: 1.4,
+                    materialLoss: 1097000000,
+                    headcount: 303,
+                    laborCost: 6160000000,
+                    laborRatio: 12.7,
+                    revenuePerHead: 7.9,
+                    overhead: 5526000000,
+                    overheadRatio: 11.4,
+                    depreciation: 1230000000,
+                    techFee: 1325000000,
+                    taxDues: 853000000,
+                    welfare: 969000000,
+                    electricity: 669000000,
+                    rent: 388000000,
+                    repair: 89000000,
+                    commission: 1000000,
+                    transportation: 3000000,
+                    officeSupplies: 76000000,
+                    overheadOther: 171000000,
+                    operatingProfit: 9097000000,
+                    operatingProfitRatio: 18.8,
+                    interestIncome: 2000000,
+                    forexGain: 105000000,
+                    interestExpense: 235000000,
+                    forexLoss: 0,
+                    ebt: 8968000000,
+                    ebtRatio: 18.5,
+                };
+                if (!div.subDivMonthly) div.subDivMonthly = {};
+                if (!div.subDivMonthly['prod2']) div.subDivMonthly['prod2'] = {};
+                div.subDivMonthly['prod2'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd2Prev } as any, true);
+            }
         }
     });
     return store;
