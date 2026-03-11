@@ -271,7 +271,9 @@ export function Dashboard() {
         const divDataToUpdate = newStore.divisions[divIdx];
         const plData = { ...createEmptyPLData(), ...data };
 
-        if (selectedSubDiv !== 'all') {
+        const isSubDiv = divisionInfo.subDivisionMode === 'tabs' && selectedSubDiv !== 'all';
+
+        if (isSubDiv) {
             if (dataType === 'target') {
                 if (!divDataToUpdate.subDivTargetMonthly) divDataToUpdate.subDivTargetMonthly = {};
                 if (!divDataToUpdate.subDivTargetMonthly[selectedSubDiv]) divDataToUpdate.subDivTargetMonthly[selectedSubDiv] = {};
@@ -673,30 +675,33 @@ export function Dashboard() {
                     )}
 
                     {/* ===== 데이터 입력 모달 (합계 탭에서는 비활성화) ===== */}
-                    {showInputModal && selectedDivision !== 'total' && (
-                        <DataInputModal
-                            divisionInfo={divisionInfo}
-                            year={editDataType === 'prevYear' ? selectedYear - 1 : selectedYear}
-                            month={editMonth}
-                            dataType={editDataType}
-                            initialData={
-                                editDataType === 'prevYear'
-                                    ? (selectedSubDiv !== 'all' ? prevYearDivData?.subDivMonthly?.[selectedSubDiv]?.[editMonth] : prevYearDivData?.monthly?.[editMonth])
-                                    : editDataType === 'target'
-                                        ? (selectedSubDiv !== 'all' ? divData?.subDivTargetMonthly?.[selectedSubDiv]?.[editMonth] : divData?.targetMonthly?.[editMonth])
-                                        : (selectedSubDiv !== 'all' ? divData?.subDivMonthly?.[selectedSubDiv]?.[editMonth] : divData?.monthly?.[editMonth])
-                            }
-                            initialRate={
-                                editDataType === 'prevYear'
-                                    ? prevYearDivData?.exchangeRates?.[editMonth]?.prev
-                                    : editDataType === 'target'
-                                        ? divData?.exchangeRates?.[editMonth]?.target
-                                        : divData?.exchangeRates?.[editMonth]?.actual
-                            }
-                            onSave={(month, data, rate, type) => handleSaveData(month, data, rate, type)}
-                            onClose={() => setShowInputModal(false)}
-                        />
-                    )}
+                    {showInputModal && selectedDivision !== 'total' && (() => {
+                        const isSubDiv = divisionInfo.subDivisionMode === 'tabs' && selectedSubDiv !== 'all';
+                        return (
+                            <DataInputModal
+                                divisionInfo={divisionInfo}
+                                year={editDataType === 'prevYear' ? selectedYear - 1 : selectedYear}
+                                month={editMonth}
+                                dataType={editDataType}
+                                initialData={
+                                    editDataType === 'prevYear'
+                                        ? (isSubDiv ? prevYearDivData?.subDivMonthly?.[selectedSubDiv]?.[editMonth] : prevYearDivData?.monthly?.[editMonth])
+                                        : editDataType === 'target'
+                                            ? (isSubDiv ? divData?.subDivTargetMonthly?.[selectedSubDiv]?.[editMonth] : divData?.targetMonthly?.[editMonth])
+                                            : (isSubDiv ? divData?.subDivMonthly?.[selectedSubDiv]?.[editMonth] : divData?.monthly?.[editMonth])
+                                }
+                                initialRate={
+                                    editDataType === 'prevYear'
+                                        ? prevYearDivData?.exchangeRates?.[editMonth]?.prev
+                                        : editDataType === 'target'
+                                            ? divData?.exchangeRates?.[editMonth]?.target
+                                            : divData?.exchangeRates?.[editMonth]?.actual
+                                }
+                                onSave={(month, data, rate, type) => handleSaveData(month, data, rate, type)}
+                                onClose={() => setShowInputModal(false)}
+                            />
+                        );
+                    })()}
                 </div>
             )}
         </div>
