@@ -586,8 +586,152 @@ function applyMigrations(store: DataStore): DataStore {
                     div.targetMonthly[1] = calculateDerivedFields(totalTarget, false);
                 }
             }
-        }
+        } // closes if (div.divisionCode === 'vietnam')
+
+        if (div.divisionCode === 'mexico') {
+            if (div.year === 2026) {
+                div.exchangeRates[1] = {
+                    actual: 17.68,
+                    target: 18.42,
+                    prev: 17.08
+                };
+
+                const mxHomeActual = {
+                    revenue: 28648,
+                    salesFridge: 28463,
+                    salesOven: 176,
+                    salesOther: 9,
+                    materialRatio: 68.0,
+                    bomMaterialRatio: 66.3,
+                    headcount: 143,
+                    laborCost: 5314,
+                    laborRatio: 18.6,
+                    overhead: 4837,
+                    overheadRatio: 16.9,
+                    electricity: 1037,
+                    techFee: 859,
+                    depreciation: 376,
+                    welfare: 400,
+                    repair: 313,
+                    factoryRent: 263,
+                    transportation: 477,
+                    commission: 560,
+                    consumables: 156,
+                    packaging: 184,
+                    rent: 30,
+                    importCost: 10,
+                    taxDues: 11,
+                    overheadOther: 158,
+                    operatingProfit: -989,
+                    operatingProfitRatio: -3.5,
+                    nonOpBalance: 449,
+                    financeCost: -324,
+                    ebtRatio: -5.0
+                };
+                if (!div.subDivMonthly) div.subDivMonthly = {};
+                if (!div.subDivMonthly['homeAppliance']) div.subDivMonthly['homeAppliance'] = {};
+                div.subDivMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomeActual } as any, true);
+
+                const mxHomeTarget = {
+                    revenue: 27083,
+                    salesFridge: 26041,
+                    salesOven: 1042,
+                    salesOther: 0,
+                    materialRatio: 66.3,
+                    bomMaterialRatio: 66.3,
+                    laborCost: 5201,
+                    laborRatio: 19.2,
+                    overhead: 4685,
+                    overheadRatio: 17.3,
+                    operatingProfit: -758,
+                    operatingProfitRatio: -2.8,
+                    nonOpBalance: 318,
+                    financeCost: -318,
+                    ebtRatio: -4.0
+                };
+                if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
+                if (!div.subDivTargetMonthly['homeAppliance']) div.subDivTargetMonthly['homeAppliance'] = {};
+                div.subDivTargetMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomeTarget } as any, true);
+            }
+
+            if (div.year === 2025) {
+                const mxHomePrev = {
+                    revenue: 34775,
+                    salesFridge: 34228,
+                    salesOven: 546,
+                    salesOther: 1,
+                    materialRatio: 67.6,
+                    bomMaterialRatio: 67.6,
+                    headcount: 121,
+                    laborCost: 5736,
+                    laborRatio: 16.5,
+                    overhead: 5736,
+                    overheadRatio: 16.5,
+                    electricity: 1959,
+                    techFee: 1049,
+                    depreciation: 538,
+                    welfare: 282,
+                    repair: 517,
+                    factoryRent: 251,
+                    transportation: 53,
+                    commission: 421,
+                    consumables: 277,
+                    packaging: 204,
+                    rent: 31,
+                    importCost: 0,
+                    taxDues: 0,
+                    overheadOther: 154,
+                    operatingProfit: -1899,
+                    operatingProfitRatio: -5.5,
+                    nonOpBalance: 1197,
+                    financeCost: -249,
+                    ebtRatio: -8.9
+                };
+                if (!div.subDivMonthly) div.subDivMonthly = {};
+                if (!div.subDivMonthly['homeAppliance']) div.subDivMonthly['homeAppliance'] = {};
+                div.subDivMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomePrev } as any, true);
+            }
+
+            // 멕시코 전체(합계) 계산
+            const subKeys = ['homeAppliance', 'automotive'];
+            if (div.subDivMonthly) {
+                const totalActual = createEmptyPLData();
+                let hasData = false;
+                subKeys.forEach(key => {
+                    const subData = div.subDivMonthly?.[key]?.[1];
+                    if (subData) {
+                        hasData = true;
+                        Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
+                            if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
+                                totalActual[k] = (totalActual[k] || 0) + (subData[k] || 0);
+                            }
+                        });
+                    }
+                });
+                if (hasData) div.monthly[1] = calculateDerivedFields(totalActual, false);
+            }
+            if (div.subDivTargetMonthly) {
+                const totalTarget = createEmptyPLData();
+                let hasData = false;
+                subKeys.forEach(key => {
+                    const subData = div.subDivTargetMonthly?.[key]?.[1];
+                    if (subData) {
+                        hasData = true;
+                        Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
+                            if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
+                                totalTarget[k] = (totalTarget[k] || 0) + (subData[k] || 0);
+                            }
+                        });
+                    }
+                });
+                if (hasData) {
+                    if (!div.targetMonthly) div.targetMonthly = {};
+                    div.targetMonthly[1] = calculateDerivedFields(totalTarget, false);
+                }
+            }
+        } // closes if (div.divisionCode === 'mexico')
     });
+
 
     // 마이그레이션 완료 플래그 설정
     store._migrated_v10 = true;

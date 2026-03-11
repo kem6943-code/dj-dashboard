@@ -231,8 +231,8 @@ export const VIETNAM_ITEMS: PLItem[] = [
 export const MEXICO_ITEMS: PLItem[] = [
     // ===== 매출/판가 =====
     { key: 'revenue', label: '매출액', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
-    { key: 'salesFL', label: 'FL', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
-    { key: 'salesTL', label: 'TL', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesFridge', label: '냉장고', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesOven', label: '오븐', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
     { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
 
     // ===== 재료비 =====
@@ -249,10 +249,19 @@ export const MEXICO_ITEMS: PLItem[] = [
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
     { key: 'overheadRatio', label: '경비율', isHeader: false, indent: 0, isCalculated: true, section: '경비', type: 'ratio' },
-    { key: 'depreciation', label: '감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'electricity', label: '전력비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'consumables', label: '소모품비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'techFee', label: '기술료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'depreciation', label: '감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'welfare', label: '복리후생비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'repair', label: '수선비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'factoryRent', label: '공장임차료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'transportation', label: '운반비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'commission', label: '지급수수료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'consumables', label: '소모품비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'packaging', label: '포장비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'rent', label: '지급임차료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'importCost', label: '수입통관비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'taxDues', label: '세금과공과', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'overheadOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
 
     // ===== 영업이익 =====
@@ -260,8 +269,8 @@ export const MEXICO_ITEMS: PLItem[] = [
     { key: 'operatingProfitRatio', label: '(%)', isHeader: false, indent: 0, isCalculated: true, section: '영업이익', type: 'ratio' },
 
     // ===== 영업외수지 =====
-    { key: 'financeCost', label: '금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
-    { key: 'forexGainLoss', label: '외환차손익', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
+    { key: 'nonOpBalance', label: '영업외수지자', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
+    { key: 'financeCost', label: '-금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영업외수지' },
 
     // ===== 세전이익 =====
     { key: 'ebt', label: '세전이익 (%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
