@@ -123,7 +123,6 @@ export const THAILAND_ITEMS: PLItem[] = [
 
     // ===== 재료비 =====
     { key: 'materialRatio', label: '실적재료비율 (%)', isHeader: true, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
-    { key: 'lossReflected', label: 'Loss 率 반영', isHeader: false, indent: 1, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율 (%)', isHeader: false, indent: 1, isCalculated: true, section: '재료비', type: 'ratio' },
     { key: 'lossRate', label: 'Loss율 (%)', isHeader: false, indent: 1, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 1, isCalculated: false, section: '재료비' },
