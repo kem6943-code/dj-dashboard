@@ -182,6 +182,136 @@ export async function loadData(): Promise<DataStore> {
                     div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thPrev } as any, true);
                 }
             }
+
+            // ===== 🇻🇳 베트남 사업부 — 생산1실(prod1) 데이터 마이그레이션 =====
+            if (div.divisionCode === 'vietnam') {
+                if (div.year === 2026) {
+                    // 🎯 생산1실 2026년 1월 실적 ('26실적) — 이미지 100% 셀 싱크
+                    const vnProd1Actual = {
+                        revenue: 29795000000,
+                        salesAIO: 9613000000,
+                        salesREF: 20182000000,
+                        rawMaterialCost: 19164000000,
+                        materialRatio: 64.3,
+                        bomMaterialRatio: 63.2,
+                        materialDiff: 1.1,
+                        vvci: 394000000,
+                        materialLoss: 0,
+                        headcount: 236,
+                        laborCost: 4389000000,
+                        laborRatio: 14.7,
+                        revenuePerHead: 6.8,
+                        overhead: 5008000000,
+                        overheadRatio: 16.8,
+                        depreciation: 2216000000,
+                        techFee: 828000000,
+                        taxDues: 0,
+                        welfare: 573000000,
+                        electricity: 697000000,
+                        rent: 290000000,
+                        repair: 45000000,
+                        commission: 26000000,
+                        transportation: 7000000,
+                        officeSupplies: 47000000,
+                        overheadOther: 279000000,
+                        operatingProfit: 1234000000,
+                        operatingProfitRatio: 4.1,
+                        interestIncome: 1000000,
+                        forexGain: 24000000,
+                        interestExpense: 129000000,
+                        forexLoss: 1000000,
+                        ebt: 1129000000,
+                        ebtRatio: 3.8,
+                    };
+                    if (!div.subDivMonthly) div.subDivMonthly = {};
+                    if (!div.subDivMonthly['prod1']) div.subDivMonthly['prod1'] = {};
+                    div.subDivMonthly['prod1'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd1Actual } as any, true);
+
+                    // 🎯 생산1실 2026년 1월 TD목표 — 이미지 100% 셀 싱크
+                    const vnProd1Target = {
+                        revenue: 18065000000,
+                        salesAIO: 3635000000,
+                        salesREF: 14430000000,
+                        rawMaterialCost: 11921000000,
+                        materialRatio: 66.0,
+                        bomMaterialRatio: 63.8,
+                        materialDiff: 2.6,
+                        vvci: 325000000,
+                        materialLoss: 0,
+                        headcount: 234,
+                        laborCost: 3017000000,
+                        laborRatio: 16.7,
+                        revenuePerHead: 6.0,
+                        overhead: 4077000000,
+                        overheadRatio: 22.6,
+                        depreciation: 2218000000,
+                        techFee: 534000000,
+                        taxDues: 61000000,
+                        welfare: 383000000,
+                        electricity: 414000000,
+                        rent: 212000000,
+                        repair: 44000000,
+                        commission: 27000000,
+                        transportation: 4000000,
+                        officeSupplies: 42000000,
+                        overheadOther: 139000000,
+                        operatingProfit: -950000000,
+                        operatingProfitRatio: -5.3,
+                        interestIncome: 1000000,
+                        forexGain: 0,
+                        interestExpense: 157000000,
+                        forexLoss: 0,
+                        ebt: -1106000000,
+                        ebtRatio: -6.1,
+                    };
+                    if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
+                    if (!div.subDivTargetMonthly['prod1']) div.subDivTargetMonthly['prod1'] = {};
+                    div.subDivTargetMonthly['prod1'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd1Target } as any, true);
+                }
+
+                if (div.year === 2025) {
+                    // 🎯 생산1실 전년('25실적) — 이미지 100% 셀 싱크
+                    const vnProd1Prev = {
+                        revenue: 325117000000,
+                        salesAIO: 93838000000,
+                        salesREF: 231279000000,
+                        rawMaterialCost: 211534000000,
+                        materialRatio: 65.1,
+                        bomMaterialRatio: 63.5,
+                        materialDiff: 1.6,
+                        vvci: 499000000,
+                        materialLoss: 5613000000,
+                        headcount: 221.25,
+                        laborCost: 45530000000,
+                        laborRatio: 14.0,
+                        revenuePerHead: 7.1,
+                        overhead: 62886000000,
+                        overheadRatio: 19.3,
+                        depreciation: 25895000000,
+                        techFee: 9228000000,
+                        taxDues: 2753000000,
+                        welfare: 7226000000,
+                        electricity: 8345000000,
+                        rent: 3495000000,
+                        repair: 1229000000,
+                        commission: 1501000000,
+                        transportation: 118000000,
+                        officeSupplies: 462000000,
+                        overheadOther: 2628000000,
+                        operatingProfit: 5167000000,
+                        operatingProfitRatio: 1.6,
+                        interestIncome: 9000000,
+                        forexGain: 378000000,
+                        interestExpense: 2054000000,
+                        forexLoss: 995000000,
+                        ebt: 2606000000,
+                        ebtRatio: 0.8,
+                    };
+                    if (!div.subDivMonthly) div.subDivMonthly = {};
+                    if (!div.subDivMonthly['prod1']) div.subDivMonthly['prod1'] = {};
+                    div.subDivMonthly['prod1'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd1Prev } as any, true);
+                }
+            }
         });
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedStore));
