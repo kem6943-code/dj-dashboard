@@ -90,8 +90,13 @@ export function Dashboard() {
             const subs = divisionInfo.subDivisions;
             const baseLabels: string[] = [];
             const data: MonthlyPLData[] = [];
+            const rates: number[] = [];
 
             const m = selectedTotalMonth || 1; // 기준 월 지정
+            // 환율 도출
+            const rs = (periodType === 'monthly' && m <= 12)
+                ? (divData.exchangeRates?.[m] || { actual: 1, target: 1, prev: 1 })
+                : (divData.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 });
 
             subs.forEach(s => {
                 const subData = divData.subDivMonthly?.[s.key] || {};
@@ -102,8 +107,10 @@ export function Dashboard() {
                 if (showTarget) {
                     // 멕시코 서브디비전 목표 데이터가 없으므로 일단 빈 데이터 매핑
                     data.push({} as MonthlyPLData, act);
+                    rates.push(rs.target || 1, rs.actual || 1);
                 } else {
                     data.push(act);
+                    rates.push(rs.actual || 1);
                 }
             });
 
@@ -121,11 +128,13 @@ export function Dashboard() {
             baseLabels.push('합계');
             if (showTarget) {
                 data.push(totalTarg, totalAct);
+                rates.push(rs.target || 1, rs.actual || 1);
             } else {
                 data.push(totalAct);
+                rates.push(rs.actual || 1);
             }
 
-            return { baseLabels, data, rates: data.map(() => 1) }; // 서브디비전 컬럼 모드는 일단 1로 (필요시 추후 확장)
+            return { baseLabels, data, rates }; // 수정: 단위 환율 적용
         }
 
         // 서브디비전 탭 모드 (예: 베트남 생산실별)

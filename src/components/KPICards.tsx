@@ -30,19 +30,22 @@ export function KPICards({ divData, divisionInfo }: KPICardsProps) {
         ? Number(currentData.materialRatio).toFixed(1)
         : '0.0';
 
+    const isMXN = divisionInfo.currency === 'MXN';
+    const defaultUnit = isMXN ? '천' : '백만';
+
     const kpis = [
         {
             label: '매출액',
-            value: formatAmount(revenue),
-            unit: '백만',
+            value: formatAmount(revenue, defaultUnit, divisionInfo.currency),
+            unit: defaultUnit,
             icon: DollarSign,
             color: 'var(--accent-blue)',
             month: latestMonth > 0 ? `${latestMonth}월` : '-',
         },
         {
             label: '영업이익',
-            value: formatAmount(operatingProfit),
-            unit: '백만',
+            value: formatAmount(operatingProfit, defaultUnit, divisionInfo.currency),
+            unit: defaultUnit,
             icon: operatingProfit >= 0 ? TrendingUp : TrendingDown,
             color: operatingProfit >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)',
             month: latestMonth > 0 ? `${latestMonth}월` : '-',
@@ -65,8 +68,8 @@ export function KPICards({ divData, divisionInfo }: KPICardsProps) {
         },
         {
             label: '세전이익',
-            value: formatAmount(ebt),
-            unit: '백만',
+            value: formatAmount(ebt, defaultUnit, divisionInfo.currency),
+            unit: defaultUnit,
             icon: ebt >= 0 ? TrendingUp : TrendingDown,
             color: ebt >= 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)',
             month: latestMonth > 0 ? `${latestMonth}월` : '-',
