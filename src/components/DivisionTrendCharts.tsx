@@ -9,10 +9,18 @@ interface Props {
 }
 
 export function DivisionTrendCharts({ store, year }: Props) {
-    // 억 단위 포맷터
-    const formatEok = (val: number) => {
-        const eok = val / 100000000;
-        return Number(eok.toFixed(1));
+    // 사업부별 통화에 맞는 스케일링 함수 생성
+    const getScaleInfo = (currency: string) => {
+        switch (currency) {
+            case 'MXN':
+                return { multiplier: 1000, unitText: '천 MXN' };
+            case 'VND':
+                return { multiplier: 1000000000, unitText: '십억 VND' };
+            case 'THB':
+                return { multiplier: 1000000, unitText: '백만 THB' };
+            default: // KRW
+                return { multiplier: 100000000, unitText: '억원' };
+        }
     };
 
     return (
@@ -23,6 +31,9 @@ export function DivisionTrendCharts({ store, year }: Props) {
 
                 if (!divData) return null;
 
+                const { multiplier, unitText } = getScaleInfo(divInfo.currency);
+                const formatVal = (val: number) => Number((val / multiplier).toFixed(1));
+
                 // 월별 데이터 가공
                 const chartData = MONTH_NAMES.map((name, i) => {
                     const month = i + 1;
@@ -32,12 +43,12 @@ export function DivisionTrendCharts({ store, year }: Props) {
 
                     return {
                         name,
-                        매출_실적: ds ? formatEok(ds.revenue || 0) : null,
-                        매출_목표: ts ? formatEok(ts.revenue || 0) : null,
-                        매출_전년: pds ? formatEok(pds.revenue || 0) : null,
-                        영익_실적: ds ? formatEok(ds.operatingProfit || 0) : null,
-                        영익_목표: ts ? formatEok(ts.operatingProfit || 0) : null,
-                        영익_전년: pds ? formatEok(pds.operatingProfit || 0) : null,
+                        매출_실적: ds ? formatVal(ds.revenue || 0) : null,
+                        매출_목표: ts ? formatVal(ts.revenue || 0) : null,
+                        매출_전년: pds ? formatVal(pds.revenue || 0) : null,
+                        영익_실적: ds ? formatVal(ds.operatingProfit || 0) : null,
+                        영익_목표: ts ? formatVal(ts.operatingProfit || 0) : null,
+                        영익_전년: pds ? formatVal(pds.operatingProfit || 0) : null,
                     };
                 });
 
@@ -46,7 +57,7 @@ export function DivisionTrendCharts({ store, year }: Props) {
                         <div className="flex items-center gap-2 mb-4">
                             <span className="text-xl">{divInfo.flag}</span>
                             <h3 className="text-lg font-bold text-gray-800">{divInfo.name} 월별 트렌드</h3>
-                            <span className="text-[11px] text-gray-400 font-medium ml-2 bg-gray-100 px-2 py-0.5 rounded">단위: 억원</span>
+                            <span className="text-[11px] text-gray-400 font-medium ml-2 bg-gray-100 px-2 py-0.5 rounded">단위: {unitText}</span>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
