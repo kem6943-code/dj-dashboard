@@ -14,13 +14,13 @@ interface DataInputModalProps {
     dataType?: 'actual' | 'target' | 'prevYear';
     initialData?: MonthlyPLData;
     initialRate?: number; // 현재 환율
-    onSave: (month: number, data: Record<string, number>, exchangeRate: number, dataType: 'actual' | 'target' | 'prevYear') => void;
+    onSave: (month: number, data: Record<string, number>, exchangeRate: number, dataType: 'actual' | 'target' | 'prevYear', manualOverrides?: Set<string>) => void;
     onClose: () => void;
 }
 
 export function DataInputModal({ divisionInfo, year, month, dataType = 'actual', initialData, initialRate, onSave, onClose }: DataInputModalProps) {
     const [selectedMonth, setSelectedMonth] = useState(month);
-    const [exchangeRate, setExchangeRate] = useState(initialRate || 1);
+    const [exchangeRate, setExchangeRate] = useState<number | string>(initialRate || 1);
 
     // 단위 계산 (MXN은 천 단위, 나머지는 백만 단위)
     const isMXN = divisionInfo.currency === 'MXN';
@@ -34,12 +34,17 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 isMXN ? `천${divisionInfo.currency}` :
                     `백만${divisionInfo.currency}`;
 
-    const [formData, setFormData] = useState<Record<string, number>>(() => {
+    const [formData, setFormData] = useState<Record<string, any>>(() => {
         return initialData ? { ...initialData } : createEmptyPLData();
     });
 
     // 수동 오버라이드된 항목 추적 (자동 계산 항목을 직접 수정한 경우)
-    const [overrides, setOverrides] = useState<Set<string>>(new Set());
+    const [overrides, setOverrides] = useState<Set<string>>(() => {
+        if (initialData?.manualOverrides) {
+            return new Set(initialData.manualOverrides);
+        }
+        return new Set();
+    });
 
     // 자동 계산 필드 업데이트 (입력값 변경 시)
     const plItems = getPLItemsForDivision(divisionInfo.code as any);
@@ -80,12 +85,21 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                 });
             }
             // 금액인 경우에만 multiplier 적용
-            setFormData(prev => ({ ...prev, [key]: numValue * (isAmount ? multiplier : 1) }));
+            setFormData(prev => ({
+                ...prev,
+                [key]: numValue * (isAmount ? multiplier : 1),
+                manualOverrides: Array.from(overrides) // 오버라이드 상태 변경 시 데이터에도 반영
+            }));
         }
     };
 
     const handleSubmit = () => {
-        onSave(selectedMonth, formData, exchangeRate, dataType);
+        // overrides Set을 데이터 내부에 포함시켜 영구 저장되도록 함
+        const finalData = {
+            ...formData,
+            manualOverrides: Array.from(overrides)
+        };
+        onSave(selectedMonth, finalData as any, Number(exchangeRate) || 0, dataType, overrides.size > 0 ? overrides : undefined);
     };
 
     return (
@@ -142,10 +156,9 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
                                 step="0.001"
                                 className="input-field font-bold text-amber-900 border-amber-300 focus:border-amber-500 focus:ring-amber-200"
                                 style={{ maxWidth: 120, border: '1px solid #fcd34d', backgroundColor: '#fff', padding: '6px 12px' }}
-                                value={exchangeRate || ''}
+                                value={exchangeRate === 0 ? '' : exchangeRate}
                                 onChange={e => {
-                                    const val = Number(e.target.value);
-                                    if (val >= 0) setExchangeRate(val);
+                                    setExchangeRate(e.target.value);
                                 }}
                                 placeholder="0"
                             />

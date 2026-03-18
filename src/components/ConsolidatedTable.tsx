@@ -69,14 +69,14 @@ function getDivisionPeriodData(
             });
         }
 
-        const rs = divData.exchangeRates[m] || { actual: 1, target: 1, prev: 1 };
+        const rs = divData.exchangeRates?.[m] || { actual: 1, target: 1, prev: 1 };
         actualRateSum += rs.actual || 1;
         targetRateSum += rs.target || 1;
         rateCount++;
     });
 
-    const avgActualRate = rateCount > 0 ? actualRateSum / rateCount : (divData.exchangeRates[1]?.actual || 1);
-    const avgTargetRate = rateCount > 0 ? targetRateSum / rateCount : (divData.exchangeRates[1]?.target || 1);
+    const avgActualRate = rateCount > 0 ? actualRateSum / rateCount : (divData.exchangeRates?.[1]?.actual || 1);
+    const avgTargetRate = rateCount > 0 ? targetRateSum / rateCount : (divData.exchangeRates?.[1]?.target || 1);
 
     return {
         actualData: calculateDerivedFields(actualResult, true),

@@ -19,8 +19,34 @@ export async function saveData(store: DataStore): Promise<void> {
 
 // 🔧 데이터 마이그레이션 — 어떤 소스(클라우드/로컬/기본)든 플래그가 없으면 1회만 적용
 function applyMigrations(store: DataStore): DataStore {
-    if (store._migrated_v13) return store;
+    // [긴급 에러 방어망]: 클라우드 DB 등에서 로드된 날것(raw)의 데이터에 필수 구조가 누락되었을 경우 초기화 보장
+    if (!store.divisions) store.divisions = [];
+    store.divisions.forEach(div => {
+        if (!div.monthly) div.monthly = {};
+        if (!div.targetMonthly) div.targetMonthly = {};
+        if (!div.exchangeRates) div.exchangeRates = {};
+        if (!div.subDivMonthly) div.subDivMonthly = {};
+        if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
 
+        // 레거시 'exchangeRate'(단일 숫자) 속성이 남아있는 경우, 신형 다중 월 'exchangeRates' 구조로 안전 보장(Migrate)
+        if ('exchangeRate' in div && typeof (div as any).exchangeRate === 'number') {
+            const rate = (div as any).exchangeRate;
+            div.exchangeRates[1] = { actual: rate, target: rate, prev: rate };
+            delete (div as any).exchangeRate;
+        }
+
+        // [긴급 수치 보정]: 베트남 898억 등 환율 1.0 오독 방지 및 '25년 환율 누락 방지
+        if (div.year === 2025 || div.year === 2026) {
+            for (let m = 1; m <= 12; m++) {
+                if (div.divisionCode === 'vietnam' && (!div.exchangeRates[m] || div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0)) {
+                    div.exchangeRates[m] = { actual: 0.055, target: 0.055, prev: 0.055 };
+                }
+                if (div.divisionCode === 'thailand' && (!div.exchangeRates[m] || div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0)) {
+                    div.exchangeRates[m] = { actual: 39.5, target: 39.5, prev: 39.5 };
+                }
+            }
+        }
+    });
     store.divisions.forEach(div => {
         if (!store._migrated_v10) {
             if (div.divisionCode === 'thailand') {
@@ -743,39 +769,76 @@ function applyMigrations(store: DataStore): DataStore {
     });
 
 
+    // ===== 연간 TD 목표값(KRW) — 항상 강제 적용 (클라우드 데이터 오염 방지) =====
+    store.divisions.forEach(div => {
+        if (div.year === 2026) {
+            if (!div.yearlyTarget) {
+                div.yearlyTarget = { revenue: 0, operatingProfit: 0 };
+            }
+
+            if (div.divisionCode === 'changwon') {
+                div.yearlyTarget.revenue = 110500000000;
+                div.yearlyTarget.operatingProfit = 2500000000;
+            } else if (div.divisionCode === 'vietnam') {
+                div.yearlyTarget.revenue = 55000000000;
+                div.yearlyTarget.operatingProfit = 7500000000;
+            } else if (div.divisionCode === 'thailand') {
+                // 태국: 2,200억 / 60억
+                div.yearlyTarget.revenue = 220000000000;
+                div.yearlyTarget.operatingProfit = 6000000000;
+            } else if (div.divisionCode === 'mexico') {
+                // 멕시코: 369억 / 18.5억
+                div.yearlyTarget.revenue = 36900000000;
+                div.yearlyTarget.operatingProfit = 1850000000;
+            }
+        }
+    });
+    store._migrated_v16 = true;
+
     // 마이그레이션 완료 플래그 설정
     store._migrated_v10 = true;
     store._migrated_v11 = true;
     store._migrated_v12 = true;
     store._migrated_v13 = true;
+    store._migrated_v14 = true;
+    store._migrated_v15 = true;
+    store._migrated_v16 = true;
     return store;
 }
 
 // 데이터 로드
 export async function loadData(): Promise<DataStore> {
-    const cloudData = await fetchFromCloud();
-    if (cloudData) {
-        // 클라우드 데이터에도 마이그레이션 적용
-        const migrated = applyMigrations(cloudData);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-        return migrated;
-    }
-
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-        const defaultStore = applyMigrations(createEmptyStore());
-        await saveData(defaultStore);
-        return defaultStore;
+    let localStore: DataStore | null = null;
+    if (raw) {
+        try { localStore = JSON.parse(raw) as DataStore; } catch { }
     }
 
-    try {
-        const parsedStore = JSON.parse(raw) as DataStore;
-        const migrated = applyMigrations(parsedStore);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-        return migrated;
-    } catch {
-        return applyMigrations(createEmptyStore());
+    const cloudData = await fetchFromCloud();
+
+    let targetData = localStore;
+    if (cloudData && localStore) {
+        const cloudTime = new Date(cloudData.lastUpdated || 0).getTime();
+        const localTime = new Date(localStore.lastUpdated || 0).getTime();
+
+        // 클라우드 데이터가 더 최신이거나 시간차가 없으면 클라우드를 신뢰
+        if (cloudTime >= localTime) {
+            targetData = cloudData;
+        }
+    } else if (cloudData) {
+        targetData = cloudData;
     }
+
+    if (!targetData) {
+        targetData = createEmptyStore();
+    }
+
+    // 누락된 신규 데이터 뼈대(마이그레이션) 보완
+    const migrated = applyMigrations(targetData);
+
+    // 로컬 저장소를 최신 마이그레이션 적용 상태로 업데이트
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    return migrated;
 }
 
 // 기본 데이터 스토어 생성
@@ -794,7 +857,8 @@ export function createEmptyStore(): DataStore {
         _migrated_v10: false,
         _migrated_v11: false,
         _migrated_v12: false,
-        _migrated_v13: false
+        _migrated_v13: false,
+        _migrated_v16: false
     };
 }
 

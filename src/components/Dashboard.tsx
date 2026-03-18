@@ -255,10 +255,25 @@ export function Dashboard() {
     }
 
     // 데이터 저장 핸들러 (환율 포함)
-    const handleSaveData = async (month: number, data: Record<string, number>, exchangeRate: number, dataType: 'actual' | 'target' | 'prevYear' = 'actual') => {
+    const handleSaveData = async (month: number, data: Record<string, number>, exchangeRate: number, dataType: 'actual' | 'target' | 'prevYear' = 'actual', manualOverrides?: Set<string>) => {
         if (!store) return;
 
-        let newStore = { ...store };
+        // 🔧 깊은 복사: React가 상태 변경을 감지하도록 divisions 배열 및 대상 division 객체를 새 참조로 교체
+        let newStore = {
+            ...store,
+            divisions: store.divisions.map(d => ({
+                ...d,
+                monthly: { ...d.monthly },
+                targetMonthly: { ...(d.targetMonthly || {}) },
+                exchangeRates: { ...d.exchangeRates },
+                subDivMonthly: d.subDivMonthly ? Object.fromEntries(
+                    Object.entries(d.subDivMonthly).map(([k, v]) => [k, { ...v }])
+                ) : undefined,
+                subDivTargetMonthly: d.subDivTargetMonthly ? Object.fromEntries(
+                    Object.entries(d.subDivTargetMonthly).map(([k, v]) => [k, { ...v }])
+                ) : undefined,
+            })),
+        };
         const targetYear = dataType === 'prevYear' ? selectedYear - 1 : selectedYear;
 
         let divIdx = newStore.divisions.findIndex(
@@ -272,7 +287,9 @@ export function Dashboard() {
                 year: targetYear,
                 exchangeRates: { [month]: { actual: exchangeRate, target: exchangeRate, prev: exchangeRate } },
                 monthly: {},
-                targetMonthly: {}
+                targetMonthly: {},
+                subDivMonthly: {},
+                subDivTargetMonthly: {},
             });
             divIdx = newStore.divisions.length - 1;
         }
@@ -280,13 +297,16 @@ export function Dashboard() {
         const divDataToUpdate = newStore.divisions[divIdx];
         const plData = { ...createEmptyPLData(), ...data };
 
+        // 데이터에 manualOverrides가 포함되어 있다면 Set으로 변환하여 calculateDerivedFields에 전달
+        const effectiveOverrides = manualOverrides || (data.manualOverrides ? new Set(data.manualOverrides as any as string[]) : undefined);
+
         const isSubDiv = divisionInfo.subDivisionMode === 'tabs' && selectedSubDiv !== 'all';
 
         if (isSubDiv) {
             if (dataType === 'target') {
                 if (!divDataToUpdate.subDivTargetMonthly) divDataToUpdate.subDivTargetMonthly = {};
                 if (!divDataToUpdate.subDivTargetMonthly[selectedSubDiv]) divDataToUpdate.subDivTargetMonthly[selectedSubDiv] = {};
-                divDataToUpdate.subDivTargetMonthly[selectedSubDiv][month] = calculateDerivedFields(plData, true);
+                divDataToUpdate.subDivTargetMonthly[selectedSubDiv][month] = calculateDerivedFields(plData, true, effectiveOverrides);
 
                 // 베트남 전체(all) 타겟 합산 재계산 로직
                 const totalTarget = createEmptyPLData();
@@ -313,7 +333,7 @@ export function Dashboard() {
                 // actual or prevYear
                 if (!divDataToUpdate.subDivMonthly) divDataToUpdate.subDivMonthly = {};
                 if (!divDataToUpdate.subDivMonthly[selectedSubDiv]) divDataToUpdate.subDivMonthly[selectedSubDiv] = {};
-                divDataToUpdate.subDivMonthly[selectedSubDiv][month] = calculateDerivedFields(plData, true);
+                divDataToUpdate.subDivMonthly[selectedSubDiv][month] = calculateDerivedFields(plData, true, effectiveOverrides);
 
                 // 베트남 전체(all) 실적 합산 재계산 로직
                 const totalActual = createEmptyPLData();
@@ -339,20 +359,20 @@ export function Dashboard() {
         } else {
             if (dataType === 'target') {
                 if (!divDataToUpdate.targetMonthly) divDataToUpdate.targetMonthly = {};
-                divDataToUpdate.targetMonthly[month] = calculateDerivedFields(plData, true);
+                divDataToUpdate.targetMonthly[month] = calculateDerivedFields(plData, true, effectiveOverrides);
             } else {
-                // actual or prevYear
+                // actual or prevYear — manualOverrides 전달로 사용자 수정값 보존
                 if (!divDataToUpdate.monthly) divDataToUpdate.monthly = {};
-                divDataToUpdate.monthly[month] = calculateDerivedFields(plData, true);
+                divDataToUpdate.monthly[month] = calculateDerivedFields(plData, true, effectiveOverrides);
             }
         }
 
-        // 환율 저장
+        // 환율 개별 업데이트 (원래 값을 유지하면서, 현재 수정 중인 데이터 타입의 환율만 업데이트)
         if (!divDataToUpdate.exchangeRates) divDataToUpdate.exchangeRates = {};
+        const existingRates = divDataToUpdate.exchangeRates[month] || { actual: 1, target: 1, prev: 1 };
         divDataToUpdate.exchangeRates[month] = {
-            actual: exchangeRate,
-            target: exchangeRate,
-            prev: exchangeRate
+            ...existingRates,
+            [dataType === 'prevYear' ? 'prev' : dataType]: exchangeRate
         };
 
         newStore.lastUpdated = new Date().toISOString();
@@ -478,7 +498,6 @@ export function Dashboard() {
                             />
                         </div>
                     </div>
-
                 </div>
             ) : activeView === 'comparison' ? (
                 <ComparisonView store={store} year={selectedYear} periodType={periodType} />
@@ -565,6 +584,16 @@ export function Dashboard() {
                             {/* ===== KPI 카드 ===== */}
                             <KPICards divData={divData} divisionInfo={divisionInfo} />
 
+                            {/* ===== 비용 구조 추이 차트 ===== */}
+                            <div className="mt-6 mb-4">
+                                <Charts
+                                    divData={divData}
+                                    prevYearData={prevYearDivData ?? undefined}
+                                    divisionInfo={divisionInfo}
+                                    year={selectedYear}
+                                />
+                            </div>
+
                             {/* ===== 기간 선택 ===== */}
                             <div className="flex items-center gap-2 mb-4 mt-6">
                                 <Calendar className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
@@ -624,21 +653,14 @@ export function Dashboard() {
                                     </span>
                                 </div>
 
-                                {/* 서브 디비전 탭 (베트남: 생산1/2/3실 등) */}
+                                {/* 서브 디비전 프리미엄 탭 */}
                                 {divisionInfo.subDivisions && divisionInfo.subDivisionMode === 'tabs' && (
-                                    <div className="flex flex-wrap gap-3 mb-6 mt-2">
+                                    <div className="premium-tabs-container mb-6 mt-2">
                                         {divisionInfo.subDivisions.map(sub => (
                                             <button
                                                 key={sub.key}
                                                 onClick={() => setSelectedSubDiv(sub.key)}
-                                                className={`px - 5 py - 2 rounded - full text - sm font - bold transition - all border - 2 ${selectedSubDiv === sub.key
-                                                    ? 'border-blue-500 shadow-md ring-4 ring-blue-500/20'
-                                                    : 'border-transparent hover:border-blue-300 hover:bg-white/60 shadow-sm'
-                                                    } `}
-                                                style={{
-                                                    background: selectedSubDiv === sub.key ? 'var(--accent-blue)' : 'var(--glass-bg)',
-                                                    color: selectedSubDiv === sub.key ? 'white' : 'var(--text-primary)',
-                                                }}
+                                                className={`premium-tab-btn ${selectedSubDiv === sub.key ? 'active' : ''}`}
                                             >
                                                 {sub.name}
                                             </button>

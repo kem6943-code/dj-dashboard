@@ -141,10 +141,10 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
             const divData = getDivisionData(store, divCode, year);
             const pl = divData?.monthly[month];
 
-            if (pl && pl.revenue !== 0) {
+            if (pl && (pl.revenue || 0) !== 0) {
                 // 억 단위 환산 후 소수점 1자리 반올림 (금액 * 환율 / 1억)
-                pt[`${divCode}_매출`] = Math.round((pl.revenue * rate) / 100000000 * 10) / 10;
-                pt[`${divCode}_영익`] = Math.round((pl.operatingProfit * rate) / 100000000 * 10) / 10;
+                pt[`${divCode}_매출`] = Math.round(((pl.revenue || 0) * rate) / 100000000 * 10) / 10;
+                pt[`${divCode}_영익`] = Math.round(((pl.operatingProfit || 0) * rate) / 100000000 * 10) / 10;
             } else {
                 pt[`${divCode}_매출`] = null;
                 pt[`${divCode}_영익`] = null;

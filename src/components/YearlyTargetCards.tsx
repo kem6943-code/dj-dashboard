@@ -1,6 +1,6 @@
 import { Target } from 'lucide-react';
 import type { DataStore } from '../utils/dataModel';
-import { DIVISIONS, formatAmount } from '../utils/dataModel';
+import { DIVISIONS, MXN_KRW_RATE } from '../utils/dataModel';
 
 interface Props {
     store: DataStore;
@@ -12,14 +12,12 @@ export function YearlyTargetCards({ store, year }: Props) {
 
     if (divs.length === 0) return null;
 
-    // '억' 단위 변환 포맷터 (소수점 없이 깔끔하게)
+    // '억' 단위 변환 포맷터 (주인님 특명: 무조건 '억'으로 통일)
     const formatEok = (val: number) => {
         const eok = val / 100000000;
-        if (eok >= 1 || eok <= -1) {
-            return `${Number(eok.toFixed(0)).toLocaleString()}억`;
-        } else {
-            return `${formatAmount(val, '백만')}M`;
-        }
+        // 소수점이 있으면 한자리까지 표시, 없으면 정수표시
+        const formatted = eok % 1 === 0 ? eok.toFixed(0) : eok.toFixed(1);
+        return `${Number(formatted).toLocaleString()}억`;
     };
 
     return (
@@ -48,13 +46,14 @@ export function YearlyTargetCards({ store, year }: Props) {
 
                     // 경영진 지시사항(원화) 직관적 비교를 위해 전부 KRW 기준으로 변환
                     const rates = divData.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 };
-                    const actualRate = rates.actual || 1;
-                    const targetRate = rates.target || 1;
+                    const isMexico = divInfo.code === 'mexico';
+                    // 🇲🇽 멕시코: 직접 MXN→KRW 환율 적용
+                    const actualRate = isMexico ? MXN_KRW_RATE : (rates.actual || 1);
 
                     const actualRev = actualRevRaw * actualRate;
                     const actualOp = actualOpRaw * actualRate;
-                    const targetRev = targetRevRaw * targetRate;
-                    const targetOp = targetOpRaw * targetRate;
+                    const targetRev = targetRevRaw; // v16 확정 수치 (KRW)
+                    const targetOp = targetOpRaw;   // v16 확정 수치 (KRW)
 
                     const revAchieve = targetRev > 0 ? (actualRev / targetRev) * 100 : 0;
                     const opAchieve = targetOp > 0 ? (actualOp / targetOp) * 100 : 0;

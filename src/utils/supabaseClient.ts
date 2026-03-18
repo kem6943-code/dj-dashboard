@@ -6,7 +6,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 고정 ID를 사용하여 하나의 문서만 업데이트/조회합니다 (1인용 싱글/글로벌 상태 공유)
-const DOCUMENT_ID = 'global_dashboard_state';
+const DOCUMENT_ID = 1;
 
 // 클라우드 동기화 함수
 export async function syncToCloud(data: any) {
@@ -15,7 +15,7 @@ export async function syncToCloud(data: any) {
             .from('dashboard_data')
             .upsert({
                 id: DOCUMENT_ID,
-                data: data,
+                content: data,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'id' });
 
@@ -31,7 +31,7 @@ export async function fetchFromCloud() {
     try {
         const { data, error } = await supabase
             .from('dashboard_data')
-            .select('data')
+            .select('content')
             .eq('id', DOCUMENT_ID)
             .single();
 
@@ -40,7 +40,7 @@ export async function fetchFromCloud() {
             return null;
         }
 
-        return data?.data || null;
+        return data?.content || null;
     } catch (e) {
         console.error('Network error fetching from cloud:', e);
         return null;

@@ -52,6 +52,9 @@ export const DIVISIONS: DivisionInfo[] = [
 export const TOTAL_DIVISION: DivisionInfo = { code: 'total', name: '합계', nameEn: 'Total', flag: '📊', currency: 'KRW' };
 export const DIVISIONS_WITH_TOTAL: DivisionInfo[] = [...DIVISIONS, TOTAL_DIVISION];
 
+// 🇲🇽 멕시코 원화 환산용 직접 환율 (1 MXN = X 원, 환율 변동 시 이 값만 수정)
+export const MXN_KRW_RATE = 82;
+
 // P&L 항목 정의
 export interface PLItem {
     key: string;       // 고유 키
@@ -189,7 +192,6 @@ export const VIETNAM_ITEMS: PLItem[] = [
     { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialDiff', label: '차이', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
-    { key: 'vvci', label: 'VV/CI', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
     { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
 
     // ===== 노무비 =====
@@ -302,9 +304,51 @@ export const ALL_ITEMS_MAP: Record<string, PLItem> = {};
     }
 });
 
+// 상세 경비 내역 (태국사업부 등 상세 분석용)
+export interface ExpenseDetail {
+    account: string;  // 계정명 (예: 전력비)
+    amount: number;   // 당월/누계 금액
+    diff: number;     // 전년 대비 증감액
+    reason: string;   // 증감 사유 (상세 내역)
+}
+
 // 월별 P&L 데이터
 export interface MonthlyPLData {
-    [key: string]: number; // PLItem.key -> 금액
+    // 공통 숫자 필드 (TypeScript 연산 오류 방지용)
+    revenue?: number;
+    laborCost?: number;
+    overhead?: number;
+    operatingProfit?: number;
+    ebt?: number;
+    operatingProfitRatio?: number;
+    ebtRatio?: number;
+    materialCost?: number;
+    rawMaterialCost?: number;
+    materialRatio?: number;
+    bomMaterialRatio?: number;
+    headcount?: number;
+    laborRatio?: number;
+    overheadRatio?: number;
+    nonOpBalance?: number;
+    nonOpIncome?: number;
+    nonOpExpense?: number;
+    interestIncome?: number;
+    forexGain?: number;
+    interestExpense?: number;
+    forexLoss?: number;
+    lossRate?: number;
+    materialLoss?: number;
+    viPerformance?: number;
+    lgImpact?: number;
+    djVI?: number;
+    viGap?: number;
+    viRatio?: number;
+    laborCostRatio?: number;
+    revenuePerHead?: number;
+
+    [key: string]: any; // PLItem.key -> 금액 또는 상세 내역
+    expenseDetails?: ExpenseDetail[]; // 상세 경비 분석 결과 데이터
+    manualOverrides?: string[]; // 수동으로 직접 입력한 필드 키 목록 (재계산 방지용)
 }
 
 // 월별 환율 세트 (실적, 목표, 전년)
@@ -337,6 +381,9 @@ export interface DataStore {
     _migrated_v11?: boolean; // v11 멕시코 데이터 1회 마이그레이션 적용 여부 플래그
     _migrated_v12?: boolean; // v12 멕시코 금액 수정 마이그레이션 플래그
     _migrated_v13?: boolean; // v13 멕시코 누락 데이터 항목 갱신 마이그레이션 플래그
+    _migrated_v14?: boolean;
+    _migrated_v15?: boolean;
+    _migrated_v16?: boolean;
 }
 
 // ===== 유틸 함수들 =====
@@ -354,7 +401,8 @@ export function createEmptyPLData(): MonthlyPLData {
 }
 
 // 계산 항목 자동 산출
-export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boolean = false): MonthlyPLData {
+// manualOverrides: 사용자가 직접 수정한 필드 키 집합 (이 필드들은 절대 재계산하지 않음)
+export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boolean = false, manualOverrides?: Set<string>): MonthlyPLData {
     const result = { ...data };
 
     // 매출액 자동 산출 (하위 항목 - sales로 시작하는 모든 key의 합)
@@ -429,22 +477,27 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
         }
     });
 
+    // === 수동 오버라이드 검사 함수: manualOverrides 또는 데이터 내의 manualOverrides 배열 체크 ===
+    const isManual = (key: string) =>
+        manualOverrides?.has(key) === true ||
+        result.manualOverrides?.includes(key) === true;
+
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
-    if (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0) {
-        // [V9] 슬라이드의 공식 불일치를 허용하기 위해 수동 입력값 무조건 유지
+    if (isManual('operatingProfit') || (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0)) {
+        // 수동 입력값 무조건 유지
     } else {
         result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);
     }
 
     // 영업이익률
-    if (preserveAmounts && result.operatingProfitRatio !== undefined && result.operatingProfitRatio !== 0) {
+    if (isManual('operatingProfitRatio') || (preserveAmounts && result.operatingProfitRatio !== undefined && result.operatingProfitRatio !== 0)) {
         // 수동 입력 보존
     } else {
-        result.operatingProfitRatio = revenue > 0 ? (result.operatingProfit / revenue) * 100 : 0;
+        result.operatingProfitRatio = revenue > 0 ? ((result.operatingProfit || 0) / revenue) * 100 : 0;
     }
 
     // 영업외수지
-    if (preserveAmounts && result.nonOpBalance !== undefined && result.nonOpBalance !== 0) {
+    if (isManual('nonOpBalance') || (preserveAmounts && result.nonOpBalance !== undefined && result.nonOpBalance !== 0)) {
         // 수동 입력값 보존
     } else {
         const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
@@ -453,14 +506,14 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     }
 
     // 세전이익 = 영업이익 + 영외수지
-    if (preserveAmounts && result.ebt !== undefined && result.ebt !== 0) {
+    if (isManual('ebt') || (preserveAmounts && result.ebt !== undefined && result.ebt !== 0)) {
         // 수동 입력값 보존
     } else {
         result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
     }
 
     // 세전이익률
-    if (preserveAmounts && result.ebtRatio !== undefined && result.ebtRatio !== 0) {
+    if (isManual('ebtRatio') || (preserveAmounts && result.ebtRatio !== undefined && result.ebtRatio !== 0)) {
         // 수동 입력 보존
     } else {
         result.ebtRatio = revenue > 0 ? ((result.ebt || 0) / revenue) * 100 : 0;
@@ -595,8 +648,11 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
             .filter(d => d.year === year && d.divisionCode !== 'total')
             .forEach(divData => {
                 const rates = divData.exchangeRates[m] || { actual: 1, target: 1, prev: 1 };
-                const actualRate = rates.actual || 1;
-                const targetRate = rates.target || 1;
+                const isMexico = divData.divisionCode === 'mexico';
+
+                // 🇲🇽 멕시코: 직접 MXN→KRW 환율 적용
+                const actualRate = isMexico ? MXN_KRW_RATE : (rates.actual || 1);
+                const targetRate = isMexico ? MXN_KRW_RATE : (rates.target || 1);
 
                 // 실적 합산
                 const mData = divData.monthly[m];

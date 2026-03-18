@@ -32,12 +32,12 @@ export function DivisionTrendCharts({ store, year }: Props) {
 
                     return {
                         name,
-                        매출_실적: ds ? formatEok(ds.revenue) : null,
-                        매출_목표: ts ? formatEok(ts.revenue) : null,
-                        매출_전년: pds ? formatEok(pds.revenue) : null,
-                        영익_실적: ds ? formatEok(ds.operatingProfit) : null,
-                        영익_목표: ts ? formatEok(ts.operatingProfit) : null,
-                        영익_전년: pds ? formatEok(pds.operatingProfit) : null,
+                        매출_실적: ds ? formatEok(ds.revenue || 0) : null,
+                        매출_목표: ts ? formatEok(ts.revenue || 0) : null,
+                        매출_전년: pds ? formatEok(pds.revenue || 0) : null,
+                        영익_실적: ds ? formatEok(ds.operatingProfit || 0) : null,
+                        영익_목표: ts ? formatEok(ts.operatingProfit || 0) : null,
+                        영익_전년: pds ? formatEok(pds.operatingProfit || 0) : null,
                     };
                 });
 
