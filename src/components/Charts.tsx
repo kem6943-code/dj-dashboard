@@ -52,16 +52,11 @@ export function Charts({ divData, divisionInfo }: ChartsProps) {
         // 환율 변환 없이(원본 그대로), 화면 표시 단위(multiplier)로만 나눔
         const revScaled = (ds.revenue || 0) / multiplier;
 
-        // 비율 가져오기 (Fallback 처리 적용)
-        const matRatio = ds?.materialRatio || ds?.bomMaterialRatio || 0;
-        const laborRatio = ds?.laborRatio || 0;
-        const overheadRatio = ds?.overheadRatio || 0;
-
-        // 금액 계산 (비율 기반): 이익은 전체 매출액에서 비용들을 차감한 나머지 갭으로 구성 (스택을 정확히 맞추기 위함)
-        const matAmt = revScaled * (matRatio / 100);
-        const laborAmt = revScaled * (laborRatio / 100);
-        const overheadAmt = revScaled * (overheadRatio / 100);
-        const opAmt = revScaled - matAmt - laborAmt - overheadAmt; // 남은 룸 = 이익 (적자일 수도 있음)
+        // 금액 직접 계산 (원시 데이터의 절대금액을 그대로 사용하여 환율 및 비율 계산 시의 오차 원천 차단)
+        const matAmt = (ds.materialCost || ds.rawMaterialCost || 0) / multiplier;
+        const laborAmt = (ds.laborCost || 0) / multiplier;
+        const overheadAmt = (ds.overhead || 0) / multiplier;
+        const opAmt = (ds.operatingProfit || 0) / multiplier;
 
         return {
             name,

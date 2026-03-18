@@ -421,7 +421,8 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     const revenue = result.revenue || 0;
 
     // 실적재료비율 및 재료비 산출
-    let materialCost = result.rawMaterialCost || 0;
+    // [V10 Fix] 전사 합산 등에서 materialCost가 이미 합산되어 들어온 경우 최우선 사용
+    let materialCost = result.materialCost || result.rawMaterialCost || 0;
 
     if (preserveAmounts && result.materialRatio !== undefined && result.materialRatio !== 0) {
         // [V9] 수동 입력된 재료비율을 절대적으로 신뢰 (공식 무시)
@@ -667,6 +668,13 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                             }
                         }
                     });
+
+                    // 파생 금액 수동 합산 (비율 기반 일괄 계산 시 다른 항목 누락에 따른 오차/왜곡 방지)
+                    result.materialCost = (result.materialCost || 0) + ((mData.materialCost || 0) * actualRate);
+                    result.operatingProfit = (result.operatingProfit || 0) + ((mData.operatingProfit || 0) * actualRate);
+                    result.ebt = (result.ebt || 0) + ((mData.ebt || 0) * actualRate);
+                    result.nonOpBalance = (result.nonOpBalance || 0) + ((mData.nonOpBalance || 0) * actualRate);
+                    result.revenue = (result.revenue || 0) + ((mData.revenue || 0) * actualRate);
                 }
 
                 // 목표 합산
@@ -682,6 +690,13 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                             }
                         }
                     });
+
+                    // 목표 파생 금액 수동 합산
+                    targetResult.materialCost = (targetResult.materialCost || 0) + ((tData.materialCost || 0) * targetRate);
+                    targetResult.operatingProfit = (targetResult.operatingProfit || 0) + ((tData.operatingProfit || 0) * targetRate);
+                    targetResult.ebt = (targetResult.ebt || 0) + ((tData.ebt || 0) * targetRate);
+                    targetResult.nonOpBalance = (targetResult.nonOpBalance || 0) + ((tData.nonOpBalance || 0) * targetRate);
+                    targetResult.revenue = (targetResult.revenue || 0) + ((tData.revenue || 0) * targetRate);
                 }
             });
 
