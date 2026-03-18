@@ -15,7 +15,7 @@ export function DivisionTrendCharts({ store, year }: Props) {
             case 'MXN':
                 return { multiplier: 1000, unitText: '천 MXN' };
             case 'VND':
-                return { multiplier: 1000000000, unitText: '십억 VND' };
+                return { multiplier: 1000000, unitText: '백만 VND' };
             case 'THB':
                 return { multiplier: 1000000, unitText: '백만 THB' };
             default: // KRW
