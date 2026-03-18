@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import {
     type DataStore,
+    type DivisionCode,
     DIVISIONS,
     formatAmount,
     aggregateQuarter,
@@ -26,12 +27,46 @@ interface ComparisonViewProps {
 }
 
 export function ComparisonView({ store, year, periodType }: ComparisonViewProps) {
-    // 2026 사업계획 기준 표준 환율 (KRW)
-    const FX_RATES: Record<string, number> = {
-        'changwon': 1,      // KRW (원) -> 1배
-        'thailand': 39.5,   // THB (바트) -> 39.5배
-        'vietnam': 0.055,   // VND (동) -> 0.055배 (100동=5.5원)
-        'mexico': 75.0,     // MXN (페소) -> 75.0배
+    // 사업부별 환율을 store에서 동적으로 가져오는 헬퍼
+    // → 사용자가 '26실적에서 입력한 exchangeRates를 실시간 반영
+    const getFxRate = (divCode: DivisionCode, month: number): number => {
+        if (divCode === 'changwon') return 1;
+        const divData = getDivisionData(store, divCode, year);
+        const rates = divData?.exchangeRates?.[month];
+        if (rates?.actual && rates.actual !== 0) return rates.actual;
+        // fallback: 해당 월에 환율이 없으면 가장 최근 입력된 환율 사용
+        if (divData?.exchangeRates) {
+            for (let m = month; m >= 1; m--) {
+                const r = divData.exchangeRates[m];
+                if (r?.actual && r.actual !== 0) return r.actual;
+            }
+        }
+        // 최종 fallback: BP 기준 기본값
+        if (divCode === 'thailand') return 39.5;
+        if (divCode === 'vietnam') return 0.055;
+        if (divCode === 'mexico') return 75.0;
+        return 1;
+    };
+
+    // 글로벌 최신 월 계산 (환율 안내 표시 등에 사용)
+    let globalLatestMonth = 0;
+    DIVISIONS.forEach(div => {
+        const divData = getDivisionData(store, div.code, year);
+        if (divData?.monthly) {
+            const months = Object.keys(divData.monthly).map(Number).filter(m => divData.monthly[m]?.revenue !== 0);
+            if (months.length > 0) {
+                const maxMonth = Math.max(...months);
+                if (maxMonth > globalLatestMonth) globalLatestMonth = maxMonth;
+            }
+        }
+    });
+    const latestMonth = globalLatestMonth || 1;
+
+    // 현재 적용 환율 정보 (안내 표시용)
+    const currentRates = {
+        thailand: getFxRate('thailand', latestMonth),
+        vietnam: getFxRate('vietnam', latestMonth),
+        mexico: getFxRate('mexico', latestMonth),
     };
 
     const DIV_COLORS: Record<string, string> = {
@@ -62,30 +97,18 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
     };
 
     // 각 사업부의 가장 최근 월 데이터 또는 집계 데이터 (테이블용)
-    const getLatestOrAgg = (): { label: string; data: { division: string; plData: MonthlyPLData }[] } => {
-        const results: { division: string; plData: MonthlyPLData }[] = [];
+    const getLatestOrAgg = (): { label: string; data: { division: string; plData: MonthlyPLData; divCode: DivisionCode }[] } => {
+        const results: { division: string; plData: MonthlyPLData; divCode: DivisionCode }[] = [];
         let label = '';
 
-        // 글로벌 최신 월 계산 (모든 사업부 통틀어 매출이 있는 가장 최신 월)
-        let globalLatestMonth = 0;
         if (periodType === 'monthly') {
-            DIVISIONS.forEach(div => {
-                const divData = getDivisionData(store, div.code, year);
-                if (divData && divData.monthly) {
-                    const months = Object.keys(divData.monthly).map(Number).filter(m => divData.monthly[m]?.revenue !== 0);
-                    if (months.length > 0) {
-                        const maxMonth = Math.max(...months);
-                        if (maxMonth > globalLatestMonth) globalLatestMonth = maxMonth;
-                    }
-                }
-            });
             label = globalLatestMonth > 0 ? `${globalLatestMonth}월` : '-';
         }
 
         DIVISIONS.forEach(div => {
             const divData = getDivisionData(store, div.code, year);
             if (!divData) {
-                results.push({ division: div.name, plData: {} as MonthlyPLData });
+                results.push({ division: div.name, plData: {} as MonthlyPLData, divCode: div.code });
                 return;
             }
 
@@ -108,7 +131,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                 plData = globalLatestMonth > 0 ? divData.monthly[globalLatestMonth] || ({} as MonthlyPLData) : ({} as MonthlyPLData);
             }
 
-            results.push({ division: div.name, plData });
+            results.push({ division: div.name, plData, divCode: div.code });
         });
 
         return { label, data: results };
@@ -116,10 +139,9 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
     const { label: periodLabel, data: rawCompData } = getLatestOrAgg();
 
-    // 데이터에 환율 적용 처리 (원화 테이블 통일용)
-    const compData = rawCompData.map((d, i) => {
-        const divCode = DIVISIONS[i].code;
-        const rate = FX_RATES[divCode] || 1;
+    // 데이터에 환율 적용 처리 (원화 테이블 통일용) — 입력된 환율 사용
+    const compData = rawCompData.map((d) => {
+        const rate = getFxRate(d.divCode, latestMonth);
         const convertedPL = { ...d.plData };
 
         Object.keys(convertedPL).forEach(key => {
@@ -131,13 +153,13 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
         return { ...d, plData: convertedPL };
     });
 
-    // 라인 차트용 시계열(1~12월) 데이터 가공 (환산 및 억원/백만원 스케일 조정 - 여기선 억원)
+    // 라인 차트용 시계열(1~12월) 데이터 가공 — 월별 입력 환율 적용
     const lineChartData = MONTH_NAMES.map((name, i) => {
         const month = i + 1;
         const pt: any = { name };
         DIVISIONS.forEach(div => {
             const divCode = div.code;
-            const rate = FX_RATES[divCode] || 1;
+            const rate = getFxRate(divCode, month);
             const divData = getDivisionData(store, divCode, year);
             const pl = divData?.monthly[month];
 
@@ -164,12 +186,12 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
     return (
         <div className="animate-fade-in space-y-6" style={{ padding: '24px', boxSizing: 'border-box' }}>
-            {/* 환율 적용 안내 */}
+            {/* 환율 적용 안내 — 사용자 입력 환율 동적 표시 */}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6 flex items-center gap-3">
                 <span className="text-xl">💱</span>
                 <div>
-                    <h4 className="text-sm font-bold text-blue-900 mb-1">통합 보고를 위해 '원화(KRW)' 기준으로 환율을 일괄 적용했습니다. (2026 BP 기준)</h4>
-                    <p className="text-xs text-blue-700">적용 환율: 🇹🇭 태국(THB) = 39.5원 / 🇻🇳 베트남(VND) = 0.055원 (100VND=5.5원) / 🇲🇽 멕시코(MXN) = 75.0원</p>
+                    <h4 className="text-sm font-bold text-blue-900 mb-1">'{year % 100}실적 입력 환율 기준으로 원화(KRW) 환산하여 표시합니다. ({latestMonth}월 기준)</h4>
+                    <p className="text-xs text-blue-700">적용 환율: 🇹🇭 태국(THB) = {currentRates.thailand}원 / 🇻🇳 베트남(VND) = {currentRates.vietnam}원 / 🇲🇽 멕시코(MXN) = {currentRates.mexico}원</p>
                 </div>
             </div>
 
