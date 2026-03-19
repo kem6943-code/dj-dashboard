@@ -14,7 +14,6 @@ import {
     formatAmount,
     aggregateQuarter,
     aggregateHalf,
-    aggregateYear,
     type MonthlyPLData,
     MONTH_NAMES
 } from '../utils/dataModel';
@@ -96,7 +95,43 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
         setVisibleDivs(prev => ({ ...prev, [code]: !prev[code] }));
     };
 
-    // 각 사업부의 가장 최근 월 데이터 또는 집계 데이터 (테이블용)
+    // 월별 데이터를 해당 월 환율로 원화 환산하는 헬퍼
+    const convertMonthToKRW = (plData: MonthlyPLData, divCode: DivisionCode, month: number): MonthlyPLData => {
+        const rate = getFxRate(divCode, month);
+        if (rate === 1) return { ...plData }; // KRW는 변환 불필요
+        const converted = { ...plData };
+        Object.keys(converted).forEach(key => {
+            const isRatioOrCount = key.toLowerCase().includes('ratio') || key.toLowerCase().includes('rate') || key === 'headcount' || key === 'revenuePerHead';
+            if (!isRatioOrCount && typeof converted[key] === 'number') {
+                converted[key] = converted[key] * rate;
+            }
+        });
+        return converted;
+    };
+
+    // 여러 월 데이터를 각각의 환율로 원화 환산 후 합산하는 헬퍼
+    const aggregateWithFx = (divData: any, divCode: DivisionCode, months: number[]): MonthlyPLData => {
+        const result: any = {};
+        months.forEach(m => {
+            const mData = divData?.monthly?.[m];
+            if (!mData || !mData.revenue) return;
+            const converted = convertMonthToKRW(mData, divCode, m);
+            Object.keys(converted).forEach(key => {
+                const isRatioOrCount = key.toLowerCase().includes('ratio') || key.toLowerCase().includes('rate') || key === 'headcount' || key === 'revenuePerHead';
+                if (typeof converted[key] === 'number') {
+                    if (isRatioOrCount) {
+                        // 비율은 마지막 월의 값 사용 (합산 부적합)
+                        result[key] = converted[key];
+                    } else {
+                        result[key] = (result[key] || 0) + converted[key];
+                    }
+                }
+            });
+        });
+        return result as MonthlyPLData;
+    };
+
+    // 각 사업부의 가장 최근 월 데이터 또는 집계 데이터 (테이블용) — 원화 환산 포함
     const getLatestOrAgg = (): { label: string; data: { division: string; plData: MonthlyPLData; divCode: DivisionCode }[] } => {
         const results: { division: string; plData: MonthlyPLData; divCode: DivisionCode }[] = [];
         let label = '';
@@ -114,21 +149,33 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
 
             let plData: MonthlyPLData;
             if (periodType === 'yearly') {
-                plData = aggregateYear(divData.monthly);
+                // 연간: 1~12월 각각의 환율로 원화 환산 후 합산
+                plData = aggregateWithFx(divData, div.code, Array.from({ length: 12 }, (_, i) => i + 1));
                 label = `${year}년 연간`;
             } else if (periodType === 'quarterly') {
+                // 분기: 해당 분기 3개월을 각각의 환율로 원화 환산 후 합산
+                let selectedQ = 1;
                 for (let q = 4; q >= 1; q--) {
                     const d = aggregateQuarter(divData.monthly, q);
-                    if (d.revenue !== 0) { plData = d; label = `Q${q}`; break; }
+                    if (d.revenue !== 0) { selectedQ = q; label = `Q${q}`; break; }
                 }
-                plData = plData! || aggregateQuarter(divData.monthly, 1);
                 label = label || 'Q1';
+                const startM = (selectedQ - 1) * 3 + 1;
+                plData = aggregateWithFx(divData, div.code, [startM, startM + 1, startM + 2]);
             } else if (periodType === 'half') {
+                // 반기: 해당 반기 6개월을 각각의 환율로 원화 환산 후 합산
                 const h2 = aggregateHalf(divData.monthly, 2);
-                if (h2.revenue !== 0) { plData = h2; label = '하반기'; }
-                else { plData = aggregateHalf(divData.monthly, 1); label = '상반기'; }
+                if (h2.revenue !== 0) {
+                    plData = aggregateWithFx(divData, div.code, [7, 8, 9, 10, 11, 12]);
+                    label = '하반기';
+                } else {
+                    plData = aggregateWithFx(divData, div.code, [1, 2, 3, 4, 5, 6]);
+                    label = '상반기';
+                }
             } else {
-                plData = globalLatestMonth > 0 ? divData.monthly[globalLatestMonth] || ({} as MonthlyPLData) : ({} as MonthlyPLData);
+                // 월간: 해당 월의 환율로 원화 환산
+                const monthData = globalLatestMonth > 0 ? divData.monthly[globalLatestMonth] || ({} as MonthlyPLData) : ({} as MonthlyPLData);
+                plData = convertMonthToKRW(monthData, div.code, globalLatestMonth || 1);
             }
 
             results.push({ division: div.name, plData, divCode: div.code });
@@ -137,21 +184,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
         return { label, data: results };
     };
 
-    const { label: periodLabel, data: rawCompData } = getLatestOrAgg();
-
-    // 데이터에 환율 적용 처리 (원화 테이블 통일용) — 입력된 환율 사용
-    const compData = rawCompData.map((d) => {
-        const rate = getFxRate(d.divCode, latestMonth);
-        const convertedPL = { ...d.plData };
-
-        Object.keys(convertedPL).forEach(key => {
-            const isRatioOrCount = key.toLowerCase().includes('ratio') || key.toLowerCase().includes('rate') || key === 'headcount' || key === 'revenuePerHead';
-            if (!isRatioOrCount && typeof convertedPL[key] === 'number') {
-                convertedPL[key] = convertedPL[key] * rate;
-            }
-        });
-        return { ...d, plData: convertedPL };
-    });
+    const { label: periodLabel, data: compData } = getLatestOrAgg();
 
     // 라인 차트용 시계열(1~12월) 데이터 가공 — 월별 입력 환율 적용
     const lineChartData = MONTH_NAMES.map((name, i) => {
