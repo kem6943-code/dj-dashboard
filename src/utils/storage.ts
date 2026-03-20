@@ -38,6 +38,11 @@ function applyMigrations(store: DataStore): DataStore {
         // [긴급 수치 보정]: 베트남 898억 등 환율 1.0 오독 방지 및 '25년 환율 누락 방지
         if (div.year === 2025 || div.year === 2026) {
             for (let m = 1; m <= 12; m++) {
+                // 🔧 베트남 환율 이상치 보정: 0.5~1.0 범위는 소수점 실수(예: 0.055→0.55) → 0.055로 교정
+                if (div.divisionCode === 'vietnam' && div.exchangeRates[m] &&
+                    div.exchangeRates[m].actual >= 0.5 && div.exchangeRates[m].actual < 1) {
+                    div.exchangeRates[m].actual = 0.055;
+                }
                 if (div.divisionCode === 'vietnam' && (!div.exchangeRates[m] || div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0)) {
                     div.exchangeRates[m] = { actual: 0.055, target: 0.055, prev: 0.055 };
                 }
