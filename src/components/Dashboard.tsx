@@ -711,6 +711,7 @@ export function Dashboard() {
                         return (
                             <DataInputModal
                                 divisionInfo={divisionInfo}
+                                subDivision={selectedSubDiv}
                                 year={editDataType === 'prevYear' ? selectedYear - 1 : selectedYear}
                                 month={editMonth}
                                 dataType={editDataType}

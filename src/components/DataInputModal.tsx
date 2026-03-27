@@ -9,6 +9,7 @@ import { X, Save, Calculator } from 'lucide-react';
 
 interface DataInputModalProps {
     divisionInfo: DivisionInfo;
+    subDivision?: string;
     year: number;
     month: number;
     dataType?: 'actual' | 'target' | 'prevYear';
@@ -18,7 +19,7 @@ interface DataInputModalProps {
     onClose: () => void;
 }
 
-export function DataInputModal({ divisionInfo, year, month, dataType = 'actual', initialData, initialRate, onSave, onClose }: DataInputModalProps) {
+export function DataInputModal({ divisionInfo, subDivision, year, month, dataType = 'actual', initialData, initialRate, onSave, onClose }: DataInputModalProps) {
     const [selectedMonth, setSelectedMonth] = useState(month);
     const [exchangeRate, setExchangeRate] = useState<number | string>(initialRate || 1);
 
@@ -47,7 +48,7 @@ export function DataInputModal({ divisionInfo, year, month, dataType = 'actual',
     });
 
     // 자동 계산 필드 업데이트 (입력값 변경 시)
-    const plItems = getPLItemsForDivision(divisionInfo.code as any);
+    const plItems = getPLItemsForDivision(divisionInfo.code as any, subDivision);
     useEffect(() => {
         const calculated = calculateDerivedFields(formData);
         setFormData(prev => {
