@@ -230,21 +230,14 @@ export const VIETNAM_ITEMS: PLItem[] = [
     { key: 'ebtRatio', label: '(%)', isHeader: false, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
-// 멕시코 사업부 P&L 항목 — 가전/자동차 공통 사용
-export const MEXICO_ITEMS: PLItem[] = [
-    // ===== 매출/판가 =====
-    { key: 'revenue', label: '매출액(MXN)', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
-    { key: 'revenueUSD', label: '매출액(천USD)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
-    { key: 'salesFridge', label: '냉장고', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
-    { key: 'salesOven', label: '오븐', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
-    { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
-
+// 멕시코 사업부 공통 경비/이익 항목
+const MEXICO_COMMON_COSTS: PLItem[] = [
     // ===== 재료비 =====
     { key: 'materialRatio', label: '실적재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'bomMaterialRatio', label: 'BOM재료비율', isHeader: false, indent: 0, isCalculated: false, section: '재료비', type: 'ratio' },
     { key: 'materialDiff', label: '차이', isHeader: false, indent: 0, isCalculated: true, section: '재료비', type: 'ratio' },
-    { key: 'purchaseVI', label: '구매VI', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
-    { key: 'materialLoss', label: '재료Loss금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
+    { key: 'purchaseVI', label: '구매 VI', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
+    { key: 'materialLoss', label: '재료Loss 금액', isHeader: false, indent: 0, isCalculated: false, section: '재료비' },
 
     // ===== 노무비 =====
     { key: 'headcount', label: '인원', isHeader: false, indent: 0, isCalculated: false, section: '노무비', type: 'count' },
@@ -255,19 +248,17 @@ export const MEXICO_ITEMS: PLItem[] = [
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
     { key: 'overheadRatio', label: '경비율', isHeader: false, indent: 0, isCalculated: true, section: '경비', type: 'ratio' },
+    { key: 'depreciation', label: '감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'electricity', label: '전력비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'techFee', label: '기술료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'depreciation', label: '감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'welfare', label: '복리후생비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'repair', label: '수선비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'factoryRent', label: '공장임차료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'transportation', label: '운반비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'commission', label: '지급수수료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'consumables', label: '소모품비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'packaging', label: '포장비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'rent', label: '지급임차료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'importCost', label: '수입통관비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
-    { key: 'taxDues', label: '세금과공과', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'repair', label: '수선비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'welfare', label: '복리후생비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'transportation', label: '운반비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'consumables', label: '소모품비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'commission', label: '지급수수료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'rent', label: '지급임차료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
+    { key: 'packaging', label: '포장비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'overheadOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
 
     // ===== 영업이익 =====
@@ -282,12 +273,61 @@ export const MEXICO_ITEMS: PLItem[] = [
     { key: 'ebtRatio', label: '세전이익(%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
+const MEXICO_COMMON_SALES_HEADER: PLItem[] = [
+    { key: 'revenue', label: '매출액(MXN)', isHeader: true, indent: 0, isCalculated: true, section: '매출/판가' },
+    { key: 'revenueUSD', label: '매출액(USD)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+];
+
+export const MEXICO_HA_ITEMS: PLItem[] = [
+    ...MEXICO_COMMON_SALES_HEADER,
+    { key: 'salesFridge', label: '냉장고', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesOven', label: '오븐', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesOther', label: '기타', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    ...MEXICO_COMMON_COSTS,
+];
+
+export const MEXICO_AUTO_ITEMS: PLItem[] = [
+    ...MEXICO_COMMON_SALES_HEADER,
+    { key: 'salesHanon', label: '한온', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesSeoyeon', label: '서연이화', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesKefico', label: '현대 케피코', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesDonggwang', label: '동광 라모스', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesAmotech', label: '엠오토텍', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesKyungrim', label: '경림', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesMobis', label: '현대 모비스', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesYoungshin', label: '영신', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesOther', label: '기타수익', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    ...MEXICO_COMMON_COSTS,
+];
+
+export const MEXICO_ALL_ITEMS: PLItem[] = [
+    ...MEXICO_COMMON_SALES_HEADER,
+    { key: 'salesFridge', label: '냉장고(가전)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesOven', label: '오븐(가전)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesHanon', label: '한온(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesSeoyeon', label: '서연이화(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesKefico', label: '현대 케피코(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesDonggwang', label: '동광 라모스(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesAmotech', label: '엠오토텍(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesKyungrim', label: '경림(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesMobis', label: '현대 모비스(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesYoungshin', label: '영신(차)', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    { key: 'salesOther', label: '기타/기타수익', isHeader: false, indent: 1, isCalculated: false, section: '매출/판가' },
+    ...MEXICO_COMMON_COSTS,
+];
+
+export const MEXICO_ITEMS = MEXICO_ALL_ITEMS;
+
 // 사업부별 P&L 항목 반환
-export function getPLItemsForDivision(code: DivisionCode): PLItem[] {
+export function getPLItemsForDivision(code: DivisionCode, subCode?: string): PLItem[] {
+    if (code === 'mexico') {
+        if (subCode === 'homeAppliance') return MEXICO_HA_ITEMS;
+        if (subCode === 'automotive') return MEXICO_AUTO_ITEMS;
+        return MEXICO_ALL_ITEMS;
+    }
     switch (code) {
         case 'thailand': return THAILAND_ITEMS;
         case 'vietnam': return VIETNAM_ITEMS;
-        case 'mexico': return MEXICO_ITEMS;
         case 'changwon':
         default: return CHANGWON_ITEMS;
     }

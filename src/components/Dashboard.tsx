@@ -685,7 +685,7 @@ export function Dashboard() {
                                 )}
 
                                 <PLTable
-                                    items={getPLItemsForDivision(selectedDivision)}
+                                    items={getPLItemsForDivision(selectedDivision, selectedSubDiv)}
                                     labels={periodLabels}
                                     data={periodData}
                                     rates={periodRates}
