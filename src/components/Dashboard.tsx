@@ -178,7 +178,7 @@ export function Dashboard() {
                 // showYoY가 켜져있으면 전년 실적 먼저
                 if (showYoY) {
                     data.push(prevYearActualData?.[idx] || ({} as MonthlyPLData));
-                    rates.push(prs.actual || 1);
+                    rates.push(prs.actual !== 1 && prs.actual !== undefined ? prs.actual : (prs.prev || 1));
                 }
                 // 실적(현재 년도)은 항상 그 다음
                 data.push(actualData[idx]);
@@ -372,7 +372,7 @@ export function Dashboard() {
         const existingRates = divDataToUpdate.exchangeRates[month] || { actual: 1, target: 1, prev: 1 };
         divDataToUpdate.exchangeRates[month] = {
             ...existingRates,
-            [dataType === 'prevYear' ? 'prev' : dataType]: exchangeRate
+            [dataType === 'prevYear' ? 'actual' : dataType]: exchangeRate
         };
 
         newStore.lastUpdated = new Date().toISOString();
@@ -723,7 +723,9 @@ export function Dashboard() {
                                 }
                                 initialRate={
                                     editDataType === 'prevYear'
-                                        ? prevYearDivData?.exchangeRates?.[editMonth]?.prev
+                                        ? (prevYearDivData?.exchangeRates?.[editMonth]?.actual !== 1 && prevYearDivData?.exchangeRates?.[editMonth]?.actual !== undefined) 
+                                            ? prevYearDivData?.exchangeRates?.[editMonth]?.actual 
+                                            : prevYearDivData?.exchangeRates?.[editMonth]?.prev
                                         : editDataType === 'target'
                                             ? divData?.exchangeRates?.[editMonth]?.target
                                             : divData?.exchangeRates?.[editMonth]?.actual
