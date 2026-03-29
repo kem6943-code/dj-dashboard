@@ -317,9 +317,8 @@ export function Dashboard() {
                     const subData = divDataToUpdate.subDivTargetMonthly?.[sub.key]?.[month];
                     if (subData) {
                         hasData = true;
-                        Object.entries(plData).forEach(([k]) => {
+                        Object.entries(subData).forEach(([k, val]) => {
                             // 금액/카운트 항목만 단순 합산 (ALL_ITEMS_MAP이 Dashboard에 없으므로 대략적으로 합산)
-                            const val = subData[k];
                             if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
                                 totalTarget[k] = (totalTarget[k] || 0) + val;
                             }
@@ -344,8 +343,7 @@ export function Dashboard() {
                     const subData = divDataToUpdate.subDivMonthly?.[sub.key]?.[month];
                     if (subData) {
                         hasData = true;
-                        Object.entries(plData).forEach(([k]) => {
-                            const val = subData[k];
+                        Object.entries(subData).forEach(([k, val]) => {
                             if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
                                 totalActual[k] = (totalActual[k] || 0) + val;
                             }

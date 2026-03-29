@@ -590,9 +590,9 @@ function applyMigrations(store: DataStore): DataStore {
                         const subData = div.subDivMonthly?.[key]?.[1];
                         if (subData) {
                             hasData = true;
-                            Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
-                                if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
-                                    totalActual[k] = (totalActual[k] || 0) + (subData[k] || 0);
+                            Object.entries(subData).forEach(([k, val]) => {
+                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                    totalActual[k] = (totalActual[k] || 0) + val;
                                 }
                             });
                         }
@@ -607,9 +607,9 @@ function applyMigrations(store: DataStore): DataStore {
                         const subData = div.subDivTargetMonthly?.[key]?.[1];
                         if (subData) {
                             hasData = true;
-                            Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
-                                if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
-                                    totalTarget[k] = (totalTarget[k] || 0) + (subData[k] || 0);
+                            Object.entries(subData).forEach(([k, val]) => {
+                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                    totalTarget[k] = (totalTarget[k] || 0) + val;
                                 }
                             });
                         }
@@ -742,9 +742,9 @@ function applyMigrations(store: DataStore): DataStore {
                         const subData = div.subDivMonthly?.[key]?.[1];
                         if (subData) {
                             hasData = true;
-                            Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
-                                if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
-                                    totalActual[k] = (totalActual[k] || 0) + (subData[k] || 0);
+                            Object.entries(subData).forEach(([k, val]) => {
+                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                    totalActual[k] = (totalActual[k] || 0) + val;
                                 }
                             });
                         }
@@ -758,9 +758,9 @@ function applyMigrations(store: DataStore): DataStore {
                         const subData = div.subDivTargetMonthly?.[key]?.[1];
                         if (subData) {
                             hasData = true;
-                            Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
-                                if (!item.isCalculated && (!item.type || item.type === 'amount' || item.type === 'count')) {
-                                    totalTarget[k] = (totalTarget[k] || 0) + (subData[k] || 0);
+                            Object.entries(subData).forEach(([k, val]) => {
+                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                    totalTarget[k] = (totalTarget[k] || 0) + val;
                                 }
                             });
                         }
