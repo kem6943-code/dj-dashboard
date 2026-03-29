@@ -104,9 +104,9 @@ export function DataInputModal({ divisionInfo, subDivision, year, month, dataTyp
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay" style={{ padding: '20px', boxSizing: 'border-box' }}>
-            <div className="glass-card px-5 py-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
-                style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)', padding: '24px 20px', boxSizing: 'border-box' }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4 sm:p-5">
+            <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in p-5 sm:p-6"
+                style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}
             >
                 {/* 헤더 */}
                 <div className="flex items-center justify-between mb-6">

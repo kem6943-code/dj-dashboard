@@ -8,12 +8,13 @@ import { syncToCloud, fetchFromCloud } from './supabaseClient';
 const STORAGE_KEY = 'management_dashboard_data_v10'; // v9→v10: 태국 P&L 모든 세부 행(경비 % 등) 100% 전수 싱크
 
 // 데이터 저장
-export async function saveData(store: DataStore): Promise<void> {
+export async function saveData(store: DataStore): Promise<boolean> {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-        await syncToCloud(store);
+        return await syncToCloud(store);
     } catch (e) {
         console.error('Failed to save data:', e);
+        return false;
     }
 }
 

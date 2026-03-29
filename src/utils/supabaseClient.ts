@@ -9,7 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 const DOCUMENT_ID = 1;
 
 // 클라우드 동기화 함수
-export async function syncToCloud(data: any) {
+export async function syncToCloud(data: any): Promise<boolean> {
     try {
         const { error } = await supabase
             .from('dashboard_data')
@@ -21,9 +21,12 @@ export async function syncToCloud(data: any) {
 
         if (error) {
             console.error('Error syncing to cloud:', error);
+            return false;
         }
+        return true;
     } catch (e) {
         console.error('Network error syncing to cloud:', e);
+        return false;
     }
 }
 

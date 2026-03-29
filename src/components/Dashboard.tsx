@@ -52,6 +52,7 @@ export function Dashboard() {
     const [showTarget, setShowTarget] = useState(true);
     const [showYoY, setShowYoY] = useState(true); // '25' 대비 보기 토글 (기본 ON)
     const [loading, setLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
 
     // 초기 데이터 로드
     useEffect(() => {
@@ -377,7 +378,13 @@ export function Dashboard() {
 
         newStore.lastUpdated = new Date().toISOString();
 
-        await saveData(newStore);
+        const success = await saveData(newStore);
+        if (!success) {
+            setSyncError('클라우드 DB 서버 연결 실패!\n입력하신 데이터는 로컬 컴퓨터에만 임시 저장되었습니다.');
+        } else {
+            setSyncError(null);
+        }
+
         setStore(newStore);
         setShowInputModal(false);
     };
@@ -390,7 +397,7 @@ export function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen p-12 max-w-[1920px] mx-auto bg-[#fafafa]" style={{ padding: '48px', boxSizing: 'border-box' }}>
+        <div className="min-h-screen p-4 sm:p-6 md:p-8 lg:p-12 max-w-[1920px] mx-auto bg-[#fafafa]">
             {/* ===== 헤더 ===== */}
             <header className="mb-16">
                 <div className="flex items-center justify-between">
@@ -432,7 +439,7 @@ export function Dashboard() {
             </header>
 
             {/* ===== 메인 뷰 스위처 ===== */}
-            <div className="flex items-center gap-4 flex-wrap" style={{ marginBottom: '25px' }}>
+            <div className="flex items-center gap-4 flex-wrap mb-6">
                 <button
                     className={`tab-btn ${activeView === 'main' ? 'active' : ''}`}
                     onClick={() => setActiveView('main')}
@@ -462,7 +469,7 @@ export function Dashboard() {
                 <div className="animate-fade-in pb-20">
 
                     {/* 1. 상단: 전사 통합 YTD 요약 (KPI 카드) */}
-                    <div style={{ marginBottom: '25px' }}>
+                    <div className="mb-6">
                         <h2 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-slate-800 tracking-tight">
                             <BarChart3 className="text-blue-500 w-6 h-6" />
                             {selectedYear}년 전사 통합 경영실적 요약 <span className="text-sm font-semibold text-slate-400 ml-2 tracking-normal">(YTD 기준)</span>
@@ -474,12 +481,12 @@ export function Dashboard() {
                     </div>
 
                     {/* 2. 중단: 사업부별 연간 TD목표 달성 진척도 */}
-                    <div style={{ marginBottom: '25px' }}>
+                    <div className="mb-6">
                         <YearlyTargetCards store={store} year={selectedYear} />
                     </div>
 
                     {/* 3. 하단 1: 각 사업부별 월별 실적 트렌드 그래고 */}
-                    <div style={{ marginBottom: '40px' }}>
+                    <div className="mb-10">
                         <DivisionTrendCharts store={store} year={selectedYear} />
                     </div>
 
@@ -489,7 +496,7 @@ export function Dashboard() {
                             <TrendingUp className="text-emerald-500 w-7 h-7" />
                             전사 월별 실적 트렌드
                         </h2>
-                        <div className="glass-card p-6 shadow-sm border border-gray-100" style={{ padding: '24px', boxSizing: 'border-box' }}>
+                        <div className="glass-card p-4 sm:p-6 shadow-sm border border-gray-100">
                             <Charts
                                 divData={consolidateAllDivisions(store, selectedYear)}
                                 prevYearData={consolidateAllDivisions(store, selectedYear - 1)}
@@ -636,7 +643,7 @@ export function Dashboard() {
                             </div>
 
                             {/* ===== P&L 테이블 ===== */}
-                            <div className="glass-card p-8 mb-10 animate-fade-in" style={{ padding: '32px', boxSizing: 'border-box' }}>
+                            <div className="glass-card p-4 sm:p-6 md:p-8 mb-10 animate-fade-in">
                                 <div className="flex justify-between items-center mb-4">
                                     <div>
                                         {periodType === 'monthly' && divisionInfo.code !== 'total' && divisionInfo.subDivisionMode !== 'columns' && (
@@ -736,6 +743,25 @@ export function Dashboard() {
                             />
                         );
                     })()}
+                </div>
+            )}
+
+            {/* 클라우드 동기화 실패 에러 토스트 */}
+            {syncError && (
+                <div className="fixed bottom-6 right-6 z-[100] animate-fade-in flex items-start gap-4 bg-red-50 border border-red-200 text-red-700 px-5 py-5 rounded-2xl shadow-2xl max-w-sm" style={{ boxShadow: '0 10px 40px rgba(239,68,68,0.2)' }}>
+                    <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-10 h-10 bg-red-100/80 rounded-full flex items-center justify-center border border-red-200">
+                            <span className="text-red-500 font-extrabold text-lg">!</span>
+                        </div>
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="font-bold text-[15px] mb-1 text-red-900 tracking-tight">🚨 클라우드 동기화 경고</h4>
+                        <p className="text-[13px] text-red-800 leading-relaxed opacity-90 whitespace-pre-line">{syncError}</p>
+                        <p className="text-[11px] text-red-700/80 mt-2 font-medium">Supabase 프로젝트가 일시 중지되었는지 확인해주세요.</p>
+                    </div>
+                    <button onClick={() => setSyncError(null)} className="p-1 hover:bg-red-100 rounded-full transition-colors self-start opacity-70 hover:opacity-100 -mr-1 -mt-1">
+                        <span className="text-2xl leading-none block w-6 h-6 text-center text-red-500">&times;</span>
+                    </button>
                 </div>
             )}
         </div>
