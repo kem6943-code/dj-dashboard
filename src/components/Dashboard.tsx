@@ -397,7 +397,7 @@ export function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen p-4 sm:p-6 md:p-8 lg:p-12 max-w-[1920px] mx-auto bg-[#fafafa]">
+        <div className="min-h-screen p-12 max-w-[1920px] mx-auto bg-[#fafafa]" style={{ padding: '48px', boxSizing: 'border-box' }}>
             {/* ===== 헤더 ===== */}
             <header className="mb-16">
                 <div className="flex items-center justify-between">
@@ -439,7 +439,7 @@ export function Dashboard() {
             </header>
 
             {/* ===== 메인 뷰 스위처 ===== */}
-            <div className="flex items-center gap-4 flex-wrap mb-6">
+            <div className="flex items-center gap-4 flex-wrap" style={{ marginBottom: '25px' }}>
                 <button
                     className={`tab-btn ${activeView === 'main' ? 'active' : ''}`}
                     onClick={() => setActiveView('main')}
@@ -469,7 +469,7 @@ export function Dashboard() {
                 <div className="animate-fade-in pb-20">
 
                     {/* 1. 상단: 전사 통합 YTD 요약 (KPI 카드) */}
-                    <div className="mb-6">
+                    <div style={{ marginBottom: '25px' }}>
                         <h2 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-slate-800 tracking-tight">
                             <BarChart3 className="text-blue-500 w-6 h-6" />
                             {selectedYear}년 전사 통합 경영실적 요약 <span className="text-sm font-semibold text-slate-400 ml-2 tracking-normal">(YTD 기준)</span>
@@ -481,12 +481,12 @@ export function Dashboard() {
                     </div>
 
                     {/* 2. 중단: 사업부별 연간 TD목표 달성 진척도 */}
-                    <div className="mb-6">
+                    <div style={{ marginBottom: '25px' }}>
                         <YearlyTargetCards store={store} year={selectedYear} />
                     </div>
 
                     {/* 3. 하단 1: 각 사업부별 월별 실적 트렌드 그래고 */}
-                    <div className="mb-10">
+                    <div style={{ marginBottom: '40px' }}>
                         <DivisionTrendCharts store={store} year={selectedYear} />
                     </div>
 
@@ -496,7 +496,7 @@ export function Dashboard() {
                             <TrendingUp className="text-emerald-500 w-7 h-7" />
                             전사 월별 실적 트렌드
                         </h2>
-                        <div className="glass-card p-4 sm:p-6 shadow-sm border border-gray-100">
+                        <div className="glass-card p-6 shadow-sm border border-gray-100" style={{ padding: '24px', boxSizing: 'border-box' }}>
                             <Charts
                                 divData={consolidateAllDivisions(store, selectedYear)}
                                 prevYearData={consolidateAllDivisions(store, selectedYear - 1)}
@@ -643,7 +643,7 @@ export function Dashboard() {
                             </div>
 
                             {/* ===== P&L 테이블 ===== */}
-                            <div className="glass-card p-4 sm:p-6 md:p-8 mb-10 animate-fade-in">
+                            <div className="glass-card p-8 mb-10 animate-fade-in" style={{ padding: '32px', boxSizing: 'border-box' }}>
                                 <div className="flex justify-between items-center mb-4">
                                     <div>
                                         {periodType === 'monthly' && divisionInfo.code !== 'total' && divisionInfo.subDivisionMode !== 'columns' && (

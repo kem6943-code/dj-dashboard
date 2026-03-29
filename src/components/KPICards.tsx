@@ -77,11 +77,11 @@ export function KPICards({ divData, divisionInfo }: KPICardsProps) {
     ];
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-10 animate-fade-in py-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 animate-fade-in" style={{ padding: '20px 0', boxSizing: 'border-box' }}>
             {kpis.map((kpi, i) => {
                 const Icon = kpi.icon;
                 return (
-                    <div key={i} className="kpi-card p-4 sm:p-5">
+                    <div key={i} className="kpi-card" style={{ padding: '20px', boxSizing: 'border-box' }}>
                         <div className="flex items-center justify-between">
                             <span className="kpi-label">{kpi.label}</span>
                             <Icon className="w-4 h-4" style={{ color: kpi.color }} />
