@@ -317,6 +317,9 @@ export function Dashboard() {
                     const subData = divDataToUpdate.subDivTargetMonthly?.[sub.key]?.[month];
                     if (subData) {
                         hasData = true;
+                        if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
+                            subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
+                        }
                         Object.entries(subData).forEach(([k, val]) => {
                             // 금액/카운트 항목만 단순 합산 (ALL_ITEMS_MAP이 Dashboard에 없으므로 대략적으로 합산)
                             if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
@@ -343,6 +346,9 @@ export function Dashboard() {
                     const subData = divDataToUpdate.subDivMonthly?.[sub.key]?.[month];
                     if (subData) {
                         hasData = true;
+                        if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
+                            subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
+                        }
                         Object.entries(subData).forEach(([k, val]) => {
                             if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
                                 totalActual[k] = (totalActual[k] || 0) + val;

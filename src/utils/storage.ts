@@ -829,6 +829,10 @@ function autoRepairAggregations(store: DataStore): DataStore {
                         const subData = div.subDivMonthly?.[sub.key]?.[month];
                         if (subData && Object.keys(subData).length > 0) {
                             hasData = true;
+                            // 🚑 강제 힐링: 과거 에러로 subData에 materialCost 자체가 DB에서 유실된 경우를 위해 강제 복원
+                            if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
+                                subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
+                            }
                             Object.entries(subData).forEach(([k, val]) => {
                                 if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
                                     totalActual[k] = (totalActual[k] || 0) + val;
@@ -849,6 +853,9 @@ function autoRepairAggregations(store: DataStore): DataStore {
                         const subData = div.subDivTargetMonthly?.[sub.key]?.[month];
                         if (subData && Object.keys(subData).length > 0) {
                             hasData = true;
+                            if ((!subData.materialCost || subData.materialCost === 0) && subData.revenue > 0 && subData.materialRatio > 0) {
+                                subData.materialCost = (subData.revenue * subData.materialRatio) / 100;
+                            }
                             Object.entries(subData).forEach(([k, val]) => {
                                 if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
                                     totalTarget[k] = (totalTarget[k] || 0) + val;
