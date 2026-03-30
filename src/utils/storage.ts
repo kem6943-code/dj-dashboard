@@ -812,6 +812,60 @@ function applyMigrations(store: DataStore): DataStore {
     return store;
 }
 
+// 🔧 자동 복원 로직: 과거 버그로 인해 잘못 합산된 채 클라우드에 영구 저장된 '전체' 탭의 합계 데이터를
+// 서브디비전(가전, 자동차 등) 실데이터를 긁어모아 로드 시점에 즉시 완벽하게 수학적 재계산하여 덮어씌움
+function autoRepairAggregations(store: DataStore): DataStore {
+    const repaired = { ...store };
+    repaired.divisions.forEach(div => {
+        const divInfo = DIVISIONS_WITH_TOTAL.find(d => d.code === div.divisionCode);
+        if (divInfo && divInfo.subDivisions && divInfo.subDivisionMode === 'tabs') {
+            for (let month = 1; month <= 12; month++) {
+                // 실적 자동 복구
+                if (div.subDivMonthly) {
+                    const totalActual = createEmptyPLData();
+                    let hasData = false;
+                    divInfo.subDivisions.forEach(sub => {
+                        if (sub.key === 'all') return;
+                        const subData = div.subDivMonthly?.[sub.key]?.[month];
+                        if (subData && Object.keys(subData).length > 0) {
+                            hasData = true;
+                            Object.entries(subData).forEach(([k, val]) => {
+                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                    totalActual[k] = (totalActual[k] || 0) + val;
+                                }
+                            });
+                        }
+                    });
+                    if (hasData) {
+                        div.monthly[month] = calculateDerivedFields(totalActual, false);
+                    }
+                }
+                // 목표 자동 복구
+                if (div.subDivTargetMonthly) {
+                    const totalTarget = createEmptyPLData();
+                    let hasData = false;
+                    divInfo.subDivisions.forEach(sub => {
+                        if (sub.key === 'all') return;
+                        const subData = div.subDivTargetMonthly?.[sub.key]?.[month];
+                        if (subData && Object.keys(subData).length > 0) {
+                            hasData = true;
+                            Object.entries(subData).forEach(([k, val]) => {
+                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
+                                    totalTarget[k] = (totalTarget[k] || 0) + val;
+                                }
+                            });
+                        }
+                    });
+                    if (hasData) {
+                        div.targetMonthly[month] = calculateDerivedFields(totalTarget, false);
+                    }
+                }
+            }
+        }
+    });
+    return repaired;
+}
+
 // 데이터 로드
 export async function loadData(): Promise<DataStore> {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -842,9 +896,12 @@ export async function loadData(): Promise<DataStore> {
     // 누락된 신규 데이터 뼈대(마이그레이션) 보완
     const migrated = applyMigrations(targetData);
 
-    // 로컬 저장소를 최신 마이그레이션 적용 상태로 업데이트
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-    return migrated;
+    // 손상된 하위-상위 합계 불일치 데이터 런타임 자동 복구
+    const fullyRepaired = autoRepairAggregations(migrated);
+
+    // 로컬 저장소를 최신 마이그레이션 및 퍼펙트 복원 상태로 업데이트
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fullyRepaired));
+    return fullyRepaired;
 }
 
 // 기본 데이터 스토어 생성
