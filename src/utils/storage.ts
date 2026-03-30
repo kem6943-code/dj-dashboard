@@ -824,6 +824,7 @@ function autoRepairAggregations(store: DataStore): DataStore {
                 if (div.subDivMonthly) {
                     const totalActual = createEmptyPLData();
                     let hasData = false;
+                    let manualOverrides = new Set<string>();
                     divInfo.subDivisions.forEach(sub => {
                         if (sub.key === 'all') return;
                         const subData = div.subDivMonthly?.[sub.key]?.[month];
@@ -833,6 +834,7 @@ function autoRepairAggregations(store: DataStore): DataStore {
                             if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
                                 subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
                             }
+                            if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverrides.add(m));
                             Object.entries(subData).forEach(([k, val]) => {
                                 if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
                                     totalActual[k] = (totalActual[k] || 0) + val;
@@ -841,6 +843,7 @@ function autoRepairAggregations(store: DataStore): DataStore {
                         }
                     });
                     if (hasData) {
+                        totalActual.manualOverrides = Array.from(manualOverrides);
                         div.monthly[month] = calculateDerivedFields(totalActual, false);
                     }
                 }
@@ -848,14 +851,16 @@ function autoRepairAggregations(store: DataStore): DataStore {
                 if (div.subDivTargetMonthly) {
                     const totalTarget = createEmptyPLData();
                     let hasData = false;
+                    let manualOverridesTarget = new Set<string>();
                     divInfo.subDivisions.forEach(sub => {
                         if (sub.key === 'all') return;
                         const subData = div.subDivTargetMonthly?.[sub.key]?.[month];
                         if (subData && Object.keys(subData).length > 0) {
                             hasData = true;
-                            if ((!subData.materialCost || subData.materialCost === 0) && subData.revenue > 0 && subData.materialRatio > 0) {
-                                subData.materialCost = (subData.revenue * subData.materialRatio) / 100;
+                            if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
+                                subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
                             }
+                            if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverridesTarget.add(m));
                             Object.entries(subData).forEach(([k, val]) => {
                                 if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
                                     totalTarget[k] = (totalTarget[k] || 0) + val;
@@ -864,6 +869,7 @@ function autoRepairAggregations(store: DataStore): DataStore {
                         }
                     });
                     if (hasData) {
+                        totalTarget.manualOverrides = Array.from(manualOverridesTarget);
                         div.targetMonthly[month] = calculateDerivedFields(totalTarget, false);
                     }
                 }

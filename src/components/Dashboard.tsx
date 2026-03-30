@@ -311,12 +311,14 @@ export function Dashboard() {
 
                 // 베트남 전체(all) 타겟 합산 재계산 로직
                 const totalTarget = createEmptyPLData();
-                let hasData = false;
+                let hasDataTarget = false;
+                let manualOverridesTarget = new Set<string>();
                 divisionInfo.subDivisions?.forEach(sub => {
                     if (sub.key === 'all') return;
                     const subData = divDataToUpdate.subDivTargetMonthly?.[sub.key]?.[month];
                     if (subData) {
-                        hasData = true;
+                        hasDataTarget = true;
+                        if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverridesTarget.add(m));
                         if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
                             subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
                         }
@@ -328,7 +330,8 @@ export function Dashboard() {
                         });
                     }
                 });
-                if (hasData) {
+                if (hasDataTarget) {
+                    totalTarget.manualOverrides = Array.from(manualOverridesTarget);
                     if (!divDataToUpdate.targetMonthly) divDataToUpdate.targetMonthly = {};
                     divDataToUpdate.targetMonthly[month] = calculateDerivedFields(totalTarget, false);
                 }
@@ -340,12 +343,14 @@ export function Dashboard() {
 
                 // 베트남 전체(all) 실적 합산 재계산 로직
                 const totalActual = createEmptyPLData();
-                let hasData = false;
+                let hasDataActual = false;
+                let manualOverridesActual = new Set<string>();
                 divisionInfo.subDivisions?.forEach(sub => {
                     if (sub.key === 'all') return;
                     const subData = divDataToUpdate.subDivMonthly?.[sub.key]?.[month];
                     if (subData) {
-                        hasData = true;
+                        hasDataActual = true;
+                        if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverridesActual.add(m));
                         if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
                             subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
                         }
@@ -356,7 +361,8 @@ export function Dashboard() {
                         });
                     }
                 });
-                if (hasData) {
+                if (hasDataActual) {
+                    totalActual.manualOverrides = Array.from(manualOverridesActual);
                     if (!divDataToUpdate.monthly) divDataToUpdate.monthly = {};
                     divDataToUpdate.monthly[month] = calculateDerivedFields(totalActual, false);
                 }
