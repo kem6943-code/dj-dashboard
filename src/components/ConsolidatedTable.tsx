@@ -107,13 +107,21 @@ export function ConsolidatedTable({ store, year, periodType, periodIndex }: Cons
 
     // 합계: 원화 기준 합산
     const totalData = createEmptyPLData();
+    let manualOverrides = new Set<string>();
     divisionData.forEach(({ dataKRW }) => {
+        if (dataKRW.manualOverrides) dataKRW.manualOverrides.forEach(mo => manualOverrides.add(mo));
         Object.values(ALL_ITEMS_MAP).forEach(item => {
             if (!item.isCalculated) {
                 totalData[item.key] = (totalData[item.key] || 0) + (dataKRW[item.key] || 0);
             }
         });
+        totalData.materialCost = (totalData.materialCost || 0) + (dataKRW.materialCost || 0);
+        totalData.operatingProfit = (totalData.operatingProfit || 0) + (dataKRW.operatingProfit || 0);
+        totalData.ebt = (totalData.ebt || 0) + (dataKRW.ebt || 0);
+        totalData.nonOpBalance = (totalData.nonOpBalance || 0) + (dataKRW.nonOpBalance || 0);
+        totalData.revenue = (totalData.revenue || 0) + (dataKRW.revenue || 0);
     });
+    totalData.manualOverrides = Array.from(manualOverrides);
     const totalComputed = calculateDerivedFields(totalData, true);
 
     const periodLabel = getPeriodLabel(periodType, periodIndex, year);

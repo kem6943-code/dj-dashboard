@@ -601,18 +601,26 @@ export function aggregateQuarter(monthly: { [month: number]: MonthlyPLData }, qu
     const startMonth = (quarter - 1) * 3 + 1;
     const months = [startMonth, startMonth + 1, startMonth + 2];
     const result = createEmptyPLData();
+    let manualOverrides = new Set<string>();
 
     months.forEach(m => {
         const mData = monthly[m];
         if (mData) {
+            if (mData.manualOverrides) mData.manualOverrides.forEach(mo => manualOverrides.add(mo));
             Object.values(ALL_ITEMS_MAP).forEach(item => {
                 if (!item.isCalculated) {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
+            result.materialCost = (result.materialCost || 0) + (mData.materialCost || 0);
+            result.operatingProfit = (result.operatingProfit || 0) + (mData.operatingProfit || 0);
+            result.ebt = (result.ebt || 0) + (mData.ebt || 0);
+            result.nonOpBalance = (result.nonOpBalance || 0) + (mData.nonOpBalance || 0);
+            result.revenue = (result.revenue || 0) + (mData.revenue || 0);
         }
     });
 
+    result.manualOverrides = Array.from(manualOverrides);
     return calculateDerivedFields(result, true);
 }
 
@@ -621,34 +629,51 @@ export function aggregateHalf(monthly: { [month: number]: MonthlyPLData }, half:
     const startMonth = (half - 1) * 6 + 1;
     const months = Array.from({ length: 6 }, (_, i) => startMonth + i);
     const result = createEmptyPLData();
+    let manualOverrides = new Set<string>();
 
     months.forEach(m => {
         const mData = monthly[m];
         if (mData) {
+            if (mData.manualOverrides) mData.manualOverrides.forEach(mo => manualOverrides.add(mo));
             Object.values(ALL_ITEMS_MAP).forEach(item => {
                 if (!item.isCalculated) {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
+            result.materialCost = (result.materialCost || 0) + (mData.materialCost || 0);
+            result.operatingProfit = (result.operatingProfit || 0) + (mData.operatingProfit || 0);
+            result.ebt = (result.ebt || 0) + (mData.ebt || 0);
+            result.nonOpBalance = (result.nonOpBalance || 0) + (mData.nonOpBalance || 0);
+            result.revenue = (result.revenue || 0) + (mData.revenue || 0);
         }
     });
 
+    result.manualOverrides = Array.from(manualOverrides);
     return calculateDerivedFields(result, true);
 }
 
 // 연간 데이터 집계
 export function aggregateYear(monthly: { [month: number]: MonthlyPLData }): MonthlyPLData {
     const result = createEmptyPLData();
+    let manualOverrides = new Set<string>();
+    
     for (let m = 1; m <= 12; m++) {
         const mData = monthly[m];
         if (mData) {
+            if (mData.manualOverrides) mData.manualOverrides.forEach(mo => manualOverrides.add(mo));
             Object.values(ALL_ITEMS_MAP).forEach(item => {
                 if (!item.isCalculated) {
                     result[item.key] = (result[item.key] || 0) + (mData[item.key] || 0);
                 }
             });
+            result.materialCost = (result.materialCost || 0) + (mData.materialCost || 0);
+            result.operatingProfit = (result.operatingProfit || 0) + (mData.operatingProfit || 0);
+            result.ebt = (result.ebt || 0) + (mData.ebt || 0);
+            result.nonOpBalance = (result.nonOpBalance || 0) + (mData.nonOpBalance || 0);
+            result.revenue = (result.revenue || 0) + (mData.revenue || 0);
         }
     }
+    result.manualOverrides = Array.from(manualOverrides);
     return calculateDerivedFields(result, true);
 }
 
