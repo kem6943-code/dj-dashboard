@@ -286,16 +286,6 @@ export function Dashboard() {
                                     {divisionInfo && <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={divisionInfo} />}
 
 
-                                    <div className="flex items-center gap-4 mb-4 mt-8">
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 bg-white">
-                                            <input type="checkbox" checked={showTarget} onChange={(e) => setShowTarget(e.target.checked)} className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
-                                            <span className="font-semibold text-slate-600">TD목표 대비 보기</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 bg-white">
-                                            <input type="checkbox" checked={showYoY} onChange={(e) => setShowYoY(e.target.checked)} className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
-                                            <span className="font-semibold text-slate-600">'25년 대비 보기</span>
-                                        </label>
-                                    </div>
 
                                     {/* 매출/비용/이익률 혼합 차트 */}
                                     {divisionInfo && (
@@ -305,13 +295,21 @@ export function Dashboard() {
                                     <div className="w-full max-w-full overflow-hidden mx-auto pb-6">
                                         <div className="glass-card p-8 mb-10 bg-white border border-slate-200/60 rounded-2xl overflow-hidden max-w-full">
                                             <div className="w-full overflow-x-auto">
-                                            <div className="flex justify-between items-center mb-6">
-                                                <div>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <div className="flex items-center gap-3 flex-wrap">
                                                     {divisionInfo && divisionInfo.code !== 'total' && divisionInfo.subDivisionMode !== 'columns' && (
                                                         <ExcelUploader currentStore={store} onUploadSuccess={(newStore) => setStore(newStore)} divisionCode={divisionInfo.code} year={dateRange.end.year} />
                                                     )}
+                                                    <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 bg-white transition-colors">
+                                                        <input type="checkbox" checked={showTarget} onChange={(e) => setShowTarget(e.target.checked)} className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
+                                                        <span className="font-semibold text-slate-600">TD목표 대비 보기</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 bg-white transition-colors">
+                                                        <input type="checkbox" checked={showYoY} onChange={(e) => setShowYoY(e.target.checked)} className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
+                                                        <span className="font-semibold text-slate-600">'25년 대비 보기</span>
+                                                    </label>
                                                 </div>
-                                                <div className="text-sm font-semibold text-slate-500 text-right">
+                                                <div className="text-sm font-semibold text-slate-500 text-right whitespace-nowrap">
                                                     단위: {divisionInfo?.currency === 'KRW' ? '백만원' : divisionInfo?.currency === 'MXN' ? `천 ${divisionInfo.currency}` : `백만 ${divisionInfo?.currency}`}
                                                 </div>
                                             </div>
