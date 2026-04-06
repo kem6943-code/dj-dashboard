@@ -4,12 +4,7 @@
  */
 
 // 사업부 코드
-export type DivisionCode = 'total' | 'changwon' | 'thailand' | 'vietnam' | 'mexico';
-
-export type MonthYear = {
-    year: number;
-    month: number;
-};
+export type DivisionCode = 'changwon' | 'thailand' | 'vietnam' | 'mexico' | 'total';
 
 // 서브 디비전 (생산실, 사업 분류)
 export interface SubDivision {
@@ -524,50 +519,45 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     });
 
     // === 수동 오버라이드 검사 함수: manualOverrides 또는 데이터 내의 manualOverrides 배열 체크 ===
-    // [버그 방어] UI 모달에서 읽기 전용(isCalculated: true)인 항목이 실수로 manualOverrides에 들어온 것을 무시하고 항상 공식을 타도록 강제!
-    const isManual = (key: string) => {
-        const itemDef = ALL_ITEMS_MAP[key];
-        if (itemDef?.isCalculated) return false;
-        return manualOverrides?.has(key) === true || result.manualOverrides?.includes(key) === true;
-    };
+    const isManual = (key: string) =>
+        manualOverrides?.has(key) === true ||
+        result.manualOverrides?.includes(key) === true;
 
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
     if (isManual('operatingProfit') || (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0)) {
         // 수동 입력값 무조건 유지
     } else {
-        result.operatingProfit = Number(revenue) - Number(materialCost) - Number(result.laborCost || 0) - Number(result.overhead || 0);
+        result.operatingProfit = revenue - materialCost - (result.laborCost || 0) - (result.overhead || 0);
     }
 
     // 영업이익률
     if (isManual('operatingProfitRatio') || (preserveAmounts && result.operatingProfitRatio !== undefined && result.operatingProfitRatio !== 0)) {
         // 수동 입력 보존
     } else {
-        const revNum = Number(revenue);
-        result.operatingProfitRatio = (revNum !== 0 && !isNaN(revNum)) ? (Number(result.operatingProfit || 0) / Math.abs(revNum)) * 100 : 0;
+        result.operatingProfitRatio = revenue > 0 ? ((result.operatingProfit || 0) / revenue) * 100 : 0;
     }
 
     // 영업외수지
     if (isManual('nonOpBalance') || (preserveAmounts && result.nonOpBalance !== undefined && result.nonOpBalance !== 0)) {
         // 수동 입력값 보존
     } else {
-        const nonOpIncome = Number(result.nonOpIncome || 0) + Number(result.interestIncome || 0) + Number(result.forexGain || 0);
-        const nonOpExpense = Number(result.financeCost || 0) + Number(result.interestExpense || 0) + Number(result.forexLoss || 0);
-        result.nonOpBalance = nonOpIncome - nonOpExpense + Number(result.forexGainLoss || 0) + Number(result.nonOpOther || 0);
+        const nonOpIncome = (result.nonOpIncome || 0) + (result.interestIncome || 0) + (result.forexGain || 0);
+        const nonOpExpense = (result.financeCost || 0) + (result.interestExpense || 0) + (result.forexLoss || 0);
+        result.nonOpBalance = nonOpIncome - nonOpExpense + (result.forexGainLoss || 0) + (result.nonOpOther || 0);
     }
 
     // 세전이익 = 영업이익 + 영외수지
     if (isManual('ebt') || (preserveAmounts && result.ebt !== undefined && result.ebt !== 0)) {
         // 수동 입력값 보존
     } else {
-        result.ebt = Number(result.operatingProfit || 0) + Number(result.nonOpBalance || 0);
+        result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
     }
 
     // 세전이익률
     if (isManual('ebtRatio') || (preserveAmounts && result.ebtRatio !== undefined && result.ebtRatio !== 0)) {
         // 수동 입력 보존
     } else {
-        const revNum = Number(revenue);
-        result.ebtRatio = (revNum !== 0 && !isNaN(revNum)) ? (Number(result.ebt || 0) / Math.abs(revNum)) * 100 : 0;
+        result.ebtRatio = revenue > 0 ? ((result.ebt || 0) / revenue) * 100 : 0;
     }
 
     return result;

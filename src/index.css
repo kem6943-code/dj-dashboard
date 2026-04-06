@@ -1,409 +1,128 @@
 @import "tailwindcss";
 
-/* ===== 프로페셔널 라이트 테마 (공간감 강조 버전) ===== */
-:root {
-  --bg-primary: #f9fafb;
-  /* 조금 더 밝고 깨끗한 그레이 */
-  --bg-secondary: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-hover: #ffffff;
-  --text-primary: #111827;
-  /* 텍스트 대비 향상 */
-  --text-secondary: #4b5563;
-  --text-muted: #9ca3af;
-  --accent-blue: #3b82f6;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-rose: #ef4444;
-  --accent-purple: #8b5cf6;
-  --border-color: #f3f4f6;
-  /* 더 연한 보더 */
-  --glass-bg: #ffffff;
-  --header-bg: #111827;
+/* 
+ * Premium B2B SaaS Global Theme
+ * Focused on pristine typography, deep contrasts, and atomic Tailwind usage
+ */
+
+@theme {
+  --font-sans: "Inter", "Pretendard", system-ui, sans-serif;
+  --color-slate-850: #192132;
+  --color-blue-600: #1e3a8a; /* Unified Dark Navy */
+  --color-blue-700: #172554;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased font-sans selection:bg-blue-900/20 selection:text-slate-900;
+  }
 }
 
-body {
-  font-family: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ===== 스크롤바 ===== */
+/* Custom Scrollbar for a polished look */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 5px;
+  @apply bg-transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 5px;
+  @apply bg-slate-300 rounded-full border-[2px] border-slate-50 hover:bg-slate-400 transition-colors;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
-
-/* PLTable 전용: 가로 스크롤바를 항상 표시 */
-.table-scroll-container {
-  overflow-x: scroll !important;
-  overflow-y: auto;
-}
-
-.table-scroll-container::-webkit-scrollbar {
-  height: 12px;
-}
-
-.table-scroll-container::-webkit-scrollbar-track {
-  background: #e2e8f0;
-  border-radius: 6px;
-}
-
-.table-scroll-container::-webkit-scrollbar-thumb {
-  background: #64748b;
-  border-radius: 6px;
-  border: 2px solid #e2e8f0;
-}
-
-.table-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-/* ===== 카드 (참고 이미지 스타일: 부드러운 그림자) ===== */
+/* 
+ * Legacy overrides bridging the gap while components are updated.
+ * We will remove these progressively.
+ */
 .glass-card {
-  background: var(--bg-card);
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  border-radius: 12px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  @apply bg-white rounded-xl shadow-[0_1px_3px_0_rgb(0,0,0,0.1),0_1px_2px_-1px_rgb(0,0,0,0.1)] ring-1 ring-slate-100/80 transition-shadow duration-300;
 }
-
 .glass-card:hover {
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.08),
-    0 4px 6px -2px rgba(0, 0, 0, 0.04);
-  transform: translateY(-1px);
+  @apply shadow-lg ring-slate-200/50;
 }
 
-/* ===== 데이터 테이블 ===== */
+/* Table overrides for PLTable */
 .data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.72rem;
+  @apply w-full border-separate border-spacing-0 text-[13px];
 }
-
 .data-table th {
-  background: #f8fafc;
-  color: #64748b;
-  font-weight: 700;
-  padding: 6px 10px;
-  font-size: 0.72rem;
-  text-align: right;
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  border-bottom: 2px solid var(--border-color);
+  @apply bg-slate-50/90 backdrop-blur text-slate-500 font-semibold px-4 py-2.5 text-right whitespace-nowrap sticky top-0 z-10 border-b border-slate-200 tracking-wide;
 }
-
-/* 2단 헤더의 두 번째 행은 첫 번째 행의 높이만큼 띄워서 고정 */
 .data-table .header-row-2 th {
-  top: 32px;
+  @apply top-[37px];
 }
-
 .data-table th:first-child {
-  text-align: left;
-  border-radius: 8px 0 0 0;
+  @apply text-left;
 }
-
-.data-table th:last-child {
-  border-radius: 0 8px 0 0;
-}
-
 .data-table td {
-  padding: 5px 10px;
-  text-align: right;
-  border-bottom: 1px solid #f1f5f9;
-  white-space: nowrap;
-  color: var(--text-secondary);
+  @apply px-4 py-2.5 text-right border-b border-slate-100 whitespace-nowrap text-slate-600 transition-colors;
 }
-
 .data-table td:first-child {
-  text-align: left;
-  font-weight: 500;
-  color: var(--text-primary);
+  @apply text-left font-medium text-slate-800;
 }
-
 .data-table tr:hover td {
-  background: #f8fafc;
+  @apply bg-slate-50/80 text-slate-900;
+}
+.data-table .row-header td {
+  @apply bg-slate-50/50 font-semibold text-slate-800 border-b border-slate-200;
 }
 
-/* ===== 열 고정(Sticky) ===== */
+/* Sticky Column logic */
 .sticky-col-1 {
-  position: sticky;
-  left: 0;
-  z-index: 5;
-  background-color: #ffffff;
+  @apply sticky left-0 z-[5] bg-white;
 }
-
 .sticky-col-2 {
-  position: sticky;
-  left: 70px;
-  /* 첫 번째 컬럼(섹션) 너비만큼 띄움 */
-  z-index: 5;
-  background-color: #ffffff;
+  @apply sticky left-[90px] z-[5] bg-white; /* Adjust width appropriately */
 }
-
-/* 헤더 열 고정 시 z-index를 더 높게 설정하여 스크롤 시 위로 올라오도록 함 */
 .data-table th.sticky-col-1,
 .data-table th.sticky-col-2 {
-  z-index: 20;
-  background-color: #f1f5f9;
+  @apply z-[20] bg-slate-50;
 }
-
-/* row-header 행의 고정 열 배경색 */
 .data-table .row-header td.sticky-col-1,
 .data-table .row-header td.sticky-col-2 {
-  background-color: #fafbfd;
+  @apply bg-slate-50/50;
 }
-
-/* tr:hover 시 고정 열 배경색도 함께 변경되도록 */
 .data-table tr:hover td.sticky-col-1,
 .data-table tr:hover td.sticky-col-2 {
-  background-color: #f8fafc;
+  @apply bg-slate-50/80;
 }
-
-/* 고정 열에 우측 다크 보더 추가하여 스크롤 시 시각적 구분 */
 .sticky-col-2::after {
   content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 1px;
-  height: 100%;
-  background-color: var(--border-color);
-  box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+  @apply absolute top-0 right-0 w-[1px] h-full bg-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)];
 }
 
-.data-table .row-header {
-  font-weight: 700;
-}
+/* Value colors */
+.value-positive { @apply text-blue-800 font-medium; } /* Darker blue for positive */
+.value-negative { @apply text-rose-600 font-medium; }
+.value-neutral { @apply text-slate-500; }
 
-.data-table .row-header td {
-  color: var(--text-primary);
-  background: #fafbfd;
-  border-bottom: 1px solid var(--border-color);
-}
-
-/* ===== 값 컬러코딩 ===== */
-.value-positive {
-  color: var(--accent-blue);
-}
-
-.value-negative {
-  color: var(--accent-rose);
-}
-
-.value-neutral {
-  color: var(--text-secondary);
-}
-
-/* ===== 탭 ===== */
+/* 
+ * Premium Tabs (Division Selection) 
+ * High Visual Hierarchy (Filled Dark Navy)
+ */
 .tab-btn {
-  padding: 7px 16px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  border-radius: 8px;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  @apply relative px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all duration-200 flex items-center justify-center gap-2 border cursor-pointer bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800;
 }
-
-.tab-btn:hover {
-  color: var(--text-primary);
-  background: #f1f5f9;
-}
-
 .tab-btn.active {
-  color: var(--accent-blue);
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  font-weight: 600;
+  @apply bg-slate-800 border-slate-800 text-white shadow-md font-semibold;
 }
 
-/* ===== 입력 필드 ===== */
-.input-field {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: var(--text-primary);
-  font-size: 0.85rem;
-  width: 100%;
-  transition: border-color 0.15s, box-shadow 0.15s;
+/* 
+ * Sub Tabs (Period/Month Selection) 
+ * Low Visual Hierarchy (Subtle Pill)
+ */
+.sub-tab-btn {
+  @apply relative px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center border cursor-pointer bg-transparent border-transparent text-slate-500 hover:text-slate-900;
+}
+.sub-tab-btn.active {
+  @apply bg-white border-slate-200 text-slate-800 shadow-sm font-semibold ring-1 ring-slate-100;
 }
 
-.input-field:focus {
-  outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* ===== 버튼 ===== */
-.btn-primary {
-  background: var(--accent-blue);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 9px 20px;
-  font-weight: 600;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-primary:hover {
-  background: #1d4ed8;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-}
-
-.btn-secondary {
-  background: #ffffff;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 9px 20px;
-  font-weight: 500;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-secondary:hover {
-  color: var(--text-primary);
-  border-color: #94a3b8;
-  background: #f8fafc;
-}
-
-/* ===== KPI 카드 ===== */
-.kpi-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-}
-
-.kpi-label {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 500;
-}
-
-.kpi-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-top: 2px;
-}
-
-.kpi-change {
-  font-size: 0.78rem;
-  font-weight: 500;
-}
-
-/* ===== 애니메이션 ===== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Animation Utils */
 .animate-fade-in {
-  animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
-/* ===== 셀렉트 ===== */
-.select-field {
-  background: #ffffff;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 7px 12px;
-  color: var(--text-primary);
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-.select-field:focus {
-  outline: none;
-  border-color: var(--accent-blue);
-}
-
-/* ===== 모달 오버레이 (라이트 버전) ===== */
-.modal-overlay {
-  background: rgba(15, 23, 42, 0.3);
-  backdrop-filter: blur(4px);
-}
-
-/* Premium UI Components */
-.premium-tabs-container {
-  display: flex;
-  gap: 4px;
-  background: rgba(241, 245, 249, 0.6);
-  padding: 4px;
-  border-radius: 12px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  width: fit-content;
-  backdrop-filter: blur(8px);
-}
-
-.premium-tab-btn {
-  padding: 6px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  color: #64748b;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.premium-tab-btn.active {
-  color: #ffffff;
-  background: #3b82f6 !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-}
-
-.premium-tab-btn:not(.active):hover {
-  background: rgba(226, 232, 240, 0.8);
-  color: #1e293b;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

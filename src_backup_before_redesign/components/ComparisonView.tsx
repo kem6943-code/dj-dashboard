@@ -71,26 +71,16 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
     const DIV_COLORS: Record<string, string> = {
         'changwon': '#f97316', // 주황
         'thailand': '#3b82f6', // 파랑
-        'vietnam': '#7E57C2',  // 대비되는 보라색
-        'mexico_appliance': '#004D40',   // 진한 초록 (멕시코 가전)
-        'mexico_auto': '#689F38',        // 올리브색 (멕시코 자동차)
+        'vietnam': '#10b981',  // 초록
+        'mexico': '#8b5cf6',   // 보라
     };
-
-    const VIRTUAL_DIVS = [
-        { code: 'changwon', name: '창원사업부', flag: '🇰🇷' },
-        { code: 'thailand', name: '태국사업부', flag: '🇹🇭' },
-        { code: 'vietnam', name: '베트남사업부', flag: '🇻🇳' },
-        { code: 'mexico_appliance', name: '멕시코(가전)', flag: '🇲🇽' },
-        { code: 'mexico_auto', name: '멕시코(자동차)', flag: '🇲🇽' },
-    ];
 
     // 토글 상태
     const [visibleDivs, setVisibleDivs] = useState<Record<string, boolean>>({
         'changwon': true,
         'thailand': true,
         'vietnam': true,
-        'mexico_appliance': true,
-        'mexico_auto': true
+        'mexico': true
     });
 
     const isAllVisible = Object.values(visibleDivs).every(v => v);
@@ -106,10 +96,8 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
     };
 
     // 월별 데이터를 해당 월 환율로 원화 환산하는 헬퍼
-    const convertMonthToKRW = (plData: MonthlyPLData, divCode: DivisionCode | string, month: number): MonthlyPLData => {
-        // 실제 환율을 가져올 상위 code
-        const realDivCode = divCode.toString().startsWith('mexico_') ? 'mexico' : divCode as DivisionCode;
-        const rate = getFxRate(realDivCode, month);
+    const convertMonthToKRW = (plData: MonthlyPLData, divCode: DivisionCode, month: number): MonthlyPLData => {
+        const rate = getFxRate(divCode, month);
         if (rate === 1) return { ...plData }; // KRW는 변환 불필요
         const converted = { ...plData };
         Object.keys(converted).forEach(key => {
@@ -122,10 +110,10 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
     };
 
     // 여러 월 데이터를 각각의 환율로 원화 환산 후 합산하는 헬퍼
-    const aggregateWithFx = (divData: any, divCode: DivisionCode | string, subKey: string | null, months: number[]): MonthlyPLData => {
+    const aggregateWithFx = (divData: any, divCode: DivisionCode, months: number[]): MonthlyPLData => {
         const result: any = {};
         months.forEach(m => {
-            const mData = subKey ? divData?.subDivMonthly?.[subKey]?.[m] : divData?.monthly?.[m];
+            const mData = divData?.monthly?.[m];
             if (!mData || !mData.revenue) return;
             const converted = convertMonthToKRW(mData, divCode, m);
             Object.keys(converted).forEach(key => {
@@ -144,56 +132,53 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
     };
 
     // 각 사업부의 가장 최근 월 데이터 또는 집계 데이터 (테이블용) — 원화 환산 포함
-    const getLatestOrAgg = (): { label: string; data: { division: string; plData: MonthlyPLData; divCode: string }[] } => {
-        const results: { division: string; plData: MonthlyPLData; divCode: string }[] = [];
+    const getLatestOrAgg = (): { label: string; data: { division: string; plData: MonthlyPLData; divCode: DivisionCode }[] } => {
+        const results: { division: string; plData: MonthlyPLData; divCode: DivisionCode }[] = [];
         let label = '';
 
         if (periodType === 'monthly') {
             label = globalLatestMonth > 0 ? `${globalLatestMonth}월` : '-';
         }
 
-        VIRTUAL_DIVS.forEach(vdiv => {
-            let realDivCode = vdiv.code as DivisionCode;
-            let subKey: string | null = null;
-            if (vdiv.code === 'mexico_appliance') { realDivCode = 'mexico' as DivisionCode; subKey = 'homeAppliance'; }
-            if (vdiv.code === 'mexico_auto') { realDivCode = 'mexico' as DivisionCode; subKey = 'automotive'; }
-
-            const divData = getDivisionData(store, realDivCode, year);
+        DIVISIONS.forEach(div => {
+            const divData = getDivisionData(store, div.code, year);
             if (!divData) {
-                results.push({ division: vdiv.name, plData: {} as MonthlyPLData, divCode: vdiv.code });
+                results.push({ division: div.name, plData: {} as MonthlyPLData, divCode: div.code });
                 return;
             }
 
             let plData: MonthlyPLData;
             if (periodType === 'yearly') {
-                plData = aggregateWithFx(divData, vdiv.code, subKey, Array.from({ length: 12 }, (_, i) => i + 1));
+                // 연간: 1~12월 각각의 환율로 원화 환산 후 합산
+                plData = aggregateWithFx(divData, div.code, Array.from({ length: 12 }, (_, i) => i + 1));
                 label = `${year}년 연간`;
             } else if (periodType === 'quarterly') {
+                // 분기: 해당 분기 3개월을 각각의 환율로 원화 환산 후 합산
                 let selectedQ = 1;
                 for (let q = 4; q >= 1; q--) {
-                    // Q 판단을 위해서는 전체 div.monthly를 바라봐도 무방함 (시점 확인용)
                     const d = aggregateQuarter(divData.monthly, q);
                     if (d.revenue !== 0) { selectedQ = q; label = `Q${q}`; break; }
                 }
                 label = label || 'Q1';
                 const startM = (selectedQ - 1) * 3 + 1;
-                plData = aggregateWithFx(divData, vdiv.code, subKey, [startM, startM + 1, startM + 2]);
+                plData = aggregateWithFx(divData, div.code, [startM, startM + 1, startM + 2]);
             } else if (periodType === 'half') {
+                // 반기: 해당 반기 6개월을 각각의 환율로 원화 환산 후 합산
                 const h2 = aggregateHalf(divData.monthly, 2);
                 if (h2.revenue !== 0) {
-                    plData = aggregateWithFx(divData, vdiv.code, subKey, [7, 8, 9, 10, 11, 12]);
+                    plData = aggregateWithFx(divData, div.code, [7, 8, 9, 10, 11, 12]);
                     label = '하반기';
                 } else {
-                    plData = aggregateWithFx(divData, vdiv.code, subKey, [1, 2, 3, 4, 5, 6]);
+                    plData = aggregateWithFx(divData, div.code, [1, 2, 3, 4, 5, 6]);
                     label = '상반기';
                 }
             } else {
-                const srcData = subKey ? divData.subDivMonthly?.[subKey] : divData.monthly;
-                const monthData = globalLatestMonth > 0 ? (srcData?.[globalLatestMonth] || ({} as MonthlyPLData)) : ({} as MonthlyPLData);
-                plData = convertMonthToKRW(monthData, vdiv.code, globalLatestMonth || 1);
+                // 월간: 해당 월의 환율로 원화 환산
+                const monthData = globalLatestMonth > 0 ? divData.monthly[globalLatestMonth] || ({} as MonthlyPLData) : ({} as MonthlyPLData);
+                plData = convertMonthToKRW(monthData, div.code, globalLatestMonth || 1);
             }
 
-            results.push({ division: vdiv.name, plData, divCode: vdiv.code });
+            results.push({ division: div.name, plData, divCode: div.code });
         });
 
         return { label, data: results };
@@ -205,23 +190,19 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
     const lineChartData = MONTH_NAMES.map((name, i) => {
         const month = i + 1;
         const pt: any = { name };
-        VIRTUAL_DIVS.forEach(vdiv => {
-            let realDivCode = vdiv.code as DivisionCode;
-            let subKey: string | null = null;
-            if (vdiv.code === 'mexico_appliance') { realDivCode = 'mexico' as DivisionCode; subKey = 'homeAppliance'; }
-            if (vdiv.code === 'mexico_auto') { realDivCode = 'mexico' as DivisionCode; subKey = 'automotive'; }
-
-            const rate = getFxRate(realDivCode, month);
-            const divData = getDivisionData(store, realDivCode, year);
-            const pl = subKey ? divData?.subDivMonthly?.[subKey]?.[month] : divData?.monthly?.[month];
+        DIVISIONS.forEach(div => {
+            const divCode = div.code;
+            const rate = getFxRate(divCode, month);
+            const divData = getDivisionData(store, divCode, year);
+            const pl = divData?.monthly[month];
 
             if (pl && (pl.revenue || 0) !== 0) {
                 // 억 단위 환산 후 소수점 1자리 반올림 (금액 * 환율 / 1억)
-                pt[`${vdiv.code}_매출`] = Math.round(((pl.revenue || 0) * rate) / 100000000 * 10) / 10;
-                pt[`${vdiv.code}_영익`] = Math.round(((pl.operatingProfit || 0) * rate) / 100000000 * 10) / 10;
+                pt[`${divCode}_매출`] = Math.round(((pl.revenue || 0) * rate) / 100000000 * 10) / 10;
+                pt[`${divCode}_영익`] = Math.round(((pl.operatingProfit || 0) * rate) / 100000000 * 10) / 10;
             } else {
-                pt[`${vdiv.code}_매출`] = null;
-                pt[`${vdiv.code}_영익`] = null;
+                pt[`${divCode}_매출`] = null;
+                pt[`${divCode}_영익`] = null;
             }
         });
         return pt;
@@ -260,7 +241,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                     전체 켜기/끄기
                 </button>
                 <div className="w-px h-6 bg-slate-200 mx-2"></div>
-                {VIRTUAL_DIVS.map(div => {
+                {DIVISIONS.map(div => {
                     const isActive = visibleDivs[div.code];
                     const color = DIV_COLORS[div.code];
                     return (
@@ -316,7 +297,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                                 labelStyle={{ fontSize: '13px', fontWeight: '800', color: '#334155', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '6px' }}
                             />
                             <Legend wrapperStyle={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', paddingTop: '20px' }} iconType="circle" />
-                            {VIRTUAL_DIVS.map(div => visibleDivs[div.code] && (
+                            {DIVISIONS.map(div => visibleDivs[div.code] && (
                                 <Line
                                     key={div.code}
                                     type="monotone"
@@ -359,7 +340,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                                 labelStyle={{ fontSize: '13px', fontWeight: '800', color: '#334155', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '6px' }}
                             />
                             <Legend wrapperStyle={{ fontSize: '11.5px', fontWeight: 600, color: '#64748b', paddingTop: '20px' }} iconType="circle" />
-                            {VIRTUAL_DIVS.map(div => visibleDivs[div.code] && (
+                            {DIVISIONS.map(div => visibleDivs[div.code] && (
                                 <Line
                                     key={div.code}
                                     type="monotone"
@@ -389,7 +370,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                     <thead>
                         <tr>
                             <th style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>구분</th>
-                            {VIRTUAL_DIVS.map(div => (
+                            {DIVISIONS.map(div => (
                                 <th key={div.code} style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>{div.flag} {div.name}</th>
                             ))}
                         </tr>
@@ -429,7 +410,7 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                                 const ratio = rev !== 0 ? ((op / rev) * 100).toFixed(1) : '-';
                                 const isPos = Number(ratio) >= 0;
                                 return (
-                                    <td key={i} className={ratio !== '-' ? (isPos ? 'text-gray-900' : 'text-red-500') : ''} style={{ backgroundColor: '#f8fafc' }}>
+                                    <td key={i} className={ratio !== '-' ? (isPos ? 'value-positive' : 'value-negative') : ''} style={{ backgroundColor: '#f8fafc' }}>
                                         <strong>{ratio}{ratio !== '-' ? '%' : ''}</strong>
                                     </td>
                                 );

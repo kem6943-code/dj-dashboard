@@ -50,4 +50,14 @@ export async function fetchFromCloud() {
     }
 }
 
-/// 더 이상 auth 함수를 사용하지 않습니다. AuthContext.tsx의 Mock 로직으로 완전히 대체되었습니다.
+export const signIn = async (_email: string, _password: string): Promise<{ data: any; error: any }> => {
+    return { data: null, error: new Error('Auth disabled') };
+};
+
+export const signOut = async () => {
+    return;
+};
+
+export const getCurrentUser = async () => {
+    return null;
+};

@@ -28,21 +28,10 @@ export function YearlyTargetCards({ store, year }: Props) {
                 <span className="text-sm font-semibold text-slate-400 ml-2 tracking-normal">(YTD 기준)</span>
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" style={{ padding: '20px 0', boxSizing: 'border-box' }}>
-                {DIVISIONS.map(divInfo => {
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8" style={{ padding: '20px 0', boxSizing: 'border-box' }}>
+                {DIVISIONS.flatMap(divInfo => {
                     const divData = divs.find(d => d.divisionCode === divInfo.code);
-                    if (!divData || !divData.yearlyTarget) return null;
-
-                    const targetRevRaw = divData.yearlyTarget.revenue;
-                    const targetOpRaw = divData.yearlyTarget.operatingProfit;
-
-                    // 연간 누적 실적(YTD)
-                    let actualRevRaw = 0;
-                    let actualOpRaw = 0;
-                    Object.values(divData.monthly).forEach(m => {
-                        actualRevRaw += m.revenue || 0;
-                        actualOpRaw += m.operatingProfit || 0;
-                    });
+                    if (!divData || !divData.yearlyTarget) return [];
 
                     // 경영진 지시사항(원화) 직관적 비교를 위해 전부 KRW 기준으로 변환
                     const rates = divData.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 };
@@ -50,82 +39,157 @@ export function YearlyTargetCards({ store, year }: Props) {
                     // 🇲🇽 멕시코: 직접 MXN→KRW 환율 적용
                     const actualRate = isMexico ? MXN_KRW_RATE : (rates.actual || 1);
 
-                    const actualRev = actualRevRaw * actualRate;
-                    const actualOp = actualOpRaw * actualRate;
-                    const targetRev = targetRevRaw; // v16 확정 수치 (KRW)
-                    const targetOp = targetOpRaw;   // v16 확정 수치 (KRW)
+                    // 재사용 렌더러
+                    const renderCard = (
+                        key: string,
+                        name: string,
+                        flag: string,
+                        actualRevRaw: number,
+                        actualOpRaw: number,
+                        targetRevRaw: number | null,
+                        targetOpRaw: number | null
+                    ) => {
+                        const actualRev = actualRevRaw * actualRate;
+                        const actualOp = actualOpRaw * actualRate;
+                        const targetRev = targetRevRaw || 0;
+                        const targetOp = targetOpRaw || 0;
 
-                    const revAchieve = targetRev > 0 ? (actualRev / targetRev) * 100 : 0;
-                    const opAchieve = targetOp > 0 ? (actualOp / targetOp) * 100 : 0;
+                        const hasTarget = targetRev > 0 || targetOp > 0;
 
-                    return (
-                        <div key={divInfo.code} className="bg-white border border-gray-200/60 rounded-2xl p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-sm transition-all flex flex-col justify-between">
+                        const revAchieve = targetRev > 0 ? (actualRev / targetRev) * 100 : 0;
+                        const opAchieve = targetOp > 0 ? (actualOp / targetOp) * 100 : 0;
 
-                            {/* 카드 헤더 (사업부명) */}
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="text-[22px]">
-                                        {divInfo.flag}
+                        return (
+                            <div key={key} className="bg-white border border-gray-200/60 rounded-2xl p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-sm transition-all flex flex-col justify-between">
+                                {/* 카드 헤더 (사업부명) */}
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="text-[22px]">{flag}</div>
+                                        <div className="flex items-baseline gap-1.5">
+                                            <h3 className="text-[15px] font-bold text-gray-800 tracking-tight leading-none">{name}</h3>
+                                            <span className="text-[10px] font-medium text-blue-500 font-mono tracking-wider bg-blue-50 px-1.5 py-0.5 rounded">KRW</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-baseline gap-1.5">
-                                        <h3 className="text-[15px] font-bold text-gray-800 tracking-tight leading-none">{divInfo.name}</h3>
-                                        <span className="text-[10px] font-medium text-blue-500 font-mono tracking-wider bg-blue-50 px-1.5 py-0.5 rounded">KRW</span>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {/* 매출액 섹션 */}
+                                    <div>
+                                        <div className="flex justify-between items-end mb-3">
+                                            <span className="text-[12px] font-medium text-gray-500">
+                                                {hasTarget ? '매출액 (달성률)' : '매출액 (실적)'}
+                                            </span>
+                                            {hasTarget && (
+                                                <span className={`text-[13px] font-extrabold ${revAchieve >= 100 ? 'text-emerald-500' : 'text-blue-500'}`}>
+                                                    {revAchieve.toFixed(1)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                        {hasTarget && (
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <div className="flex-1 bg-gray-100/60 h-2.5 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all duration-1000 origin-left ${revAchieve >= 100 ? 'bg-emerald-400' : 'bg-blue-400'}`}
+                                                        style={{ width: `${Math.min(revAchieve, 100)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className={`flex justify-between items-baseline mt-1 ${!hasTarget ? 'mt-4' : ''}`}>
+                                            <span className="text-xl font-bold text-gray-800 tracking-tight">{formatEok(actualRev)}</span>
+                                            {hasTarget && <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetRev)}</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* 구분선 */}
+                                    <div className="h-[1px] w-full bg-gray-100/80 my-2"></div>
+
+                                    {/* 영업이익 섹션 */}
+                                    <div>
+                                        <div className="flex justify-between items-end mb-3">
+                                            <span className="text-[12px] font-medium text-gray-500">
+                                                {hasTarget ? '영업이익 (달성률)' : '영업이익 (실적)'}
+                                            </span>
+                                            {hasTarget && (
+                                                <span className={`text-[13px] font-extrabold ${opAchieve >= 100 ? 'text-emerald-500' : opAchieve >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
+                                                    {opAchieve.toFixed(1)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                        {hasTarget && (
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <div className="flex-1 bg-gray-100/60 h-2.5 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all duration-1000 origin-left ${opAchieve >= 100 ? 'bg-emerald-400' : opAchieve >= 0 ? 'bg-blue-400' : 'bg-rose-400'}`}
+                                                        style={{ width: `${Math.max(0, Math.min(opAchieve, 100))}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className={`flex justify-between items-baseline mt-1 ${!hasTarget ? 'mt-4' : ''}`}>
+                                            <span className={`text-xl font-bold tracking-tight ${actualOp < 0 ? 'text-rose-600' : 'text-gray-800'}`}>{formatEok(actualOp)}</span>
+                                            {hasTarget && <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetOp)}</span>}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        );
+                    };
 
-                            <div className="space-y-6">
-                                {/* 매출액 섹션 */}
-                                <div>
-                                    <div className="flex justify-between items-end mb-3">
-                                        <span className="text-[12px] font-medium text-gray-500">매출액 (달성률)</span>
-                                        <span className={`text-[13px] font-extrabold ${revAchieve >= 100 ? 'text-emerald-500' : 'text-blue-500'}`}>
-                                            {revAchieve.toFixed(1)}%
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="flex-1 bg-gray-100/60 h-2.5 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full transition-all duration-1000 origin-left ${revAchieve >= 100 ? 'bg-emerald-400' : 'bg-blue-400'}`}
-                                                style={{ width: `${Math.min(revAchieve, 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-baseline mt-1">
-                                        <span className="text-xl font-bold text-gray-800 tracking-tight">{formatEok(actualRev)}</span>
-                                        <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetRev)}</span>
-                                    </div>
-                                </div>
+                    if (isMexico) {
+                        // 멕시코(가전)
+                        let haActRev = 0;
+                        let haActOp = 0;
+                        Object.values(divData.subDivMonthly?.['homeAppliance'] || {}).forEach(m => {
+                            haActRev += m.revenue || 0;
+                            haActOp += m.operatingProfit || 0;
+                        });
+                        const cardHA = renderCard(
+                            divInfo.code + '_ha',
+                            '멕시코(가전)',
+                            divInfo.flag,
+                            haActRev,
+                            haActOp,
+                            divData.yearlyTarget.revenue,          // 기존 멕시코 전체 TD목표 이관
+                            divData.yearlyTarget.operatingProfit   // 기존 멕시코 전체 TD목표 이관
+                        );
 
-                                {/* 구분선 */}
-                                <div className="h-[1px] w-full bg-gray-100/80 my-2"></div>
+                        // 멕시코(자동차)
+                        let autoActRev = 0;
+                        let autoActOp = 0;
+                        Object.values(divData.subDivMonthly?.['automotive'] || {}).forEach(m => {
+                            autoActRev += m.revenue || 0;
+                            autoActOp += m.operatingProfit || 0;
+                        });
+                        const cardAuto = renderCard(
+                            divInfo.code + '_auto',
+                            '멕시코(자동차)',
+                            divInfo.flag,
+                            autoActRev,
+                            autoActOp,
+                            null, // 자동차 목표 없음
+                            null
+                        );
 
-                                {/* 영업이익 섹션 */}
-                                <div>
-                                    <div className="flex justify-between items-end mb-3">
-                                        <span className="text-[12px] font-medium text-gray-500">영업이익 (달성률)</span>
-                                        <span className={`text-[13px] font-extrabold ${opAchieve >= 100 ? 'text-emerald-500' : opAchieve >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
-                                            {opAchieve.toFixed(1)}%
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <div className="flex-1 bg-gray-100/60 h-2.5 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full transition-all duration-1000 origin-left ${opAchieve >= 100 ? 'bg-emerald-400' : opAchieve >= 0 ? 'bg-blue-400' : 'bg-rose-400'
-                                                    }`}
-                                                style={{ width: `${Math.max(0, Math.min(opAchieve, 100))}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-baseline mt-1">
-                                        <span className={`text-xl font-bold tracking-tight ${actualOp < 0 ? 'text-rose-600' : 'text-gray-800'}`}>{formatEok(actualOp)}</span>
-                                        <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetOp)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    );
+                        return [cardHA, cardAuto];
+                    } else {
+                        // 일반 사업부
+                        let actRev = 0;
+                        let actOp = 0;
+                        Object.values(divData.monthly).forEach(m => {
+                            actRev += m.revenue || 0;
+                            actOp += m.operatingProfit || 0;
+                        });
+                        return [renderCard(
+                            divInfo.code,
+                            divInfo.name,
+                            divInfo.flag,
+                            actRev,
+                            actOp,
+                            divData.yearlyTarget.revenue,
+                            divData.yearlyTarget.operatingProfit
+                        )];
+                    }
                 })}
             </div>
         </div>

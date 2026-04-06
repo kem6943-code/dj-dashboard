@@ -1,21 +1,29 @@
 /**
- * 차트 컴포넌트 (원본 누적 막대 그래프 복원 + dateRange 호환)
- * - 월별 비용 구조 추이: 재료비 + 노무비 + 경비를 누적으로 쌓고, 매출액은 별도 막대
- * - 영업이익은 양수면 초록, 음수면 빨강
+ * 차트 컴포넌트 (Recharts 사용)
+ * - 월별 비용 구조 추이: 매출액 vs 재료비 vs 노무비 vs 경비를 한 그래프에서 비교
  */
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts';
-import { type DataStore, type DivisionInfo, type MonthYear } from '../utils/dataModel';
+import { type DivisionYearData, type DivisionInfo, MONTH_NAMES } from '../utils/dataModel';
 
 interface ChartsProps {
-    store: DataStore;
+    divData: DivisionYearData | undefined;
+    prevYearData?: DivisionYearData | undefined;
     divisionInfo: DivisionInfo;
-    dateRange: { start: MonthYear; end: MonthYear };
+    year: number;
 }
 
-export function Charts({ store, divisionInfo, dateRange }: ChartsProps) {
-    if (!store) return null;
+export function Charts({ divData, divisionInfo }: ChartsProps) {
+    if (!divData) {
+        return (
+            <div className="animate-fade-in" style={{ padding: '24px', boxSizing: 'border-box' }}>
+                <div className="glass-card p-8 text-center" style={{ color: 'var(--text-muted)', padding: '32px', boxSizing: 'border-box' }}>
+                    데이터가 없습니다. "데이터 입력" 버튼을 클릭하여 실적 데이터를 입력해주세요.
+                </div>
+            </div>
+        );
+    }
 
     const isMXN = divisionInfo.currency === 'MXN';
     const multiplier = isMXN ? 1000 : 1000000;
@@ -23,31 +31,28 @@ export function Charts({ store, divisionInfo, dateRange }: ChartsProps) {
         isMXN ? `천 ${divisionInfo.currency}` :
             `백만 ${divisionInfo.currency}`;
 
-    // dateRange 기반 연속 월 배열 생성
-    const months: MonthYear[] = [];
-    let curY = dateRange.start.year;
-    let curM = dateRange.start.month;
-    let count = 0;
-    while ((curY < dateRange.end.year || (curY === dateRange.end.year && curM <= dateRange.end.month)) && count < 36) {
-        months.push({ year: curY, month: curM });
-        curM++;
-        if (curM > 12) { curM = 1; curY++; }
-        count++;
-    }
+    // 월별 데이터 가공 — 해당 법인의 화폐 단위로 누적 막대 그래프 구성
+    const chartData = MONTH_NAMES.map((name, i) => {
+        const month = i + 1;
+        const ds = divData.monthly[month];
 
-    // 월별 데이터 가공 — 원래의 누적 막대 차트 데이터 구조 그대로
-    const chartData = months.map(({ year, month }) => {
-        const name = `${year.toString().slice(2)}.${month}월`;
-        const divD = store.divisions.find(d => d.divisionCode === divisionInfo.code && d.year === year);
-        const ds = divD?.monthly?.[month];
-
+        // 매출액이 없으면 null 처리하여 그래프가 자연스럽게 끊기게 함
         const hasRevenue = ds && ds.revenue && ds.revenue > 0;
         if (!hasRevenue) {
-            return { name, 매출액: null, 재료비: null, 노무비: null, 경비: null, 영업이익: null };
+            return {
+                name,
+                매출액: null,
+                재료비: null,
+                노무비: null,
+                경비: null,
+                영업이익: null,
+            };
         }
 
         // 환율 변환 없이(원본 그대로), 화면 표시 단위(multiplier)로만 나눔
         const revScaled = (ds.revenue || 0) / multiplier;
+
+        // 금액 직접 계산 (원시 데이터의 절대금액을 그대로 사용하여 환율 및 비율 계산 시의 오차 원천 차단)
         const matAmt = (ds.materialCost || ds.rawMaterialCost || 0) / multiplier;
         const laborAmt = (ds.laborCost || 0) / multiplier;
         const overheadAmt = (ds.overhead || 0) / multiplier;
@@ -63,26 +68,31 @@ export function Charts({ store, divisionInfo, dateRange }: ChartsProps) {
         };
     });
 
-    // 툴팁: 각 법인 단위로 금액 표기 + 전체 매출 대비 비중(%)
+    // 툴팁 포맷터: 각 법인 단위로 금액 표기 (KRW, MXN 등), 전체 매출 대비 비중(%)을 함께 표기
     const tooltipFormatter = (value: number | string | undefined, name: string | undefined, props: any) => {
         if (value === undefined || value === null) return ['-', name];
         const valNum = Number(value);
+
+        // 매출액은 비율 표시 안 함
         if (name === '매출액') {
             return [`${valNum.toLocaleString()} ${unitText}`, name];
         }
+
+        // 각 비용/이익의 경우 전체 매출액 대비 비중을 함께 계산해서 보여줌
         const revNum = Number(props.payload.매출액);
         let ratioStr = '';
         if (revNum > 0) {
             const ratio = (valNum / revNum) * 100;
             ratioStr = ` (${ratio.toFixed(1)}%)`;
         }
+
         return [`${valNum.toLocaleString()} ${unitText}${ratioStr}`, name];
     };
 
     return (
         <div className="animate-fade-in px-4">
             <div className="flex justify-between items-end mb-4">
-                <h3 className="text-base font-bold text-gray-800">비용 구조 누적 막대 추이</h3>
+                <h3 className="text-base font-bold text-gray-800">'26년 비용 구조 누적 막대 추이</h3>
                 <span className="text-[11px] text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded">단위: {unitText}</span>
             </div>
             <div className="h-80 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
@@ -90,19 +100,21 @@ export function Charts({ store, divisionInfo, dateRange }: ChartsProps) {
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+
                         <YAxis
                             axisLine={false}
                             tickLine={false}
                             tick={{ fontSize: 10, fill: '#6b7280' }}
                             width={50}
                             label={{
-                                value: `금액(${unitText.split(' ')[0]})`,
+                                value: `금액(${unitText.split(' ')[0]})`, // '백만', '천'
                                 angle: -90,
                                 position: 'insideLeft',
                                 offset: -5,
                                 style: { fontSize: 10, fill: '#6b7280', fontWeight: 'bold' }
                             }}
                         />
+
                         <Tooltip
                             formatter={tooltipFormatter}
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -112,15 +124,17 @@ export function Charts({ store, divisionInfo, dateRange }: ChartsProps) {
                         />
                         <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
 
-                        {/* 비용을 누적(stackId="a")으로 쌓음 — 원래의 누적 막대 그래프 */}
+                        {/* 매출액과 높이를 맞추기 위해 비용을 누적(stackId="a")으로 쌓음 */}
                         <Bar stackId="a" dataKey="재료비" name="재료비" fill="#ef4444" fillOpacity={0.8} />
                         <Bar stackId="a" dataKey="노무비" name="노무비" fill="#f59e0b" fillOpacity={0.8} />
                         <Bar stackId="a" dataKey="경비" name="경비" fill="#8b5cf6" fillOpacity={0.8} />
-                        {/* 영업이익: 양수=초록, 음수=빨강 */}
+                        {/* 이익은 마지막에 쌓되, 값이 음수(적자)이면 X축 아래로 그려짐 */}
                         <Bar stackId="a" dataKey="영업이익" name="영업이익" fill="#10b981" fillOpacity={0.8} radius={[4, 4, 0, 0]}>
-                            {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={(entry.영업이익 ?? 0) < 0 ? '#ef4444' : '#10b981'} />
-                            ))}
+                            {
+                                chartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={(entry.영업이익 ?? 0) < 0 ? '#ef4444' : '#10b981'} />
+                                ))
+                            }
                         </Bar>
                     </BarChart>
                 </ResponsiveContainer>

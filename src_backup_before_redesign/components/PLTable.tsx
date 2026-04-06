@@ -65,14 +65,14 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
     const hasSubHeaders = colSpan > 1; // 서브헤더가 필요한 여부
 
     return (
-        <div className="table-scroll-container bg-white border border-slate-200/80 rounded-2xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] w-full overflow-x-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-            <table className="data-table w-max min-w-max">
+        <div className="table-scroll-container border border-gray-200 rounded-lg shadow-inner" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+            <table className="data-table">
                 <thead>
                     <tr>
-                        <th className="sticky-col-1 whitespace-nowrap px-2 z-20" rowSpan={hasSubHeaders ? 2 : 1} style={{ minWidth: 70, width: 70, textAlign: 'center', position: 'sticky', left: 0, backgroundColor: '#f8fafc' }}>섹션</th>
-                        <th className="sticky-col-2 whitespace-nowrap px-2 z-20" rowSpan={hasSubHeaders ? 2 : 1} style={{ minWidth: 130, width: 130, position: 'sticky', left: 70, backgroundColor: '#f8fafc' }}>구분</th>
+                        <th className="sticky-col-1" rowSpan={hasSubHeaders ? 2 : 1} style={{ minWidth: 70, textAlign: 'center' }}>섹션</th>
+                        <th className="sticky-col-2" rowSpan={hasSubHeaders ? 2 : 1} style={{ minWidth: 110 }}>구분</th>
                         {labels.map((label, i) => (
-                            <th key={i} colSpan={colSpan} className="whitespace-nowrap px-2" style={{ textAlign: 'center', borderLeft: '1px solid var(--border-color)' }}>
+                            <th key={i} colSpan={colSpan} style={{ minWidth: colSpan > 2 ? 200 : colSpan > 1 ? 150 : 90, textAlign: 'center' }}>
                                 <div className="flex items-center justify-center gap-1">
                                     {label}
                                     {onEditMonth && !hasSubHeaders && (
@@ -94,13 +94,14 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                 subColHeaders.map((subLabel, si) => {
                                     const dataType = subLabel === "'25실적" ? 'prevYear' : subLabel === 'TD목표' ? 'target' : 'actual';
                                     return (
-                                        <th key={`${i}-${si}`} className="whitespace-nowrap px-2 min-w-[70px]" style={{
+                                        <th key={`${i}-${si}`} style={{
+                                            minWidth: 65,
                                             textAlign: 'center',
                                             fontSize: '0.68rem',
                                             fontWeight: 600,
                                             backgroundColor: subLabel === "'25실적" ? '#fef3c7' : subLabel === 'TD목표' ? '#f0f9ff' : '#f0fdf4',
                                             borderTop: 'none',
-                                            borderLeft: '1px solid var(--border-color)',
+                                            borderLeft: si > 0 ? '1px solid var(--border-color)' : undefined,
                                             color: subLabel === "'25실적" ? '#92400e' : subLabel === 'TD목표' ? '#1e40af' : '#166534',
                                         }}>
                                             <div className="flex items-center justify-center gap-1">
@@ -126,8 +127,8 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                     {/* [NEW] 환율 전용 행 추가 - 레퍼런스 이미지 스타일 반영 */}
                     {rates && rates.length > 0 && rates.some(r => r !== 1) && (
                         <tr className="row-header" style={{ backgroundColor: '#fdfcf0', borderBottom: '2px solid #fde68a' }}>
-                            <td className="sticky-col-1 whitespace-nowrap px-2 z-10" style={{ position: 'sticky', left: 0, background: '#fdfcf0' }}></td>
-                            <td className="sticky-col-2 whitespace-nowrap px-2 z-10" style={{ position: 'sticky', left: 70, background: '#fdfcf0', color: '#92400e', fontWeight: 700, textAlign: 'center' }}>
+                            <td className="sticky-col-1" style={{ background: '#fdfcf0' }}></td>
+                            <td className="sticky-col-2" style={{ background: '#fdfcf0', color: '#92400e', fontWeight: 700, textAlign: 'center' }}>
                                 환율
                             </td>
                             {labels.map((_, monthIndex) => {
@@ -136,7 +137,7 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                     const rateIndex = monthIndex * colSpan + subColIndex;
                                     const rate = rates[rateIndex];
                                     return (
-                                        <td key={`${monthIndex}-${subColIndex}`} className="whitespace-nowrap px-2 min-w-[70px]" style={{
+                                        <td key={`${monthIndex}-${subColIndex}`} style={{
                                             textAlign: 'center',
                                             fontWeight: 600,
                                             color: '#92400e',
@@ -164,7 +165,7 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                 {/* 섹션 병합 셀 */}
                                 {isFirstInSection && section ? (
                                     <td
-                                        className="sticky-col-1 whitespace-nowrap px-2 z-10"
+                                        className="sticky-col-1"
                                         rowSpan={sectionSpans.get(section) || 1}
                                         style={{
                                             textAlign: 'center',
@@ -177,21 +178,16 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                             whiteSpace: 'pre-line',
                                             lineHeight: 1.3,
                                             padding: '4px 6px',
-                                            position: 'sticky',
-                                            left: 0,
                                         }}
                                     >
                                         {section}
                                     </td>
                                 ) : !section ? (
-                                    <td className="sticky-col-1 whitespace-nowrap z-10" style={{ position: 'sticky', left: 0, background: '#f8fafc' }}></td>
+                                    <td className="sticky-col-1" style={{ background: '#f8fafc' }}></td>
                                 ) : null}
 
                                 {/* 항목명 */}
-                                <td className="sticky-col-2 whitespace-nowrap px-2 z-10" style={{
-                                    position: 'sticky',
-                                    left: 70,
-                                    background: '#ffffff',
+                                <td className="sticky-col-2" style={{
                                     paddingLeft: `${8 + item.indent * 14}px`,
                                     fontSize: item.indent > 0 ? '0.75rem' : undefined,
                                 }}>
@@ -210,18 +206,18 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
 
                                     // 하위 컬럼 종류에 따른 스타일 (showTarget, showYoY 등의 배열을 기반)
                                     let isTargetCol = false;
+                                    let isActualCol = false;
                                     if (hasSubHeaders) {
                                         const colType = subColHeaders[i % colSpan];
                                         isTargetCol = colType === 'TD목표';
+                                        isActualCol = colType === "'26실적";
                                     }
 
                                     return (
-                                        <td key={i} className={`${colorClass} whitespace-nowrap px-2 min-w-[70px]`} style={{
+                                        <td key={i} className={colorClass} style={{
                                             fontSize: item.indent > 0 ? '0.75rem' : undefined,
-                                            textAlign: 'right',
-                                            backgroundColor: isTargetCol ? '#f8fafc' : undefined,
-                                            borderLeft: '1px solid var(--border-color)',
-                                            paddingRight: '8px',
+                                            backgroundColor: isTargetCol ? '#f8fafc' : undefined, // 목표 컬럼 배경
+                                            borderLeft: (isTargetCol || (isActualCol && showYoY)) ? '1px dashed var(--border-color)' : undefined,
                                         }}>
                                             {item.isHeader ? <strong>{formatted}</strong> : formatted}
                                         </td>

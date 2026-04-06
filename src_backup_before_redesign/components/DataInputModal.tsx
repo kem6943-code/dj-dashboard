@@ -153,17 +153,13 @@ export function DataInputModal({ divisionInfo, subDivision, year, month, dataTyp
                         <div className="flex items-center gap-2 flex-1 relative group">
                             <span className="text-xs font-bold" style={{ color: '#92400e' }}>{isMXN ? '1 USD =' : `1 ${divisionInfo.currency} =`}</span>
                             <input
-                                type="text"
-                                inputMode="decimal"
+                                type="number"
+                                step="0.001"
                                 className="input-field font-bold text-amber-900 border-amber-300 focus:border-amber-500 focus:ring-amber-200"
                                 style={{ maxWidth: 120, border: '1px solid #fcd34d', backgroundColor: '#fff', padding: '6px 12px' }}
                                 value={exchangeRate === 0 ? '' : exchangeRate}
                                 onChange={e => {
-                                    // 숫자와 소수점만 허용
-                                    const val = e.target.value;
-                                    if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-                                        setExchangeRate(val);
-                                    }
+                                    setExchangeRate(e.target.value);
                                 }}
                                 placeholder="0"
                             />
@@ -172,7 +168,7 @@ export function DataInputModal({ divisionInfo, subDivision, year, month, dataTyp
                             {/* 환율 툴팁 (기존 상수값 안내) */}
                             <div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-slate-800 text-white text-[11px] rounded shadow-lg z-10 whitespace-nowrap min-w-max text-center">
                                 권장 기준 환율:<br />
-                                🇹🇭 THB: 39.5원 ('TD목표': 41.78원) / 🇻🇳 VND: 0.055원<br />🇲🇽 MXN: 1 USD ≈ 17.7 MXN
+                                🇹🇭 THB: 39.5원 / 🇻🇳 VND: 0.055원<br />🇲🇽 MXN: 1 USD ≈ 17.7 MXN
                             </div>
                         </div>
                     </div>

@@ -2,7 +2,7 @@
  * localStorage를 사용한 데이터 저장/로드 유틸리티
  */
 import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
-import { calculateDerivedFields, createEmptyPLData, DIVISIONS_WITH_TOTAL } from './dataModel';
+import { calculateDerivedFields, createEmptyPLData, ALL_ITEMS_MAP, DIVISIONS_WITH_TOTAL } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
 const STORAGE_KEY = 'management_dashboard_data_v10'; // v9→v10: 태국 P&L 모든 세부 행(경비 % 등) 100% 전수 싱크
@@ -44,17 +44,11 @@ function applyMigrations(store: DataStore): DataStore {
                     div.exchangeRates[m].actual >= 0.5 && div.exchangeRates[m].actual < 1) {
                     div.exchangeRates[m].actual = 0.055;
                 }
-                if (div.divisionCode === 'vietnam') {
-                    if (!div.exchangeRates[m]) div.exchangeRates[m] = { actual: 0.055, target: 0.055, prev: 0.055 };
-                    if (div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0) div.exchangeRates[m].actual = 0.055;
-                    if (div.exchangeRates[m].target === 1 || div.exchangeRates[m].target === 0) div.exchangeRates[m].target = 0.055;
-                    if (div.exchangeRates[m].prev === 1 || div.exchangeRates[m].prev === 0) div.exchangeRates[m].prev = 0.055;
+                if (div.divisionCode === 'vietnam' && (!div.exchangeRates[m] || div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0)) {
+                    div.exchangeRates[m] = { actual: 0.055, target: 0.055, prev: 0.055 };
                 }
-                if (div.divisionCode === 'thailand') {
-                    if (!div.exchangeRates[m]) div.exchangeRates[m] = { actual: 39.5, target: 41.78, prev: 39.5 };
-                    if (div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0) div.exchangeRates[m].actual = 39.5;
-                    if (div.exchangeRates[m].target === 1 || div.exchangeRates[m].target === 0 || div.exchangeRates[m].target === 39.5) div.exchangeRates[m].target = 41.78;
-                    if (div.exchangeRates[m].prev === 1 || div.exchangeRates[m].prev === 0) div.exchangeRates[m].prev = 39.5;
+                if (div.divisionCode === 'thailand' && (!div.exchangeRates[m] || div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0)) {
+                    div.exchangeRates[m] = { actual: 39.5, target: 39.5, prev: 39.5 };
                 }
             }
         }
@@ -603,7 +597,7 @@ function applyMigrations(store: DataStore): DataStore {
                             });
                         }
                     });
-                    if (hasData) div.monthly[1] = calculateDerivedFields(totalActual, true);
+                    if (hasData) div.monthly[1] = calculateDerivedFields(totalActual, false);
                 }
                 // 목표 합산
                 if (div.subDivTargetMonthly) {
@@ -622,7 +616,7 @@ function applyMigrations(store: DataStore): DataStore {
                     });
                     if (hasData) {
                         if (!div.targetMonthly) div.targetMonthly = {};
-                        div.targetMonthly[1] = calculateDerivedFields(totalTarget, true);
+                        div.targetMonthly[1] = calculateDerivedFields(totalTarget, false);
                     }
                 }
             } // closes if (div.divisionCode === 'vietnam')
@@ -755,7 +749,7 @@ function applyMigrations(store: DataStore): DataStore {
                             });
                         }
                     });
-                    if (hasData) div.monthly[1] = calculateDerivedFields(totalActual, true);
+                    if (hasData) div.monthly[1] = calculateDerivedFields(totalActual, false);
                 }
                 if (div.subDivTargetMonthly) {
                     const totalTarget = createEmptyPLData();
@@ -773,7 +767,7 @@ function applyMigrations(store: DataStore): DataStore {
                     });
                     if (hasData) {
                         if (!div.targetMonthly) div.targetMonthly = {};
-                        div.targetMonthly[1] = calculateDerivedFields(totalTarget, true);
+                        div.targetMonthly[1] = calculateDerivedFields(totalTarget, false);
                     }
                 }
             } // closes if (div.divisionCode === 'mexico')
@@ -850,7 +844,7 @@ function autoRepairAggregations(store: DataStore): DataStore {
                     });
                     if (hasData) {
                         totalActual.manualOverrides = Array.from(manualOverrides);
-                        div.monthly[month] = calculateDerivedFields(totalActual, true);
+                        div.monthly[month] = calculateDerivedFields(totalActual, false);
                     }
                 }
                 // 목표 자동 복구
@@ -876,7 +870,7 @@ function autoRepairAggregations(store: DataStore): DataStore {
                     });
                     if (hasData) {
                         totalTarget.manualOverrides = Array.from(manualOverridesTarget);
-                        div.targetMonthly[month] = calculateDerivedFields(totalTarget, true);
+                        div.targetMonthly[month] = calculateDerivedFields(totalTarget, false);
                     }
                 }
             }
