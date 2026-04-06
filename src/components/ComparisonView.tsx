@@ -427,9 +427,8 @@ export function ComparisonView({ store, year, periodType }: ComparisonViewProps)
                                 const rev = d.plData?.revenue || 0;
                                 const op = d.plData?.operatingProfit || 0;
                                 const ratio = rev !== 0 ? ((op / rev) * 100).toFixed(1) : '-';
-                                const isPos = Number(ratio) >= 0;
                                 return (
-                                    <td key={i} className={ratio !== '-' ? (isPos ? 'text-gray-900' : 'text-red-500') : ''} style={{ backgroundColor: '#f8fafc' }}>
+                                    <td key={i} className="text-gray-900" style={{ backgroundColor: '#f8fafc' }}>
                                         <strong>{ratio}{ratio !== '-' ? '%' : ''}</strong>
                                     </td>
                                 );

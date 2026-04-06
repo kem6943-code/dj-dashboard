@@ -38,7 +38,7 @@ export function KPICards({ data, target }: KPICardsProps) {
         { label: '매출액', val: actRevenue, targ: targRevenue, isRate: false, colorClass: 'text-blue-600' },
         { label: '재료비율', val: actMaterialRate, targ: targMaterialRate, isRate: true, colorClass: 'text-slate-900' },
         { label: '영업이익', val: actOperatingProfit, targ: targOperatingProfit, isRate: false, colorClass: 'text-slate-900' },
-        { label: '영업이익률', val: actOpRate, targ: targOpRate, isRate: true, colorClass: actOpRate < 0 ? 'text-red-500' : 'text-gray-900' },
+        { label: '영업이익률', val: actOpRate, targ: targOpRate, isRate: true, colorClass: 'text-gray-900' },
         { label: '세전이익', val: actEbt, targ: targEbt, isRate: false, colorClass: 'text-slate-900' },
     ];
 
