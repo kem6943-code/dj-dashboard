@@ -230,17 +230,17 @@ export function Dashboard() {
                 <div className="px-8 lg:px-10 max-w-[1600px] w-full mx-auto pb-24 pt-0">
                     {activeView === 'main' ? (
                         <div className="animate-fade-in pb-20">
-                            <div style={{ marginBottom: '25px' }}>
+                            <div className="mb-8">
                                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
                                     <BarChart3 className="text-blue-500 w-5 h-5" />전사 통합 경영실적 요약
                                     <span className="text-sm font-semibold text-slate-400 ml-1">(선택 기간 기준)</span>
                                 </h3>
                                 <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={DIVISIONS_WITH_TOTAL.find(d => d.code === 'total')!} />
                             </div>
-                            <div style={{ marginBottom: '25px' }}>
+                            <div className="mb-8">
                                 <YearlyTargetCards store={store} year={dateRange.end.year} />
                             </div>
-                            <div style={{ marginBottom: '40px' }}>
+                            <div className="mb-8">
                                 <DivisionTrendCharts store={store} year={dateRange.end.year} />
                             </div>
                         </div>
@@ -283,16 +283,19 @@ export function Dashboard() {
                                         </div>
                                     )}
 
-                                    {divisionInfo && <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={divisionInfo} />}
-
-
+                                    {/* KPI 카드 영역 */}
+                                    <div className="mb-8">
+                                        {divisionInfo && <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={divisionInfo} />}
+                                    </div>
 
                                     {/* 매출/비용/이익률 혼합 차트 */}
-                                    {divisionInfo && (
-                                        <PeriodComposedChart store={store} divisionInfo={divisionInfo} dateRange={dateRange} selectedSubDiv={selectedSubDiv} />
-                                    )}
+                                    <div className="mb-8">
+                                        {divisionInfo && (
+                                            <PeriodComposedChart store={store} divisionInfo={divisionInfo} dateRange={dateRange} selectedSubDiv={selectedSubDiv} />
+                                        )}
+                                    </div>
 
-                                    <div className="w-full max-w-full overflow-hidden mx-auto pb-6">
+                                    <div className="w-full max-w-full overflow-hidden mx-auto">
                                         <div className="glass-card p-8 mb-10 bg-white border border-slate-200/60 rounded-2xl overflow-hidden max-w-full">
                                             <div className="w-full overflow-x-auto">
                                             <div className="flex justify-between items-center mb-3">
