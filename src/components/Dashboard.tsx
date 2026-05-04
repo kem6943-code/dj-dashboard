@@ -38,12 +38,13 @@ export function Dashboard() {
             setSelectedDivision('total');
         }
     }, [activeView]);
-    // [UX-2] 조회 기간 필터 - useState로 변경 (초기값만 고정)
+    // [UX-2] 조회 기간 필터 - useState로 변경 (기본값 세팅 후 데이터 로드시 최신 월로 자동 조정됨)
     const now = new Date();
     const [dateRange, setDateRange] = useState({
         start: { year: 2026, month: 1 } as MonthYear,
         end: { year: now.getFullYear(), month: now.getMonth() + 1 } as MonthYear,
     });
+    const [, setKnownMaxMonthByYear] = useState<Record<number, number>>({});
 
     // 조회 단위: 날짜 범위 선택기가 직접 기간을 제어하므로 항상 월별(monthly) 고정
     const intervalType: IntervalType = 'monthly';
@@ -69,6 +70,47 @@ export function Dashboard() {
 
     // 전체 Store 항상 로드
     const { store: rawStore, setStore, loading, handleSaveData } = useDashboardData(selectedDivision);
+
+    // [UX] 데이터가 로드되면 해당 연도의 최신 실적월(maxMonth)을 탐색하여 dateRange의 종료월을 자동 업데이트
+    useEffect(() => {
+        if (rawStore) {
+            const currentYear = dateRange.end.year;
+            let maxMonth = 1;
+            
+            rawStore.divisions.forEach(div => {
+                if (div.year === currentYear && div.monthly) {
+                    for (let m = 12; m >= 1; m--) {
+                        const mData = div.monthly[m];
+                        // 실적 데이터가 존재하는지 판단 (매출, 경비, 인건비, 영업이익 중 하나라도 0이 아니면 실적이 있는 것으로 간주)
+                        if (mData && (
+                            (mData.revenue && mData.revenue !== 0) || 
+                            (mData.overhead && mData.overhead !== 0) || 
+                            (mData.laborCost && mData.laborCost !== 0) ||
+                            (mData.operatingProfit && mData.operatingProfit !== 0)
+                        )) {
+                            if (m > maxMonth) {
+                                maxMonth = m;
+                            }
+                            break;
+                        }
+                    }
+                }
+            });
+
+            // knownMaxMonthByYear 상태를 업데이트하면서, 새로운 최대 실적월이 발견되면 dateRange도 업데이트
+            setKnownMaxMonthByYear(prev => {
+                const currentKnown = prev[currentYear] || 0;
+                if (currentKnown === 0 || maxMonth > currentKnown) {
+                    setDateRange(prevDate => ({
+                        ...prevDate,
+                        end: { year: currentYear, month: maxMonth }
+                    }));
+                    return { ...prev, [currentYear]: maxMonth };
+                }
+                return prev;
+            });
+        }
+    }, [rawStore, dateRange.end.year]);
 
     // [전역 필터] 기술료 차감 로직 파이프라인
     const store = useMemo(() => {
