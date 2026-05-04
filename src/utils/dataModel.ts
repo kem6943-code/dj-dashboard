@@ -419,10 +419,24 @@ export interface DivisionYearData {
     subDivTargetMonthly?: { [subKey: string]: { [month: number]: MonthlyPLData } }; // 서브디비전 개별 목표
 }
 
+// 본사(HQ) 공통 비용 — 월별 입력 데이터
+// 전사이익 = 사업부 세전이익 합계 + 기술료 합계 - 본사비용(영업외비용제외) + 영외수익 - 영외비용
+export interface HQMonthlyCost {
+    cost: number;        // 비용 (영업외비용 제외) — 본사, 자동차, 태국, 베트남, 멕시코 등 공통 경비
+    nonOpRevenue: number; // 전사 영외수익
+    nonOpExpense: number; // 전사 영외비용
+}
+
+export interface HQCostData {
+    year: number;
+    monthly: { [month: number]: HQMonthlyCost };
+}
+
 // 전체 데이터 스토어
 export interface DataStore {
     lastUpdated: string;   // ISO date string
     divisions: DivisionYearData[];
+    hqCosts?: HQCostData[]; // 본사 공통비 데이터 (연도별)
     _migrated_v10?: boolean; // v10 하드코딩 데이터 1회 마이그레이션 적용 여부 플래그
     _migrated_v11?: boolean; // v11 멕시코 데이터 1회 마이그레이션 적용 여부 플래그
     _migrated_v12?: boolean; // v12 멕시코 금액 수정 마이그레이션 플래그
@@ -708,8 +722,8 @@ export function convertToKRW(data: MonthlyPLData, exchangeRate: number): Monthly
     return calculateDerivedFields(result, true);
 }
 
-// 전 사업부 합산 (원화 환산 후 합산)
-export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }, year: number): DivisionYearData {
+// 전 사업부 합산 (원화 환산 후 합산) + 본사 공통비 차감
+export function consolidateAllDivisions(store: { divisions: DivisionYearData[]; hqCosts?: HQCostData[] }, year: number): DivisionYearData {
     const consolidated: DivisionYearData = {
         divisionCode: 'total',
         year,
@@ -717,6 +731,9 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
         monthly: {},
         targetMonthly: {},
     };
+
+    // 해당 연도의 HQ 공통비 데이터 조회
+    const hqYearData = store.hqCosts?.find(h => h.year === year);
 
     for (let m = 1; m <= 12; m++) {
         const result = createEmptyPLData();
@@ -778,6 +795,24 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[] }
                     targetResult.revenue = (targetResult.revenue || 0) + ((tData.revenue || 0) * targetRate);
                 }
             });
+
+        // === 본사 공통비 적용 (HQ Cost Adjustment) ===
+        // 전사이익 공식: 사업부 세전이익 합계 - 본사비용 + 영외수익 - 영외비용
+        if (hasData && hqYearData?.monthly[m]) {
+            const hq = hqYearData.monthly[m];
+            // 경비에 본사 비용 가산 → 영업이익 감소
+            result.overhead = (result.overhead || 0) + (hq.cost || 0);
+            // 영업이익 차감
+            result.operatingProfit = (result.operatingProfit || 0) - (hq.cost || 0);
+            // 영외수지: +영외수익 -영외비용
+            result.nonOpBalance = (result.nonOpBalance || 0) + (hq.nonOpRevenue || 0) - (hq.nonOpExpense || 0);
+            // 세전이익(EBT) = 영업이익 + 영외수지 (재계산)
+            result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
+            // HQ 비용 금액을 별도 필드에 저장 (UI 표시용)
+            result._hqCost = hq.cost || 0;
+            result._hqNonOpRevenue = hq.nonOpRevenue || 0;
+            result._hqNonOpExpense = hq.nonOpExpense || 0;
+        }
 
         if (hasData) {
             consolidated.monthly[m] = calculateDerivedFields(result, true);

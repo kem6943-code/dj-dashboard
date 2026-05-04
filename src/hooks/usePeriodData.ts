@@ -189,6 +189,20 @@ export function usePeriodData({
                     }
                 });
                 
+                // === [전사 공통비] HQ 비용 차감 적용 ===
+                const hqYearData = store.hqCosts?.find(h => h.year === year);
+                if (hqYearData?.monthly[month]) {
+                    const hq = hqYearData.monthly[month];
+                    // 경비에 본사 비용 가산
+                    combinedActual.overhead = (combinedActual.overhead || 0) + (hq.cost || 0);
+                    // 영업이익 차감
+                    combinedActual.operatingProfit = (combinedActual.operatingProfit || 0) - (hq.cost || 0);
+                    // 영외수지 조정
+                    combinedActual.nonOpBalance = (combinedActual.nonOpBalance || 0) + (hq.nonOpRevenue || 0) - (hq.nonOpExpense || 0);
+                    // 세전이익(EBT) 재산출
+                    combinedActual.ebt = (combinedActual.operatingProfit || 0) + (combinedActual.nonOpBalance || 0);
+                }
+
                 // 각 월별 합산 결과는 비율을 재계산(단월 보존)하여 목록에 추가
                 // [디버그] 합산 전 combinedTarget의 materialCost/materialRatio 상태 출력
                 console.log(`[전사 합산 디버그 ${year}년 ${month}월]`,

@@ -6,6 +6,7 @@ import {
     DIVISIONS_WITH_TOTAL,
     getPLItemsForDivision,
     type MonthYear,
+    type HQCostData,
 } from '../utils/dataModel';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { usePeriodData, type IntervalType } from '../hooks/usePeriodData';
@@ -17,10 +18,12 @@ import { YearlyTargetCards } from './YearlyTargetCards';
 import { DivisionTrendCharts } from './DivisionTrendCharts';
 import { ExcelUploader } from './ExcelUploader';
 import { DataInputModal } from './DataInputModal';
+import { HQCostModal } from './HQCostModal';
 import { PeriodComposedChart } from './PeriodComposedChart';
 import { MonthPresetPicker } from './MonthPresetPicker';
 import { Logo } from './Logo';
-import { BarChart3, TrendingUp, GitCompare, Target, LogOut, ChevronDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { saveData } from '../utils/storage';
+import { BarChart3, TrendingUp, GitCompare, Target, LogOut, ChevronDown, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
 
 export function Dashboard() {
     const { logout } = useAuth();
@@ -67,6 +70,9 @@ export function Dashboard() {
 
     // [본부장 지시사항] 기술료 제외 실질 영업이익 표시 토글 상태 (기본값: true - 기술료 제외)
     const [excludeTechFee, setExcludeTechFee] = useState(true);
+
+    // [전사 공통비] HQ 비용 입력 모달 상태
+    const [showHQCostModal, setShowHQCostModal] = useState(false);
 
     // 전체 Store 항상 로드
     const { store: rawStore, setStore, loading, handleSaveData } = useDashboardData(selectedDivision);
@@ -297,8 +303,18 @@ export function Dashboard() {
                         {activeView === 'main' ? '메인 대시보드' : activeView === 'dashboard' ? '사업부별 손익 분석' : '사업부 지표 비교'}
                     </h2>
 
-                    {/* 우측 상단 필터: 토글 스위치 및 날짜 선택기 */}
-                    <div className="flex items-center gap-6">
+                    {/* 우측 상단 필터: 톱니바퀴 + 토글 스위치 + 날짜 선택기 */}
+                    <div className="flex items-center gap-4">
+                        {/* ⚙️ 전사 공통비 관리 버튼 */}
+                        <button
+                            onClick={() => setShowHQCostModal(true)}
+                            className="flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-slate-200/80 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 group"
+                            title="전사 공통비 관리"
+                        >
+                            <Settings className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:rotate-90 transition-all duration-300" />
+                            <span className="text-[12px] font-semibold text-slate-500 group-hover:text-slate-700 hidden lg:inline">공통비 설정</span>
+                        </button>
+
                         {/* 실질 영업이익 토글 스위치 */}
                         <label className="flex items-center gap-2.5 cursor-pointer bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-sm transition-all hover:bg-slate-50">
                             <span className={`text-[13px] font-bold transition-colors ${!excludeTechFee ? 'text-blue-700' : 'text-slate-400'}`}>공식 영업이익</span>
@@ -479,6 +495,21 @@ export function Dashboard() {
                         }}
                         onClose={() => setEditModal(null)}
 
+                    />
+                )}
+
+                {/* 전사 공통비 관리 모달 */}
+                {showHQCostModal && rawStore && (
+                    <HQCostModal
+                        year={dateRange.end.year}
+                        hqCosts={rawStore.hqCosts || []}
+                        onSave={async (updatedHQCosts: HQCostData[]) => {
+                            const newStore = { ...rawStore, hqCosts: updatedHQCosts, lastUpdated: new Date().toISOString() };
+                            await saveData(newStore);
+                            setStore(newStore);
+                            setShowHQCostModal(false);
+                        }}
+                        onClose={() => setShowHQCostModal(false)}
                     />
                 )}
             </main>
