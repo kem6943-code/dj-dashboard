@@ -64,8 +64,8 @@ export function Dashboard() {
         dataType: 'actual' | 'target' | 'prevYear';
     } | null>(null);
 
-    // [본부장 지시사항] 기술료 제외 실질 영업이익 표시 토글 상태
-    const [excludeTechFee, setExcludeTechFee] = useState(false);
+    // [본부장 지시사항] 기술료 제외 실질 영업이익 표시 토글 상태 (기본값: true - 기술료 제외)
+    const [excludeTechFee, setExcludeTechFee] = useState(true);
 
     // 전체 Store 항상 로드
     const { store: rawStore, setStore, loading, handleSaveData } = useDashboardData(selectedDivision);
