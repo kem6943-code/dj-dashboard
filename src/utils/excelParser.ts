@@ -25,6 +25,8 @@ const LABEL_KEY_MAPPING: Record<string, keyof MonthlyPLData> = {
 
     '경비': 'overhead',
     '경비율': 'overheadRatio',
+    '- 기술료': 'techFee',
+    '기술료': 'techFee',
     '- 전력료': 'electricity',
     '- 전력비': 'electricity', // 태국 등
     '- 감가상각비': 'depreciation',
