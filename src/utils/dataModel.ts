@@ -97,6 +97,7 @@ export const CHANGWON_ITEMS: PLItem[] = [
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
     { key: 'overheadRatio', label: '경비율', isHeader: false, indent: 0, isCalculated: true, section: '경비', type: 'ratio' },
+    { key: 'techFee', label: '기술료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'electricity', label: '전력료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'depreciation', label: '감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'repair', label: '수선비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
@@ -429,6 +430,8 @@ export interface DataStore {
     _migrated_v14?: boolean;
     _migrated_v15?: boolean;
     _migrated_v16?: boolean;
+    _migrated_v17?: boolean;
+    _migrated_v18?: boolean;
 }
 
 // ===== 유틸 함수들 =====
@@ -458,8 +461,9 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
         }
     });
     // 하위 항목 합계가 실제로 0보다 클 때만 매출액을 덮어씀
-    // (createEmptyPLData가 모든 sales* 키를 0으로 초기화하므로, 존재여부가 아닌 합계값으로 판단)
-    if (totalRevenue > 0) {
+    // [Bug Fix] preserveAmounts=true(전사 합산 등)에서는 이미 정확히 합산된 revenue를
+    // sales* 하위 항목 합계로 절대 덮어쓰지 않음 → 전사 합산 시 revenue 증발 방지
+    if (totalRevenue > 0 && !(preserveAmounts && result.revenue && result.revenue > 0)) {
         result.revenue = totalRevenue;
     }
 

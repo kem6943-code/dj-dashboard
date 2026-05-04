@@ -34,8 +34,9 @@ function formatValue(value: number, item: PLItem, currency: string = 'KRW'): str
     }
     if (item.type === 'unit') {
         if (value === 0) return '-';
-        // 원당매출액 등 (이미지: 24.8) -> 소수점 1자리
-        return value.toFixed(1);
+        // 원당매출액 등 (이미지: 24.8) -> 금액 단위(백만/천)에 맞게 스케일링 후 소수점 1자리
+        const divider = currency === 'MXN' ? 1000 : 1000000;
+        return (value / divider).toFixed(1);
     }
     const unit = currency === 'MXN' ? '천' : '백만';
     return formatAmount(value, unit, currency);

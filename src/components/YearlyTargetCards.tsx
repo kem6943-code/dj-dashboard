@@ -33,31 +33,23 @@ export function YearlyTargetCards({ store, year }: Props) {
                     const divData = divs.find(d => d.divisionCode === divInfo.code);
                     if (!divData || !divData.yearlyTarget) return [];
 
-                    // 경영진 지시사항(원화) 직관적 비교를 위해 전부 KRW 기준으로 변환
-                    const rates = divData.exchangeRates?.[1] || { actual: 1, target: 1, prev: 1 };
                     const isMexico = divInfo.code === 'mexico';
-                    // 🇲🇽 멕시코: 직접 MXN→KRW 환율 적용
-                    const actualRate = isMexico ? MXN_KRW_RATE : (rates.actual || 1);
+                    const isKRW = divInfo.currency === 'KRW';
 
-                    // 재사용 렌더러
+                    // 재사용 렌더러 (파라미터로 이미 환산된 KRW 원화 실적을 받음)
                     const renderCard = (
                         key: string,
                         name: string,
                         flag: string,
-                        actualRevRaw: number,
-                        actualOpRaw: number,
-                        targetRevRaw: number | null,
-                        targetOpRaw: number | null
+                        actualRevKRW: number,
+                        actualOpKRW: number,
+                        targetRevKRW: number | null,
+                        targetOpKRW: number | null
                     ) => {
-                        const actualRev = actualRevRaw * actualRate;
-                        const actualOp = actualOpRaw * actualRate;
-                        const targetRev = targetRevRaw || 0;
-                        const targetOp = targetOpRaw || 0;
+                        const hasTarget = (targetRevKRW || 0) > 0 || (targetOpKRW || 0) > 0;
 
-                        const hasTarget = targetRev > 0 || targetOp > 0;
-
-                        const revAchieve = targetRev > 0 ? (actualRev / targetRev) * 100 : 0;
-                        const opAchieve = targetOp > 0 ? (actualOp / targetOp) * 100 : 0;
+                        const revAchieve = targetRevKRW && targetRevKRW > 0 ? (actualRevKRW / targetRevKRW) * 100 : 0;
+                        const opAchieve = targetOpKRW && targetOpKRW > 0 ? (actualOpKRW / targetOpKRW) * 100 : 0;
 
                         return (
                             <div key={key} className="bg-white border border-gray-200/60 rounded-2xl p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-sm transition-all flex flex-col justify-between">
@@ -96,8 +88,8 @@ export function YearlyTargetCards({ store, year }: Props) {
                                             </div>
                                         )}
                                         <div className={`flex justify-between items-baseline mt-1 ${!hasTarget ? 'mt-4' : ''}`}>
-                                            <span className="text-xl font-bold text-gray-800 tracking-tight">{formatEok(actualRev)}</span>
-                                            {hasTarget && <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetRev)}</span>}
+                                            <span className="text-xl font-bold text-gray-800 tracking-tight">{formatEok(actualRevKRW)}</span>
+                                            {hasTarget && <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetRevKRW || 0)}</span>}
                                         </div>
                                     </div>
 
@@ -127,8 +119,8 @@ export function YearlyTargetCards({ store, year }: Props) {
                                             </div>
                                         )}
                                         <div className={`flex justify-between items-baseline mt-1 ${!hasTarget ? 'mt-4' : ''}`}>
-                                            <span className={`text-xl font-bold tracking-tight ${actualOp < 0 ? 'text-rose-600' : 'text-gray-800'}`}>{formatEok(actualOp)}</span>
-                                            {hasTarget && <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetOp)}</span>}
+                                            <span className={`text-xl font-bold tracking-tight ${actualOpKRW < 0 ? 'text-rose-600' : 'text-gray-800'}`}>{formatEok(actualOpKRW)}</span>
+                                            {hasTarget && <span className="text-[12px] font-medium text-gray-400">/ {formatEok(targetOpKRW || 0)}</span>}
                                         </div>
                                     </div>
                                 </div>
@@ -138,35 +130,35 @@ export function YearlyTargetCards({ store, year }: Props) {
 
                     if (isMexico) {
                         // 멕시코(가전)
-                        let haActRev = 0;
-                        let haActOp = 0;
-                        Object.values(divData.subDivMonthly?.['homeAppliance'] || {}).forEach(m => {
-                            haActRev += m.revenue || 0;
-                            haActOp += m.operatingProfit || 0;
+                        let haActRevKRW = 0;
+                        let haActOpKRW = 0;
+                        Object.entries(divData.subDivMonthly?.['homeAppliance'] || {}).forEach(([, m]) => {
+                            haActRevKRW += (m.revenue || 0) * MXN_KRW_RATE;
+                            haActOpKRW += (m.operatingProfit || 0) * MXN_KRW_RATE;
                         });
                         const cardHA = renderCard(
                             divInfo.code + '_ha',
                             '멕시코(가전)',
                             divInfo.flag,
-                            haActRev,
-                            haActOp,
+                            haActRevKRW,
+                            haActOpKRW,
                             divData.yearlyTarget.revenue,          // 기존 멕시코 전체 TD목표 이관
                             divData.yearlyTarget.operatingProfit   // 기존 멕시코 전체 TD목표 이관
                         );
 
                         // 멕시코(자동차)
-                        let autoActRev = 0;
-                        let autoActOp = 0;
-                        Object.values(divData.subDivMonthly?.['automotive'] || {}).forEach(m => {
-                            autoActRev += m.revenue || 0;
-                            autoActOp += m.operatingProfit || 0;
+                        let autoActRevKRW = 0;
+                        let autoActOpKRW = 0;
+                        Object.entries(divData.subDivMonthly?.['automotive'] || {}).forEach(([, m]) => {
+                            autoActRevKRW += (m.revenue || 0) * MXN_KRW_RATE;
+                            autoActOpKRW += (m.operatingProfit || 0) * MXN_KRW_RATE;
                         });
                         const cardAuto = renderCard(
                             divInfo.code + '_auto',
                             '멕시코(자동차)',
                             divInfo.flag,
-                            autoActRev,
-                            autoActOp,
+                            autoActRevKRW,
+                            autoActOpKRW,
                             null, // 자동차 목표 없음
                             null
                         );
@@ -174,18 +166,23 @@ export function YearlyTargetCards({ store, year }: Props) {
                         return [cardHA, cardAuto];
                     } else {
                         // 일반 사업부
-                        let actRev = 0;
-                        let actOp = 0;
-                        Object.values(divData.monthly).forEach(m => {
-                            actRev += m.revenue || 0;
-                            actOp += m.operatingProfit || 0;
+                        let actRevKRW = 0;
+                        let actOpKRW = 0;
+                        Object.entries(divData.monthly).forEach(([monthStr, m]) => {
+                            const month = parseInt(monthStr);
+                            const rates = divData.exchangeRates?.[month] || { actual: 1, target: 1 };
+                            const actRate = isKRW ? 1 : (rates.actual || 1);
+                            
+                            actRevKRW += (m.revenue || 0) * actRate;
+                            actOpKRW += (m.operatingProfit || 0) * actRate;
                         });
+                        
                         return [renderCard(
                             divInfo.code,
                             divInfo.name,
                             divInfo.flag,
-                            actRev,
-                            actOp,
+                            actRevKRW,
+                            actOpKRW,
                             divData.yearlyTarget.revenue,
                             divData.yearlyTarget.operatingProfit
                         )];

@@ -47,12 +47,18 @@ function aggregateMonthlyList(list: MonthlyPLData[]): MonthlyPLData {
     if (list.length === 0) return createEmptyPLData();
 
     const agg = createEmptyPLData();
+    const countMap: Record<string, number> = {};
+
     list.forEach(d => {
         if (!d) return;
         Object.entries(ALL_ITEMS_MAP).forEach(([k, item]) => {
-            // 비율(%)과 단위 필드는 합산하면 안 됨 (예: 88% + 67% = 155% 방지)
-            if (!item.isCalculated && item.type !== 'ratio' && item.type !== 'unit' && typeof d[k] === 'number') {
+            // [Bug Fix] 인원(count), 단위(unit) 등은 단순 합산하면 분기가 지날수록 숫자가 뻥튀기됨
+            // 따라서 해당 필드들은 평균을 내기 위해 일단 합산하고 count를 기록해둔 뒤 마지막에 나눔
+            if (!item.isCalculated && item.type !== 'ratio' && typeof d[k] === 'number') {
                 agg[k] = (agg[k] || 0) + d[k];
+                if (item.type === 'count' || item.type === 'unit') {
+                    countMap[k] = (countMap[k] || 0) + (d[k] !== 0 ? 1 : 0);
+                }
             }
         });
         // isCalculated=true이지만 금액인 핵심 필드는 별도 합산
@@ -61,6 +67,13 @@ function aggregateMonthlyList(list: MonthlyPLData[]): MonthlyPLData {
         agg.operatingProfit = (agg.operatingProfit || 0) + (d.operatingProfit || 0);
         agg.ebt = (agg.ebt || 0) + (d.ebt || 0);
         agg.nonOpBalance = (agg.nonOpBalance || 0) + (d.nonOpBalance || 0);
+    });
+
+    // count(인원), unit(원당매출액) 유형의 필드들은 합산된 값을 유효한 달 수로 나누어 평균값으로 변경
+    Object.keys(countMap).forEach(k => {
+        if (countMap[k] > 0) {
+            agg[k] = agg[k] / countMap[k];
+        }
     });
     // 합산된 금액으로 비율 재계산 (preserveAmounts=true: 합산 금액 보존, 비율만 재산출)
     return calculateDerivedFields(agg, true);
@@ -171,10 +184,21 @@ export function usePeriodData({
                                 combinedTarget[k] = ((combinedTarget[k] as number) || 0) + convTarg;
                             }
                         });
+                        // [디버그] 사업부별 target materialCost 기여분 출력
+                        console.log(`  [사업부 ${div.code}] target.materialCost=${targ.materialCost} target.materialRatio=${targ.materialRatio} target.revenue=${targ.revenue} currency=${div.currency} rs.target=${rs.target}`);
                     }
                 });
                 
                 // 각 월별 합산 결과는 비율을 재계산(단월 보존)하여 목록에 추가
+                // [디버그] 합산 전 combinedTarget의 materialCost/materialRatio 상태 출력
+                console.log(`[전사 합산 디버그 ${year}년 ${month}월]`,
+                    '\n  combinedTarget.materialCost:', combinedTarget.materialCost,
+                    'combinedTarget.revenue:', combinedTarget.revenue,
+                    'combinedTarget.materialRatio:', combinedTarget.materialRatio,
+                    '\n  combinedActual.materialCost:', combinedActual.materialCost,
+                    'combinedActual.revenue:', combinedActual.revenue,
+                    'combinedActual.materialRatio:', combinedActual.materialRatio
+                );
                 totalActualList.push(calculateDerivedFields(combinedActual, true));
                 totalTargetList.push(calculateDerivedFields(combinedTarget, true));
             });
@@ -189,6 +213,8 @@ export function usePeriodData({
                 aggregateData: aggregateMonthlyList(totalActualList),
                 aggregateTarget: aggregateMonthlyList(totalTargetList),
                 monthsList: allMonths,
+                aggregateDataKRW: aggregateMonthlyList(totalActualList),
+                aggregateTargetKRW: aggregateMonthlyList(totalTargetList),
             };
         }
 
@@ -203,6 +229,12 @@ export function usePeriodData({
 
         const allActual: MonthlyPLData[] = [];
         const allTarget: MonthlyPLData[] = [];
+        const allPrev: MonthlyPLData[] = [];
+
+        // [듀얼 통화] 월별 환율 적용 KRW 환산 누적 (해외 사업부용)
+        // 핵심: 각 월의 현지통화 금액 × 해당 월 환율을 합산 (평균 환율 × 총액이 아님!)
+        const krwAct = { revenue: 0, operatingProfit: 0, ebt: 0 };
+        const krwTarg = { revenue: 0, operatingProfit: 0, ebt: 0 };
 
         // 각 그룹(기간 단위)별로 데이터를 합산
         groups.forEach(group => {
@@ -233,6 +265,19 @@ export function usePeriodData({
                 const rsAct = divData?.exchangeRates?.[month] || { actual: 1, target: 1 };
                 const rsPrev = prevDivData?.exchangeRates?.[month] || { actual: 1, target: 1 };
 
+                // [듀얼 통화] 월별 현지통화 x 해당 월 환율 누적 (해외 사업부 원화 환산용)
+                const isKRW = divisionInfo.currency === 'KRW';
+                const actRate = isKRW ? 1 : (rsAct.actual || 1);
+                const targRate = isKRW ? 1 : (rsAct.target || 1);
+                
+                krwAct.revenue += (act.revenue || 0) * actRate;
+                krwAct.operatingProfit += (act.operatingProfit || 0) * actRate;
+                krwAct.ebt += (act.ebt || 0) * actRate;
+                
+                krwTarg.revenue += (targ.revenue || 0) * targRate;
+                krwTarg.operatingProfit += (targ.operatingProfit || 0) * targRate;
+                krwTarg.ebt += (targ.ebt || 0) * targRate;
+
                 // '26실적 환율
                 rateSumAct += rsAct.actual || 1;
                 rateCountAct++;
@@ -248,6 +293,7 @@ export function usePeriodData({
 
             allActual.push(...groupActList);
             allTarget.push(...groupTargList);
+            allPrev.push(...groupPrevList);
 
             if (isColumns) return; // columns 모드는 아래에서 별도 처리
 
@@ -312,7 +358,7 @@ export function usePeriodData({
             periodLabels.push('기간 합계');
             const aggAct = aggregateMonthlyList(allActual);
             const aggTarg = aggregateMonthlyList(allTarget);
-            const aggPrev = createEmptyPLData();
+            const aggPrev = aggregateMonthlyList(allPrev);
 
             if (showYoY) {
                 periodData.push(aggPrev);
@@ -334,8 +380,8 @@ export function usePeriodData({
             aggregateData: aggregateMonthlyList(allActual),
             aggregateTarget: aggregateMonthlyList(allTarget),
             monthsList: allMonths,
+            aggregateDataKRW: krwAct,
+            aggregateTargetKRW: krwTarg,
         };
     }, [store, selectedDivision, dateRange, intervalType, selectedSubDiv, showTarget, showYoY, divisionInfo]);
 }
-/ /   T r i g g e r   C I   d e p l o y  
- 

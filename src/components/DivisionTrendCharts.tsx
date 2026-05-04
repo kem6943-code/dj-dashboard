@@ -70,6 +70,7 @@ export function DivisionTrendCharts({ store, year }: Props) {
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                                     <Tooltip
+                                        formatter={(value: any) => new Intl.NumberFormat('ko-KR').format(Number(value))}
                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                         itemStyle={{ fontSize: '12px' }}
                                         labelStyle={{ fontSize: '13px', fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}
@@ -93,6 +94,7 @@ export function DivisionTrendCharts({ store, year }: Props) {
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
                                     <Tooltip
+                                        formatter={(value: any) => new Intl.NumberFormat('ko-KR').format(Number(value))}
                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                         itemStyle={{ fontSize: '12px' }}
                                         labelStyle={{ fontSize: '13px', fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}

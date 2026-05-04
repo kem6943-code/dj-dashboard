@@ -26,13 +26,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Mock 딜레이
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // 하드코딩 인증: ID가 admin이고 비밀번호가 1234일 때 성공
-    if (id === 'admin' && pw === '1234') {
+    // 유효한 계정 목록
+    const validAccounts = [
+      { id: 'admin', pw: '1234', role: 'admin' },
+      { id: 'ceo', pw: '1234', role: 'ceo' },       // 대표님 계정
+      { id: 'head', pw: '1234', role: 'head' }      // 본부장님 계정
+    ];
+
+    const account = validAccounts.find(acc => acc.id === id && acc.pw === pw);
+
+    if (account) {
       setIsAuthenticated(true);
       sessionStorage.setItem('djt_auth', 'true');
+      sessionStorage.setItem('djt_role', account.role);
       return { success: true };
     }
-    return { success: false, error: '사번 또는 비밀번호를 다시 확인해주세요.' };
+    return { success: false, error: '사번(ID) 또는 비밀번호를 다시 확인해주세요.' };
   };
 
   const logout = () => {

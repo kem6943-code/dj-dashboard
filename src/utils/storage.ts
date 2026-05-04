@@ -1,19 +1,21 @@
 /**
  * localStorage를 사용한 데이터 저장/로드 유틸리티
  */
-import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
+import type { DataStore, DivisionYearData, DivisionCode, MonthlyPLData } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData, DIVISIONS_WITH_TOTAL } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
-const STORAGE_KEY = 'management_dashboard_data_v10'; // v9→v10: 태국 P&L 모든 세부 행(경비 % 등) 100% 전수 싱크
 
-// 데이터 저장
+
+// (중복 loadData 삭제됨)
+
+// 데이터 저장 (Supabase 전용)
 export async function saveData(store: DataStore): Promise<boolean> {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+        // 기존 localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); 완전 삭제!
         return await syncToCloud(store);
     } catch (e) {
-        console.error('Failed to save data:', e);
+        console.error('Failed to save data to Supabase:', e);
         return false;
     }
 }
@@ -778,7 +780,54 @@ function applyMigrations(store: DataStore): DataStore {
                 }
             } // closes if (div.divisionCode === 'mexico')
         } // closes if (!store._migrated_v12)
+
+        // ===== v18 마이그레이션: 멕시코 영외수지 부호 교정 (양수 -> 음수) 및 파생필드 재계산 =====
+        if (!store._migrated_v18) {
+            if (div.divisionCode === 'mexico') {
+                [1, 2, 3].forEach(m => {
+                    const flipSignIfPositive = (dataObj: MonthlyPLData | undefined): MonthlyPLData | undefined => {
+                        if (dataObj && dataObj.nonOpBalance && dataObj.nonOpBalance > 0) {
+                            dataObj.nonOpBalance = -dataObj.nonOpBalance;
+                            // 수동 오버라이드 등록 (재계산 방지)
+                            if (!dataObj.manualOverrides) dataObj.manualOverrides = [];
+                            if (!dataObj.manualOverrides.includes('nonOpBalance')) {
+                                dataObj.manualOverrides.push('nonOpBalance');
+                            }
+                            // 파생 필드(세전이익 등) 다시 계산하여 새 객체 반환
+                            return calculateDerivedFields(dataObj, true);
+                        }
+                        return dataObj;
+                    };
+
+                    if (div.monthly?.[m]) {
+                        div.monthly[m] = flipSignIfPositive(div.monthly[m]) as MonthlyPLData;
+                    }
+                    if (div.targetMonthly?.[m]) {
+                        div.targetMonthly[m] = flipSignIfPositive(div.targetMonthly[m]) as MonthlyPLData;
+                    }
+
+                    if (div.subDivMonthly) {
+                        Object.keys(div.subDivMonthly).forEach(subKey => {
+                            if (div.subDivMonthly![subKey]?.[m]) {
+                                div.subDivMonthly![subKey][m] = flipSignIfPositive(div.subDivMonthly![subKey][m]) as MonthlyPLData;
+                            }
+                        });
+                    }
+                    if (div.subDivTargetMonthly) {
+                        Object.keys(div.subDivTargetMonthly).forEach(subKey => {
+                            if (div.subDivTargetMonthly![subKey]?.[m]) {
+                                div.subDivTargetMonthly![subKey][m] = flipSignIfPositive(div.subDivTargetMonthly![subKey][m]) as MonthlyPLData;
+                            }
+                        });
+                    }
+                });
+            }
+        }
     });
+
+    if (!store._migrated_v18) {
+        store._migrated_v18 = true;
+    }
 
 
     // ===== 연간 TD 목표값(KRW) — 항상 강제 적용 (클라우드 데이터 오염 방지) =====
@@ -885,32 +934,11 @@ function autoRepairAggregations(store: DataStore): DataStore {
     return repaired;
 }
 
-// 데이터 로드
+// 데이터 로드 (Supabase 전용 비동기 로드)
 export async function loadData(): Promise<DataStore> {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    let localStore: DataStore | null = null;
-    if (raw) {
-        try { localStore = JSON.parse(raw) as DataStore; } catch { }
-    }
-
     const cloudData = await fetchFromCloud();
 
-    let targetData = localStore;
-    if (cloudData && localStore) {
-        const cloudTime = new Date(cloudData.lastUpdated || 0).getTime();
-        const localTime = new Date(localStore.lastUpdated || 0).getTime();
-
-        // 클라우드 데이터가 더 최신이거나 시간차가 없으면 클라우드를 신뢰
-        if (cloudTime >= localTime) {
-            targetData = cloudData;
-        }
-    } else if (cloudData) {
-        targetData = cloudData;
-    }
-
-    if (!targetData) {
-        targetData = createEmptyStore();
-    }
+    let targetData = cloudData ? (cloudData as DataStore) : createEmptyStore();
 
     // 누락된 신규 데이터 뼈대(마이그레이션) 보완
     const migrated = applyMigrations(targetData);
@@ -918,8 +946,6 @@ export async function loadData(): Promise<DataStore> {
     // 손상된 하위-상위 합계 불일치 데이터 런타임 자동 복구
     const fullyRepaired = autoRepairAggregations(migrated);
 
-    // 로컬 저장소를 최신 마이그레이션 및 퍼펙트 복원 상태로 업데이트
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(fullyRepaired));
     return fullyRepaired;
 }
 

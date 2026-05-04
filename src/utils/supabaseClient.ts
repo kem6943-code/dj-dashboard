@@ -1,14 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://cojxzblihtpdbgmszyrc.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvanh6YmxpaHRwZGJnbXN6eXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNjkzNjEsImV4cCI6MjA4Nzc0NTM2MX0.5CHByqfPf-m3deSyUQYIKIZDp-NdLWjHiCgL8VkzSOw';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 고정 ID를 사용하여 하나의 문서만 업데이트/조회합니다 (1인용 싱글/글로벌 상태 공유)
 const DOCUMENT_ID = 1;
 
-// 클라우드 동기화 함수
 export async function syncToCloud(data: any): Promise<boolean> {
     try {
         const { error } = await supabase
@@ -38,7 +36,7 @@ export async function fetchFromCloud() {
             .eq('id', DOCUMENT_ID)
             .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found"
+        if (error && error.code !== 'PGRST116') {
             console.error('Error fetching from cloud:', error);
             return null;
         }
@@ -49,5 +47,3 @@ export async function fetchFromCloud() {
         return null;
     }
 }
-
-/// 더 이상 auth 함수를 사용하지 않습니다. AuthContext.tsx의 Mock 로직으로 완전히 대체되었습니다.

@@ -45,15 +45,16 @@ export const ExcelUploader: React.FC<ExcelUploaderProps> = ({ currentStore, onUp
             if (!divData.monthly) divData.monthly = {};
             if (!divData.targetMonthly) divData.targetMonthly = {};
 
+            // preserveAmounts=true: 엑셀에서 읽은 영업이익/세전이익 원본 값 보존 (자동 재계산 방지)
             divData.monthly[selectedMonth] = calculateDerivedFields({
                 ...divData.monthly[selectedMonth],
                 ...actual
-            } as MonthlyPLData);
+            } as MonthlyPLData, true);
 
             divData.targetMonthly[selectedMonth] = calculateDerivedFields({
                 ...divData.targetMonthly[selectedMonth],
                 ...target
-            } as MonthlyPLData);
+            } as MonthlyPLData, true);
 
             // 2. 전년도 데이터 (예: 2025) 업데이트
             const prevYearNum = year - 1;
@@ -75,7 +76,7 @@ export const ExcelUploader: React.FC<ExcelUploaderProps> = ({ currentStore, onUp
             prevDivData.monthly[selectedMonth] = calculateDerivedFields({
                 ...prevDivData.monthly[selectedMonth],
                 ...prevYear
-            } as MonthlyPLData);
+            } as MonthlyPLData, true);
 
             await saveData(newStore);
             onUploadSuccess(newStore);

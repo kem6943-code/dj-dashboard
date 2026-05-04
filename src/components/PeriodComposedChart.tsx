@@ -97,9 +97,11 @@ export function PeriodComposedChart({ store, divisionInfo, dateRange, selectedSu
     const chartData = months.map(({ year, month }) => {
         const name = `${month}월`;
         const divD = store.divisions.find(d => d.divisionCode === divisionInfo.code && d.year === year);
-        // 서브디비전 선택 시 subDivMonthly에서 데이터를 가져옴 (핵심 버그 수정)
-        const ds = (selectedSubDiv && selectedSubDiv !== 'all' && divD?.subDivMonthly?.[selectedSubDiv]?.[month])
-            || divD?.monthly?.[month];
+        // 서브디비전 탭 선택 시: 해당 서브디비전 데이터만 표시 (없으면 null → 차트에서 빈칸 처리)
+        // 전체(all) 탭 선택 시: 합산된 monthly 데이터 사용
+        const ds = (selectedSubDiv && selectedSubDiv !== 'all')
+            ? divD?.subDivMonthly?.[selectedSubDiv]?.[month]
+            : divD?.monthly?.[month];
 
         if (!ds || !ds.revenue || ds.revenue <= 0) {
             return { name, 매출액: null, 영업이익률: null, 재료비: null, 노무비: null, 경비: null, 영업이익: null };

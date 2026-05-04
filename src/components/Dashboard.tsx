@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -64,8 +64,51 @@ export function Dashboard() {
         dataType: 'actual' | 'target' | 'prevYear';
     } | null>(null);
 
+    // [본부장 지시사항] 기술료 제외 실질 영업이익 표시 토글 상태
+    const [excludeTechFee, setExcludeTechFee] = useState(false);
+
     // 전체 Store 항상 로드
-    const { store, setStore, loading, handleSaveData } = useDashboardData(selectedDivision);
+    const { store: rawStore, setStore, loading, handleSaveData } = useDashboardData(selectedDivision);
+
+    // [전역 필터] 기술료 차감 로직 파이프라인
+    const store = useMemo(() => {
+        if (!rawStore || !excludeTechFee) return rawStore;
+
+        const newStore = JSON.parse(JSON.stringify(rawStore));
+        
+        const processMonthlyData = (monthlyObj: Record<string, any>) => {
+            if (!monthlyObj) return;
+            Object.values(monthlyObj).forEach((data: any) => {
+                if (data && typeof data.techFee === 'number' && data.techFee !== 0) {
+                    const fee = data.techFee;
+                    data.overhead = (data.overhead || 0) - fee;
+                    data.techFee = 0;
+                    data.operatingProfit = (data.operatingProfit || 0) + fee;
+                    data.ebt = (data.ebt || 0) + fee;
+                    
+                    if (data.revenue && data.revenue > 0) {
+                        data.overheadRatio = (data.overhead / data.revenue) * 100;
+                        data.operatingProfitRatio = (data.operatingProfit / data.revenue) * 100;
+                        data.ebtRatio = (data.ebt / data.revenue) * 100;
+                        if (data.techFeeRatio !== undefined) data.techFeeRatio = 0;
+                    }
+                }
+            });
+        };
+
+        newStore.divisions.forEach((div: any) => {
+            processMonthlyData(div.monthly);
+            processMonthlyData(div.targetMonthly);
+            if (div.subDivMonthly) {
+                Object.values(div.subDivMonthly).forEach((subObj: any) => processMonthlyData(subObj));
+            }
+            if (div.subDivTargetMonthly) {
+                Object.values(div.subDivTargetMonthly).forEach((subObj: any) => processMonthlyData(subObj));
+            }
+        });
+
+        return newStore;
+    }, [rawStore, excludeTechFee]);
 
     // [전사 통합 합산 로직 강제 적용] 메인 화면(main) 요약 카드는 하위 탭 선택(selectedDivision)과 무관하게 
     // 무조건 'total'을 넘겨서 usePeriodData 내부의 .reduce() 로직을 가동, 진짜 전사 총합을 강제 생성.
@@ -76,16 +119,10 @@ export function Dashboard() {
         store, selectedDivision: strictTotalDivision, dateRange, intervalType, selectedSubDiv, showTarget, showYoY,
     });
 
-    const { divisionInfo, periodLabels, periodData, periodRates, aggregateData, aggregateTarget } = periodResult;
+    const { divisionInfo, periodLabels, periodData, periodRates, aggregateData, aggregateTarget, aggregateDataKRW, aggregateTargetKRW } = periodResult;
 
-    // [검증 결과 출력] KPI 컴포넌트에 넘어가기 전, 전사 합산 로직이 제대로 돌았는지 콘솔 로그로 증명
-    if (activeView === 'main' && aggregateData.revenue) {
-        console.log(`[검증 로그: 전사 통합 Total] 
-- 대상: 창원, 태국, 베트남, 멕시코(가전/자동차) 전 사업부 순회 후 .reduce() 합산 성공
-- 총 매출 합계: ${aggregateData.revenue} (원시값)
-- 총 영업이익 합계: ${aggregateData.operatingProfit} (원시값)`);
-    }
-
+    // [해외 사업부] 월별 환율 적용 KRW 합산은 usePeriodData에서 반환된 aggregateDataKRW / aggregateTargetKRW 직접 활용
+    
     if (loading || !store) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -218,8 +255,19 @@ export function Dashboard() {
                         {activeView === 'main' ? '메인 대시보드' : activeView === 'dashboard' ? '사업부별 손익 분석' : '사업부 지표 비교'}
                     </h2>
 
-                    {/* 우측 상단 필터: 퀵 프리셋 날짜 선택기만 */}
-                    <div className="flex items-center">
+                    {/* 우측 상단 필터: 토글 스위치 및 날짜 선택기 */}
+                    <div className="flex items-center gap-6">
+                        {/* 실질 영업이익 토글 스위치 */}
+                        <label className="flex items-center gap-2.5 cursor-pointer bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-sm transition-all hover:bg-slate-50">
+                            <span className={`text-[13px] font-bold transition-colors ${!excludeTechFee ? 'text-blue-700' : 'text-slate-400'}`}>공식 영업이익</span>
+                            <div className="relative inline-block w-11 h-6">
+                                <input type="checkbox" className="sr-only" checked={excludeTechFee} onChange={(e) => setExcludeTechFee(e.target.checked)} />
+                                <div className={`block w-11 h-6 rounded-full transition-colors duration-300 ${excludeTechFee ? 'bg-indigo-600' : 'bg-slate-300'}`}></div>
+                                <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${excludeTechFee ? 'translate-x-5' : ''}`}></div>
+                            </div>
+                            <span className={`text-[13px] font-bold transition-colors ${excludeTechFee ? 'text-indigo-700' : 'text-slate-400'}`}>실질 영업이익 <span className="font-medium text-xs opacity-80">(기술료 제외)</span></span>
+                        </label>
+
                         <MonthPresetPicker
                             dateRange={dateRange}
                             onDateRangeChange={setDateRange}
@@ -235,7 +283,7 @@ export function Dashboard() {
                                     <BarChart3 className="text-blue-500 w-5 h-5" />전사 통합 경영실적 요약
                                     <span className="text-sm font-semibold text-slate-400 ml-1">(선택 기간 기준)</span>
                                 </h3>
-                                <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={DIVISIONS_WITH_TOTAL.find(d => d.code === 'total')!} />
+                                <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={DIVISIONS_WITH_TOTAL.find(d => d.code === 'total')!} dataKRW={aggregateDataKRW} targetKRW={aggregateTargetKRW} />
                             </div>
                             <div className="mb-8">
                                 <YearlyTargetCards store={store} year={dateRange.end.year} />
@@ -285,7 +333,7 @@ export function Dashboard() {
 
                                     {/* KPI 카드 영역 */}
                                     <div className="mb-8">
-                                        {divisionInfo && <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={divisionInfo} />}
+                                        {divisionInfo && <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={divisionInfo} dataKRW={aggregateDataKRW} targetKRW={aggregateTargetKRW} />}
                                     </div>
 
                                     {/* 매출/비용/이익률 혼합 차트 */}
@@ -357,7 +405,7 @@ export function Dashboard() {
                         initialData={
                             (() => {
                                 const targetYear = editModal.dataType === 'prevYear' ? dateRange.end.year - 1 : dateRange.end.year;
-                                const divData = store?.divisions.find(d => d.divisionCode === selectedDivision && d.year === targetYear);
+                                const divData = rawStore?.divisions.find(d => d.divisionCode === selectedDivision && d.year === targetYear);
                                 if (!divData) return undefined;
                                 const isSubDiv = divisionInfo.subDivisionMode === 'tabs' && selectedSubDiv !== 'all';
                                 if (editModal.dataType === 'target') {
@@ -373,7 +421,7 @@ export function Dashboard() {
                         initialRate={
                             (() => {
                                 const targetYear = editModal.dataType === 'prevYear' ? dateRange.end.year - 1 : dateRange.end.year;
-                                const divData = store?.divisions.find(d => d.divisionCode === selectedDivision && d.year === targetYear);
+                                const divData = rawStore?.divisions.find(d => d.divisionCode === selectedDivision && d.year === targetYear);
                                 const rateObj = divData?.exchangeRates?.[editModal.month];
                                 if (!rateObj) return 1;
                                 

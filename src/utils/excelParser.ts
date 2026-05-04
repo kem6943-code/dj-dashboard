@@ -39,11 +39,14 @@ const LABEL_KEY_MAPPING: Record<string, keyof MonthlyPLData> = {
     '영업이익': 'operatingProfit',
     '영업이익 (%)': 'operatingProfitRatio',
     '영외수지차': 'nonOpBalance',
+    '영외수지': 'nonOpBalance',
     '- 금융비용': 'financeCost',
     '외환차손익': 'forexGainLoss', // 태국
     '기타(영외)': 'nonOpOther', // 태국
     '세전이익': 'ebt',
-    '세전이익 (%)': 'ebtRatio'
+    // [Bug Fix] 창원 엑셀의 '세전이익 (%)' 행은 실제로 세전이익 금액을 담고 있음
+    '세전이익 (%)': 'ebt',
+    '세전이익(%)': 'ebt',
 };
 
 // 숫자 클리닝
@@ -91,13 +94,20 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
                     // 큰 섹션 추적 (중복된 '기타' 이름 구분 용도)
                     if (label.includes('매출')) currentSection = '매출';
                     else if (label.includes('경비')) currentSection = '경비';
+                    else if (label.includes('영업이익')) currentSection = '영업이익';
                     else if (label.includes('영외') || label.includes('영업외')) currentSection = '영외';
+                    else if (label.includes('세전')) currentSection = '세전';
 
                     let mappedKey = label;
                     if (label === '- 기타' || label === '기타') {
                         if (currentSection === '매출') mappedKey = '- 기타(매출)';
                         else if (currentSection === '경비') mappedKey = '- 기타(경비)';
                         else if (currentSection === '영외') mappedKey = '기타(영외)';
+                    }
+                    // [Bug Fix] '(%)' 라벨은 섹션에 따라 다른 키로 매핑
+                    if (label === '(%)' || label === '%') {
+                        if (currentSection === '영업이익') mappedKey = '영업이익 (%)';
+                        else if (currentSection === '세전') mappedKey = '세전이익 (%)';
                     }
 
                     const dataKey = LABEL_KEY_MAPPING[mappedKey] || LABEL_KEY_MAPPING[label];
@@ -108,7 +118,11 @@ export const parseMonthlyExcel = async (file: File, _targetMonth: number, _divis
                         let targetVal = parseNumber(row[COL_TARGET]);
 
                         // 단위 변환 로직
-                        const isRatio = label.includes('비율') || label.includes('(%)') || label.includes('차이') || label.includes('율');
+                        // [Bug Fix] 라벨에 '(%)'가 포함되어도 매핑된 키가 금액 필드면 비율 처리하면 안 됨
+                        // 예: '세전이익 (%)' → dataKey='ebt' (금액) → isRatio=false 강제
+                        const AMOUNT_KEYS = new Set(['ebt', 'operatingProfit', 'nonOpBalance', 'revenue', 'financeCost']);
+                        const isRatio = !AMOUNT_KEYS.has(dataKey as string) &&
+                            (label.includes('비율') || label.includes('(%)') || label.includes('차이') || label.includes('율'));
                         const isCount = label.includes('인원') || label.includes('단위');
 
                         const normalizeAmount = (val: number) => {
