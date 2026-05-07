@@ -26,10 +26,9 @@ interface KPICardsProps {
     targetKRW?: MonthlyPLData;
     // 전사이익 (= 사업부 세전이익 - 공통비 + 기술료 + 영외수익 - 영외비용)
     companyProfit?: number;
-    companyProfitTarget?: number;
 }
 
-export function KPICards({ data, target, divisionInfo, dataKRW, targetKRW, companyProfit, companyProfitTarget }: KPICardsProps) {
+export function KPICards({ data, target, divisionInfo, dataKRW, targetKRW, companyProfit }: KPICardsProps) {
     const currency = divisionInfo?.currency || 'KRW';
     const isOverseas = currency !== 'KRW';
     // 합산된 원시 금액 (현지통화 단위)
@@ -101,13 +100,7 @@ export function KPICards({ data, target, divisionInfo, dataKRW, targetKRW, compa
             {/* === 1층: 전사이익 Hero Banner (전사 합계일 때만 표시) === */}
             {showCompanyProfit && (() => {
                 const cpVal = companyProfit || 0;
-                const cpTarg = companyProfitTarget || 0;
                 const cpDisplay = formatAmount(cpVal, '백만', 'KRW');
-                const cpTargDisplay = formatAmount(cpTarg, '백만', 'KRW');
-                const cpDiff = cpVal - cpTarg;
-                const cpPositive = cpDiff > 0;
-                const cpZero = cpDiff === 0 || cpTarg === 0;
-                const cpDiffDisplay = formatAmount(Math.abs(cpDiff), '백만', 'KRW');
 
                 return (
                     <div className="relative bg-gradient-to-r from-indigo-50 via-white to-blue-50 border-2 border-indigo-200/60 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

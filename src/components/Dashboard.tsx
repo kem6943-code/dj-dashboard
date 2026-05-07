@@ -311,7 +311,6 @@ export function Dashboard() {
                                             ? aggregateData._hqManualCompanyProfit 
                                             : (aggregateData.ebt || 0)
                                     }
-                                    companyProfitTarget={aggregateTarget.ebt || 0}
                                 />
                             </div>
                             <div className="mb-8">

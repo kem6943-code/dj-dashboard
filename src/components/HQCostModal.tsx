@@ -144,7 +144,7 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                             {MONTHS.map(m => {
                                 const d = monthlyData[m] || { cost: 0, techFee: 0, nonOpRevenue: 0, nonOpExpense: 0, manualCompanyProfit: 0 };
                                 const netImpact = (d.cost || 0) - (d.techFee || 0) - (d.nonOpRevenue || 0) + (d.nonOpExpense || 0);
-                                const hasData = d.cost > 0 || d.techFee > 0 || d.nonOpRevenue > 0 || d.nonOpExpense > 0 || d.manualCompanyProfit > 0;
+                                const hasData = d.cost > 0 || d.techFee > 0 || d.nonOpRevenue > 0 || d.nonOpExpense > 0 || (d.manualCompanyProfit || 0) > 0;
                                 return (
                                     <tr key={m} className={`border-b border-slate-100 transition-colors ${hasData ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
                                         <td className="px-3 py-2 text-sm font-bold text-slate-700">{m}월</td>
