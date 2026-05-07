@@ -1,7 +1,7 @@
 /**
  * localStorage를 사용한 데이터 저장/로드 유틸리티
  */
-import type { DataStore, DivisionYearData, DivisionCode, MonthlyPLData } from './dataModel';
+import type { DataStore, DivisionYearData, DivisionCode } from './dataModel';
 import { calculateDerivedFields, createEmptyPLData, DIVISIONS_WITH_TOTAL } from './dataModel';
 import { syncToCloud, fetchFromCloud } from './supabaseClient';
 
@@ -41,23 +41,7 @@ function applyMigrations(store: DataStore): DataStore {
         // [긴급 수치 보정]: 베트남 898억 등 환율 1.0 오독 방지 및 '25년 환율 누락 방지
         if (div.year === 2025 || div.year === 2026) {
             for (let m = 1; m <= 12; m++) {
-                // 🔧 베트남 환율 이상치 보정: 0.5~1.0 범위는 소수점 실수(예: 0.055→0.55) → 0.055로 교정
-                if (div.divisionCode === 'vietnam' && div.exchangeRates[m] &&
-                    div.exchangeRates[m].actual >= 0.5 && div.exchangeRates[m].actual < 1) {
-                    div.exchangeRates[m].actual = 0.055;
-                }
-                if (div.divisionCode === 'vietnam') {
-                    if (!div.exchangeRates[m]) div.exchangeRates[m] = { actual: 0.055, target: 0.055, prev: 0.055 };
-                    if (div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0) div.exchangeRates[m].actual = 0.055;
-                    if (div.exchangeRates[m].target === 1 || div.exchangeRates[m].target === 0) div.exchangeRates[m].target = 0.055;
-                    if (div.exchangeRates[m].prev === 1 || div.exchangeRates[m].prev === 0) div.exchangeRates[m].prev = 0.055;
-                }
-                if (div.divisionCode === 'thailand') {
-                    if (!div.exchangeRates[m]) div.exchangeRates[m] = { actual: 39.5, target: 41.78, prev: 39.5 };
-                    if (div.exchangeRates[m].actual === 1 || div.exchangeRates[m].actual === 0) div.exchangeRates[m].actual = 39.5;
-                    if (div.exchangeRates[m].target === 1 || div.exchangeRates[m].target === 0 || div.exchangeRates[m].target === 39.5) div.exchangeRates[m].target = 41.78;
-                    if (div.exchangeRates[m].prev === 1 || div.exchangeRates[m].prev === 0) div.exchangeRates[m].prev = 39.5;
-                }
+
             }
         }
     });
@@ -489,184 +473,9 @@ function applyMigrations(store: DataStore): DataStore {
             } // closes if (div.divisionCode === 'vietnam')
         } // closes if (!store._migrated_v10)
 
-        if (!store._migrated_v13) {
-            if (div.divisionCode === 'mexico') {
-                if (div.year === 2026) {
-                    div.exchangeRates[1] = {
-                        actual: 17.68,
-                        target: 18.42,
-                        prev: 17.08
-                    };
 
-                    const mxHomeActual = {
-                        revenue: 28648000,
-                        revenueUSD: 1621000,
-                        salesFridge: 28463000,
-                        salesOven: 176000,
-                        salesOther: 9000,
-                        materialRatio: 68.0,
-                        bomMaterialRatio: 66.3,
-                        headcount: 143.3,
-                        laborCost: 5314000,
-                        laborRatio: 18.6,
-                        revenuePerHead: 5.4,
-                        overhead: 4837000,
-                        overheadRatio: 16.9,
-                        electricity: 1037000,
-                        techFee: 859000,
-                        depreciation: 376000,
-                        welfare: 400000,
-                        repair: 313000,
-                        factoryRent: 263000,
-                        transportation: 477000,
-                        commission: 560000,
-                        consumables: 156000,
-                        packaging: 184000,
-                        rent: 30000,
-                        importCost: 10000,
-                        taxDues: 11000,
-                        overheadOther: 158000,
-                        operatingProfit: -989000,
-                        operatingProfitRatio: -3.5,
-                        nonOpBalance: 449000,
-                        financeCost: -324000,
-                        ebtRatio: -5.0
-                    };
-                    if (!div.subDivMonthly) div.subDivMonthly = {};
-                    if (!div.subDivMonthly['homeAppliance']) div.subDivMonthly['homeAppliance'] = {};
-                    div.subDivMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomeActual } as any, true);
 
-                    const mxHomeTarget = {};
-                    if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
-                    if (!div.subDivTargetMonthly['homeAppliance']) div.subDivTargetMonthly['homeAppliance'] = {};
-                    div.subDivTargetMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomeTarget } as any, true);
-                }
 
-                if (div.year === 2025) {
-                    const mxHomePrev = {
-                        revenue: 34775000,
-                        revenueUSD: 2036000,
-                        salesFridge: 34228000,
-                        salesOven: 546000,
-                        salesOther: 1000,
-                        materialRatio: 67.6,
-                        bomMaterialRatio: 67.6,
-                        headcount: 121.0,
-                        laborCost: 5736000,
-                        laborRatio: 16.5,
-                        revenuePerHead: 6.1,
-                        overhead: 5736000,
-                        overheadRatio: 16.5,
-                        electricity: 1959000,
-                        techFee: 1049000,
-                        depreciation: 538000,
-                        welfare: 282000,
-                        repair: 517000,
-                        factoryRent: 251000,
-                        transportation: 53000,
-                        commission: 421000,
-                        consumables: 277000,
-                        packaging: 204000,
-                        rent: 31000,
-                        importCost: 0,
-                        taxDues: 0,
-                        overheadOther: 154000,
-                        operatingProfit: -1899000,
-                        operatingProfitRatio: -5.5,
-                        nonOpBalance: 1197000,
-                        financeCost: -249000,
-                        ebtRatio: -8.9
-                    };
-                    if (!div.subDivMonthly) div.subDivMonthly = {};
-                    if (!div.subDivMonthly['homeAppliance']) div.subDivMonthly['homeAppliance'] = {};
-                    div.subDivMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomePrev } as any, true);
-                }
-
-                // 멕시코 전체(합계) 계산
-                const subKeys = ['homeAppliance', 'automotive'];
-                if (div.subDivMonthly) {
-                    const totalActual = createEmptyPLData();
-                    let hasData = false;
-                    subKeys.forEach(key => {
-                        const subData = div.subDivMonthly?.[key]?.[1];
-                        if (subData) {
-                            hasData = true;
-                            Object.entries(subData).forEach(([k, val]) => {
-                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
-                                    totalActual[k] = (totalActual[k] || 0) + val;
-                                }
-                            });
-                        }
-                    });
-                    if (hasData) div.monthly[1] = calculateDerivedFields(totalActual, true);
-                }
-                if (div.subDivTargetMonthly) {
-                    const totalTarget = createEmptyPLData();
-                    let hasData = false;
-                    subKeys.forEach(key => {
-                        const subData = div.subDivTargetMonthly?.[key]?.[1];
-                        if (subData) {
-                            hasData = true;
-                            Object.entries(subData).forEach(([k, val]) => {
-                                if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
-                                    totalTarget[k] = (totalTarget[k] || 0) + val;
-                                }
-                            });
-                        }
-                    });
-                    if (hasData) {
-                        if (!div.targetMonthly) div.targetMonthly = {};
-                        div.targetMonthly[1] = calculateDerivedFields(totalTarget, true);
-                    }
-                }
-            } // closes if (div.divisionCode === 'mexico')
-        } // closes if (!store._migrated_v12)
-
-        // ===== v18 마이그레이션: 멕시코 영외수지 부호 교정 (양수 -> 음수) 및 파생필드 재계산 =====
-        if (!store._migrated_v18) {
-            if (div.divisionCode === 'mexico') {
-                [1, 2, 3].forEach(m => {
-                    const flipSignIfPositive = (dataObj: MonthlyPLData | undefined): MonthlyPLData | undefined => {
-                        if (dataObj && dataObj.nonOpBalance && dataObj.nonOpBalance > 0) {
-                            dataObj.nonOpBalance = -dataObj.nonOpBalance;
-                            // 수동 오버라이드 등록 (재계산 방지)
-                            if (!dataObj.manualOverrides) dataObj.manualOverrides = [];
-                            if (!dataObj.manualOverrides.includes('nonOpBalance')) {
-                                dataObj.manualOverrides.push('nonOpBalance');
-                            }
-                            // 파생 필드(세전이익 등) 다시 계산하여 새 객체 반환
-                            return calculateDerivedFields(dataObj, true);
-                        }
-                        return dataObj;
-                    };
-
-                    if (div.monthly?.[m]) {
-                        div.monthly[m] = flipSignIfPositive(div.monthly[m]) as MonthlyPLData;
-                    }
-                    if (div.targetMonthly?.[m]) {
-                        div.targetMonthly[m] = flipSignIfPositive(div.targetMonthly[m]) as MonthlyPLData;
-                    }
-
-                    if (div.subDivMonthly) {
-                        Object.keys(div.subDivMonthly).forEach(subKey => {
-                            // [버그 수정] 자동차(automotive) 사업부는 실제 영외수익(+)이 발생할 수 있으므로 강제 반전 제외
-                            if (subKey === 'automotive') return;
-                            if (div.subDivMonthly![subKey]?.[m]) {
-                                div.subDivMonthly![subKey][m] = flipSignIfPositive(div.subDivMonthly![subKey][m]) as MonthlyPLData;
-                            }
-                        });
-                    }
-                    if (div.subDivTargetMonthly) {
-                        Object.keys(div.subDivTargetMonthly).forEach(subKey => {
-                            if (subKey === 'automotive') return;
-                            if (div.subDivTargetMonthly![subKey]?.[m]) {
-                                div.subDivTargetMonthly![subKey][m] = flipSignIfPositive(div.subDivTargetMonthly![subKey][m]) as MonthlyPLData;
-                            }
-                        });
-                    }
-                });
-            }
-        }
     });
 
     if (!store._migrated_v18) {
@@ -729,10 +538,10 @@ function autoRepairAggregations(store: DataStore): DataStore {
                         const subData = div.subDivMonthly?.[sub.key]?.[month];
                         if (subData && Object.keys(subData).length > 0) {
                             hasData = true;
-                            // 🚑 강제 힐링: 과거 에러로 subData에 materialCost 자체가 DB에서 유실된 경우를 위해 강제 복원
-                            if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
-                                subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
-                            }
+                            
+                            // 🚑 강제 힐링: 하위 서브데이터 자체에 대해서도 역산 공식(calculateDerivedFields) 적용
+                            Object.assign(subData, calculateDerivedFields(subData, true));
+
                             if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverrides.add(m));
                             Object.entries(subData).forEach(([k, val]) => {
                                 if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
@@ -756,9 +565,10 @@ function autoRepairAggregations(store: DataStore): DataStore {
                         const subData = div.subDivTargetMonthly?.[sub.key]?.[month];
                         if (subData && Object.keys(subData).length > 0) {
                             hasData = true;
-                            if (!subData.materialCost && (subData.revenue as number) > 0 && (subData.materialRatio as number) > 0) {
-                                subData.materialCost = ((subData.revenue as number) * (subData.materialRatio as number)) / 100;
-                            }
+
+                            // 🚑 강제 힐링: 하위 서브데이터 자체에 대해서도 역산 공식 적용
+                            Object.assign(subData, calculateDerivedFields(subData, true));
+
                             if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverridesTarget.add(m));
                             Object.entries(subData).forEach(([k, val]) => {
                                 if (typeof val === 'number' && !k.toLowerCase().includes('ratio') && k !== 'materialDiff' && k !== 'revenuePerHead') {
@@ -789,15 +599,6 @@ export async function loadData(): Promise<DataStore> {
 
     // 손상된 하위-상위 합계 불일치 데이터 런타임 자동 복구
     const fullyRepaired = autoRepairAggregations(migrated);
-
-    // [강제 초기화] 사용자가 지정하지 않은 모든 목표 데이터(Target) 런타임 제거
-    if (fullyRepaired && fullyRepaired.divisions) {
-        fullyRepaired.divisions.forEach(div => {
-            div.targetMonthly = {};
-            div.subDivTargetMonthly = {};
-            // 연간 목표도 초기화하고 싶다면 추가할 수 있으나, 월간만 비우면 대시보드 합산에서 0으로 처리됩니다.
-        });
-    }
 
     return fullyRepaired;
 }

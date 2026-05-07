@@ -57,9 +57,6 @@ export const DIVISIONS: DivisionInfo[] = [
 export const TOTAL_DIVISION: DivisionInfo = { code: 'total', name: '합계', nameEn: 'Total', flag: '📊', currency: 'KRW' };
 export const DIVISIONS_WITH_TOTAL: DivisionInfo[] = [...DIVISIONS, TOTAL_DIVISION];
 
-// 🇲🇽 멕시코 원화 환산용 직접 환율 (1 MXN = X 원, 환율 변동 시 이 값만 수정)
-export const MXN_KRW_RATE = 82;
-
 // P&L 항목 정의
 export interface PLItem {
     key: string;       // 고유 키
@@ -554,6 +551,9 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
     if (isManual('operatingProfit') || (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0)) {
         // 수동 입력값 무조건 유지
+    } else if (isManual('operatingProfitRatio') || (preserveAmounts && result.operatingProfitRatio !== undefined && result.operatingProfitRatio !== 0)) {
+        // [역산 로직] 영업이익(금액)은 안 쳤는데 영업이익률(%)만 친 경우
+        result.operatingProfit = revenue * (Number(result.operatingProfitRatio || 0) / 100);
     } else {
         result.operatingProfit = Number(revenue) - Number(materialCost) - Number(result.laborCost || 0) - Number(result.overhead || 0);
     }
@@ -578,6 +578,13 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     // 세전이익 = 영업이익 + 영외수지
     if (isManual('ebt') || (preserveAmounts && result.ebt !== undefined && result.ebt !== 0)) {
         // 수동 입력값 보존
+    } else if (isManual('ebtRatio') || (preserveAmounts && result.ebtRatio !== undefined && result.ebtRatio !== 0)) {
+        // [역산 로직] 세전이익(금액)은 안 쳤는데 세전이익률(%)만 친 경우
+        result.ebt = revenue * (Number(result.ebtRatio || 0) / 100);
+        // 만약 영외수지도 안 쳤다면, ebt - operatingProfit 으로 강제 역산해준다
+        if (!isManual('nonOpBalance') && (!preserveAmounts || result.nonOpBalance === undefined || result.nonOpBalance === 0)) {
+            result.nonOpBalance = result.ebt - Number(result.operatingProfit || 0);
+        }
     } else {
         result.ebt = Number(result.operatingProfit || 0) + Number(result.nonOpBalance || 0);
     }
@@ -747,11 +754,8 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[]; 
             .filter(d => d.year === year && d.divisionCode !== 'total')
             .forEach(divData => {
                 const rates = divData.exchangeRates[m] || { actual: 1, target: 1, prev: 1 };
-                const isMexico = divData.divisionCode === 'mexico';
-
-                // 🇲🇽 멕시코: 직접 MXN→KRW 환율 적용
-                const actualRate = isMexico ? MXN_KRW_RATE : (rates.actual || 1);
-                const targetRate = isMexico ? MXN_KRW_RATE : (rates.target || 1);
+                const actualRate = rates.actual || 1;
+                const targetRate = rates.target || 1;
 
                 // 실적 합산
                 const mData = divData.monthly[m];

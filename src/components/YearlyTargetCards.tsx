@@ -1,6 +1,6 @@
 import { Target } from 'lucide-react';
 import type { DataStore } from '../utils/dataModel';
-import { DIVISIONS, MXN_KRW_RATE } from '../utils/dataModel';
+import { DIVISIONS } from '../utils/dataModel';
 
 interface Props {
     store: DataStore;
@@ -132,9 +132,13 @@ export function YearlyTargetCards({ store, year }: Props) {
                         // 멕시코(가전)
                         let haActRevKRW = 0;
                         let haActOpKRW = 0;
-                        Object.entries(divData.subDivMonthly?.['homeAppliance'] || {}).forEach(([, m]) => {
-                            haActRevKRW += (m.revenue || 0) * MXN_KRW_RATE;
-                            haActOpKRW += (m.operatingProfit || 0) * MXN_KRW_RATE;
+                        Object.keys(divData.monthly).forEach(mthStr => {
+                            const mth = parseInt(mthStr);
+                            const m = divData.subDivMonthly?.['homeAppliance']?.[mth];
+                            const rate = divData.exchangeRates?.[mth]?.actual || 1;
+                            if (!m) return;
+                            haActRevKRW += (m.revenue || 0) * rate;
+                            haActOpKRW += (m.operatingProfit || 0) * rate;
                         });
                         const cardHA = renderCard(
                             divInfo.code + '_ha',
@@ -149,9 +153,13 @@ export function YearlyTargetCards({ store, year }: Props) {
                         // 멕시코(자동차)
                         let autoActRevKRW = 0;
                         let autoActOpKRW = 0;
-                        Object.entries(divData.subDivMonthly?.['automotive'] || {}).forEach(([, m]) => {
-                            autoActRevKRW += (m.revenue || 0) * MXN_KRW_RATE;
-                            autoActOpKRW += (m.operatingProfit || 0) * MXN_KRW_RATE;
+                        Object.keys(divData.monthly).forEach(mthStr => {
+                            const mth = parseInt(mthStr);
+                            const m = divData.subDivMonthly?.['automotive']?.[mth];
+                            const rate = divData.exchangeRates?.[mth]?.actual || 1;
+                            if (!m) return;
+                            autoActRevKRW += (m.revenue || 0) * rate;
+                            autoActOpKRW += (m.operatingProfit || 0) * rate;
                         });
                         const cardAuto = renderCard(
                             divInfo.code + '_auto',

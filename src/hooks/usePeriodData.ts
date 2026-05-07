@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import {
     type DataStore, type DivisionCode, type MonthlyPLData, type MonthYear,
     calculateDerivedFields, createEmptyPLData, ALL_ITEMS_MAP,
-    DIVISIONS_WITH_TOTAL, MXN_KRW_RATE,
+    DIVISIONS_WITH_TOTAL,
 } from '../utils/dataModel';
 
 export type IntervalType = 'monthly' | 'quarterly' | 'semi' | 'yearly';
@@ -167,12 +167,7 @@ export function usePeriodData({
                         const act = divD.monthly?.[month] || createEmptyPLData();
                         const targ = divD.targetMonthly?.[month] || createEmptyPLData();
                         const rawRs = divD.exchangeRates?.[month] || { actual: 1, target: 1 };
-                        // 🇲🇽 멕시코: DB에 USD/MXN 환율이 잘못 들어가 있을 수 있으므로
-                        // consolidateAllDivisions과 동일하게 MXN_KRW_RATE 고정 환율 사용
-                        const isMexico = div.code === 'mexico';
-                        const rs = isMexico
-                            ? { actual: MXN_KRW_RATE, target: MXN_KRW_RATE }
-                            : rawRs;
+                        const rs = rawRs;
                         
                         if (div.code === 'thailand' && month === 1 && act.revenue) {
                             console.log(`[검증 로그: 1월 태국 매출(THB) ${act.revenue} * 환율 ${rs.actual} = 원화(백만) ${(act.revenue * (rs.actual || 1)) / 1000000}]`);
@@ -209,8 +204,6 @@ export function usePeriodData({
                 const hqYearData = store.hqCosts?.find(h => h.year === year);
                 if (hqYearData?.monthly[month]) {
                     const hq = hqYearData.monthly[month];
-                    // 세전이익(EBT)에서만 공통비 차감 + 기술료 상쇄 + 영외수지 조정
-                    combinedActual.ebt = (combinedActual.ebt || 0) - (hq.cost || 0) + (hq.techFee || 0) + (hq.nonOpRevenue || 0) - (hq.nonOpExpense || 0);
                     // 전사이익 역산용 메타 필드 세팅
                     combinedActual._hqCost = hq.cost || 0;
                     combinedActual._hqTechFee = hq.techFee || 0;
@@ -296,10 +289,8 @@ export function usePeriodData({
 
                 const rawRsAct = divData?.exchangeRates?.[month] || { actual: 1, target: 1 };
                 const rawRsPrev = prevDivData?.exchangeRates?.[month] || { actual: 1, target: 1 };
-                // 🇲🇽 멕시코: MXN_KRW_RATE 고정 환율 사용
-                const isMexicoDual = selectedDivision === 'mexico';
-                const rsAct = isMexicoDual ? { actual: MXN_KRW_RATE, target: MXN_KRW_RATE } : rawRsAct;
-                const rsPrev = isMexicoDual ? { actual: MXN_KRW_RATE, target: MXN_KRW_RATE } : rawRsPrev;
+                const rsAct = rawRsAct;
+                const rsPrev = rawRsPrev;
 
                 // [듀얼 통화] 월별 현지통화 x 해당 월 환율 누적 (해외 사업부 원화 환산용)
                 const isKRW = divisionInfo.currency === 'KRW';

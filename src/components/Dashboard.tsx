@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { DebugTable } from './DebugTable';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -293,15 +294,7 @@ export function Dashboard() {
                                     <span className="text-sm font-semibold text-slate-400 ml-1">(선택 기간 기준)</span>
                                 </h3>
                                 <KPICards
-                                    data={{
-                                        ...aggregateData,
-                                        // 세전이익 카드는 사업부 순수 합계를 보여줘야 하므로 공통비 조정 전 값으로 복원
-                                        ebt: (aggregateData.ebt || 0)
-                                            + (aggregateData._hqCost || 0)
-                                            - (aggregateData._hqTechFee || 0)
-                                            - (aggregateData._hqNonOpRevenue || 0)
-                                            + (aggregateData._hqNonOpExpense || 0),
-                                    }}
+                                    data={aggregateData}
                                     target={aggregateTarget}
                                     divisionInfo={DIVISIONS_WITH_TOTAL.find(d => d.code === 'total')!}
                                     dataKRW={aggregateDataKRW}
@@ -309,7 +302,11 @@ export function Dashboard() {
                                     companyProfit={
                                         aggregateData._hqManualCompanyProfit !== undefined 
                                             ? aggregateData._hqManualCompanyProfit 
-                                            : (aggregateData.ebt || 0)
+                                            : ((aggregateData.ebt || 0) 
+                                                - (aggregateData._hqCost || 0) 
+                                                + (aggregateData._hqTechFee || 0) 
+                                                + (aggregateData._hqNonOpRevenue || 0) 
+                                                - (aggregateData._hqNonOpExpense || 0))
                                     }
                                 />
                             </div>
@@ -482,6 +479,7 @@ export function Dashboard() {
                         onClose={() => setShowHQCostModal(false)}
                     />
                 )}
+                {rawStore && <DebugTable store={rawStore} />}
             </main>
         </div>
     );
