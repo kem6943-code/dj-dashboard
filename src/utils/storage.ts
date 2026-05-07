@@ -115,45 +115,7 @@ function applyMigrations(store: DataStore): DataStore {
                     div.monthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thActual } as any, true);
 
                     // 🎯 1월 TD 목표('26목표) PPT 이미지 100% 셀 싱크
-                    const thTarget = {
-                        revenue: 461200000,
-                        salesCoverTop: 364700000,
-                        salesTubOuter: 18600000,
-                        salesBaseCab: 0,
-                        salesAir: 0,
-                        salesDryer: 50800000,
-                        salesOther: 27000000,
-                        materialRatio: 88.85,
-                        lossReflected: 88.85,
-                        bomMaterialRatio: 88.45,
-                        lossRate: 0.40,
-                        materialLoss: 1800000,
-                        headcount: 464,
-                        laborCost: 17100000,
-                        laborCostRatio: 3.7,
-                        revenuePerHead: 27.0,
-                        overhead: 19700000,
-                        overheadRatio: 4.3,
-                        techFee: 5500000,
-                        techFeeRatio: 1.2,
-                        electricity: 2500000,
-                        electricityRatio: 0.6,
-                        transportation: 2500000,
-                        transportationRatio: 0.5,
-                        importCost: 1200000,
-                        importCostRatio: 0.3,
-                        consumables: 1900000,
-                        consumablesRatio: 0.4,
-                        depreciation: 2100000,
-                        depreciationRatio: 0.5,
-                        overheadOther: 3200000,
-                        overheadOtherRatio: 0.9,
-                        operatingProfit: 16300000,
-                        operatingProfitRatio: 3.5,
-                        nonOpBalance: -600000,
-                        ebt: 15700000,
-                        ebtRatio: 3.4,
-                    };
+                    const thTarget = {};
                     if (!div.targetMonthly) div.targetMonthly = {};
                     div.targetMonthly[1] = calculateDerivedFields({ ...createEmptyPLData(), ...thTarget } as any, true);
                 }
@@ -254,42 +216,7 @@ function applyMigrations(store: DataStore): DataStore {
                     div.subDivMonthly['prod1'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd1Actual } as any, true);
 
                     // 🎯 생산1실 2026년 1월 TD목표 — 이미지 100% 셀 싱크
-                    const vnProd1Target = {
-                        revenue: 18065000000,
-                        salesAIO: 3635000000,
-                        salesREF: 14430000000,
-                        rawMaterialCost: 11921000000,
-                        materialRatio: 66.0,
-                        bomMaterialRatio: 63.8,
-                        materialDiff: 2.6,
-                        vvci: 325000000,
-                        materialLoss: 0,
-                        headcount: 234,
-                        laborCost: 3017000000,
-                        laborRatio: 16.7,
-                        revenuePerHead: 6.0,
-                        overhead: 4077000000,
-                        overheadRatio: 22.6,
-                        depreciation: 2218000000,
-                        techFee: 534000000,
-                        taxDues: 61000000,
-                        welfare: 383000000,
-                        electricity: 414000000,
-                        rent: 212000000,
-                        repair: 44000000,
-                        commission: 27000000,
-                        transportation: 4000000,
-                        officeSupplies: 42000000,
-                        overheadOther: 139000000,
-                        operatingProfit: -950000000,
-                        operatingProfitRatio: -5.3,
-                        interestIncome: 1000000,
-                        forexGain: 0,
-                        interestExpense: 157000000,
-                        forexLoss: 0,
-                        ebt: -1106000000,
-                        ebtRatio: -6.1,
-                    };
+                    const vnProd1Target = {};
                     if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
                     if (!div.subDivTargetMonthly['prod1']) div.subDivTargetMonthly['prod1'] = {};
                     div.subDivTargetMonthly['prod1'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd1Target } as any, true);
@@ -380,40 +307,7 @@ function applyMigrations(store: DataStore): DataStore {
                     div.subDivMonthly['prod2'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd2Actual } as any, true);
 
                     // 🎯 생산2실 2026년 1월 TD목표 — 이미지 100% 셀 싱크
-                    const vnProd2Target = {
-                        revenue: 53808000000,
-                        salesWM: 53808000000,
-                        rawMaterialCost: 32619000000,
-                        materialRatio: 60.6,
-                        bomMaterialRatio: 58.1,
-                        materialDiff: 2.5,
-                        materialLoss: 2152000000,
-                        headcount: 260,
-                        laborCost: 6424000000,
-                        laborRatio: 11.9,
-                        revenuePerHead: 8.4,
-                        overhead: 5463000000,
-                        overheadRatio: 10.2,
-                        depreciation: 1243000000,
-                        techFee: 1449000000,
-                        taxDues: 220000000,
-                        welfare: 1065000000,
-                        electricity: 854000000,
-                        rent: 292000000,
-                        repair: 88000000,
-                        commission: 1000000,
-                        transportation: 5000000,
-                        officeSupplies: 76000000,
-                        overheadOther: 170000000,
-                        operatingProfit: 9301000000,
-                        operatingProfitRatio: 17.3,
-                        interestIncome: 2000000,
-                        forexGain: 0,
-                        interestExpense: 250000000,
-                        forexLoss: 0,
-                        ebt: 9053000000,
-                        ebtRatio: 16.8,
-                    };
+                    const vnProd2Target = {};
                     if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
                     if (!div.subDivTargetMonthly['prod2']) div.subDivTargetMonthly['prod2'] = {};
                     div.subDivTargetMonthly['prod2'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd2Target } as any, true);
@@ -504,42 +398,7 @@ function applyMigrations(store: DataStore): DataStore {
                     div.subDivMonthly['prod3'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd3Actual } as any, true);
 
                     // 🎯 생산3실 2026년 1월 TD목표 — 이미지 100% 셀 싱크
-                    const vnProd3Target = {
-                        revenue: 5111000000,
-                        salesSMAC: 1108000000,
-                        salesSF: 667000000,
-                        salesKEFICO: 2654000000,
-                        salesBallCoat: 682000000,
-                        rawMaterialCost: 2299000000,
-                        materialRatio: 51.9,
-                        bomMaterialRatio: 49.4,
-                        materialLoss: 102000000,
-                        headcount: 75,
-                        laborCost: 1467000000,
-                        laborRatio: 28.7,
-                        revenuePerHead: 3.48,
-                        overhead: 1562000000,
-                        overheadRatio: 30.6,
-                        depreciation: 814000000,
-                        techFee: 153000000,
-                        taxDues: 18000000,
-                        welfare: 300000000,
-                        electricity: 132000000,
-                        rent: 62000000,
-                        repair: 13000000,
-                        commission: 5000000,
-                        transportation: 8000000,
-                        officeSupplies: 5000000,
-                        overheadOther: 53000000,
-                        operatingProfit: 217000000,
-                        operatingProfitRatio: -4.2,
-                        interestIncome: 0,
-                        forexGain: 0,
-                        interestExpense: 12000000,
-                        forexLoss: 0,
-                        ebt: -229000000,
-                        ebtRatio: -4.5,
-                    };
+                    const vnProd3Target = {};
                     if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
                     if (!div.subDivTargetMonthly['prod3']) div.subDivTargetMonthly['prod3'] = {};
                     div.subDivTargetMonthly['prod3'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...vnProd3Target } as any, true);
@@ -677,25 +536,7 @@ function applyMigrations(store: DataStore): DataStore {
                     if (!div.subDivMonthly['homeAppliance']) div.subDivMonthly['homeAppliance'] = {};
                     div.subDivMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomeActual } as any, true);
 
-                    const mxHomeTarget = {
-                        revenue: 27083000,
-                        revenueUSD: 1470000,
-                        salesFridge: 26041000,
-                        salesOven: 1042000,
-                        salesOther: 0,
-                        materialRatio: 66.3,
-                        bomMaterialRatio: 66.3,
-                        laborCost: 5201000,
-                        laborRatio: 19.2,
-                        revenuePerHead: 5.2,
-                        overhead: 4685000,
-                        overheadRatio: 17.3,
-                        operatingProfit: -758000,
-                        operatingProfitRatio: -2.8,
-                        nonOpBalance: 318000,
-                        financeCost: -318000,
-                        ebtRatio: -4.0
-                    };
+                    const mxHomeTarget = {};
                     if (!div.subDivTargetMonthly) div.subDivTargetMonthly = {};
                     if (!div.subDivTargetMonthly['homeAppliance']) div.subDivTargetMonthly['homeAppliance'] = {};
                     div.subDivTargetMonthly['homeAppliance'][1] = calculateDerivedFields({ ...createEmptyPLData(), ...mxHomeTarget } as any, true);
@@ -808,6 +649,8 @@ function applyMigrations(store: DataStore): DataStore {
 
                     if (div.subDivMonthly) {
                         Object.keys(div.subDivMonthly).forEach(subKey => {
+                            // [버그 수정] 자동차(automotive) 사업부는 실제 영외수익(+)이 발생할 수 있으므로 강제 반전 제외
+                            if (subKey === 'automotive') return;
                             if (div.subDivMonthly![subKey]?.[m]) {
                                 div.subDivMonthly![subKey][m] = flipSignIfPositive(div.subDivMonthly![subKey][m]) as MonthlyPLData;
                             }
@@ -815,6 +658,7 @@ function applyMigrations(store: DataStore): DataStore {
                     }
                     if (div.subDivTargetMonthly) {
                         Object.keys(div.subDivTargetMonthly).forEach(subKey => {
+                            if (subKey === 'automotive') return;
                             if (div.subDivTargetMonthly![subKey]?.[m]) {
                                 div.subDivTargetMonthly![subKey][m] = flipSignIfPositive(div.subDivTargetMonthly![subKey][m]) as MonthlyPLData;
                             }
@@ -945,6 +789,15 @@ export async function loadData(): Promise<DataStore> {
 
     // 손상된 하위-상위 합계 불일치 데이터 런타임 자동 복구
     const fullyRepaired = autoRepairAggregations(migrated);
+
+    // [강제 초기화] 사용자가 지정하지 않은 모든 목표 데이터(Target) 런타임 제거
+    if (fullyRepaired && fullyRepaired.divisions) {
+        fullyRepaired.divisions.forEach(div => {
+            div.targetMonthly = {};
+            div.subDivTargetMonthly = {};
+            // 연간 목표도 초기화하고 싶다면 추가할 수 있으나, 월간만 비우면 대시보드 합산에서 0으로 처리됩니다.
+        });
+    }
 
     return fullyRepaired;
 }

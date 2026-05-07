@@ -97,7 +97,6 @@ export const CHANGWON_ITEMS: PLItem[] = [
     // ===== 경비 =====
     { key: 'overhead', label: '경비', isHeader: true, indent: 0, isCalculated: false, section: '경비' },
     { key: 'overheadRatio', label: '경비율', isHeader: false, indent: 0, isCalculated: true, section: '경비', type: 'ratio' },
-    { key: 'techFee', label: '기술료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'electricity', label: '전력료', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'depreciation', label: '감가상각비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
     { key: 'repair', label: '수선비', isHeader: false, indent: 1, isCalculated: false, section: '경비' },
@@ -391,6 +390,7 @@ export interface MonthlyPLData {
     viRatio?: number;
     laborCostRatio?: number;
     revenuePerHead?: number;
+    _hqManualCompanyProfit?: number; // 전사이익 수동 입력 표시용
 
     [key: string]: any; // PLItem.key -> 금액 또는 상세 내역
     expenseDetails?: ExpenseDetail[]; // 상세 경비 분석 결과 데이터
@@ -420,11 +420,13 @@ export interface DivisionYearData {
 }
 
 // 본사(HQ) 공통 비용 — 월별 입력 데이터
-// 전사이익 = 사업부 세전이익 합계 + 기술료 합계 - 본사비용(영업외비용제외) + 영외수익 - 영외비용
+// 전사이익 = 사업부 세전이익 합계 - 본사비용(영업외비용제외) + 기술료 + 영외수익 - 영외비용
 export interface HQMonthlyCost {
     cost: number;        // 비용 (영업외비용 제외) — 본사, 자동차, 태국, 베트남, 멕시코 등 공통 경비
+    techFee: number;     // 기술료 합계 (사업부→본사 내부거래 상쇄용)
     nonOpRevenue: number; // 전사 영외수익
     nonOpExpense: number; // 전사 영외비용
+    manualCompanyProfit?: number; // (수동입력) 전사이익
 }
 
 export interface HQCostData {
@@ -796,22 +798,21 @@ export function consolidateAllDivisions(store: { divisions: DivisionYearData[]; 
                 }
             });
 
-        // === 본사 공통비 적용 (HQ Cost Adjustment) ===
-        // 전사이익 공식: 사업부 세전이익 합계 - 본사비용 + 영외수익 - 영외비용
+        // === 본사 공통비 적용: 세전이익(EBT)에만 반영 ===
+        // 영업이익·경비는 사업부 순수 합산 그대로 유지!
+        // 전사이익 = 사업부 세전이익 합계 - 공통비용 + 기술료 + 영외수익 - 영외비용
         if (hasData && hqYearData?.monthly[m]) {
             const hq = hqYearData.monthly[m];
-            // 경비에 본사 비용 가산 → 영업이익 감소
-            result.overhead = (result.overhead || 0) + (hq.cost || 0);
-            // 영업이익 차감
-            result.operatingProfit = (result.operatingProfit || 0) - (hq.cost || 0);
-            // 영외수지: +영외수익 -영외비용
-            result.nonOpBalance = (result.nonOpBalance || 0) + (hq.nonOpRevenue || 0) - (hq.nonOpExpense || 0);
-            // 세전이익(EBT) = 영업이익 + 영외수지 (재계산)
-            result.ebt = (result.operatingProfit || 0) + (result.nonOpBalance || 0);
+            // 세전이익(EBT)에서만 공통비 차감 + 기술료 상쇄 + 영외수지 조정
+            result.ebt = (result.ebt || 0) - (hq.cost || 0) + (hq.techFee || 0) + (hq.nonOpRevenue || 0) - (hq.nonOpExpense || 0);
             // HQ 비용 금액을 별도 필드에 저장 (UI 표시용)
             result._hqCost = hq.cost || 0;
+            result._hqTechFee = hq.techFee || 0;
             result._hqNonOpRevenue = hq.nonOpRevenue || 0;
             result._hqNonOpExpense = hq.nonOpExpense || 0;
+            if (hq.manualCompanyProfit !== undefined) {
+                result._hqManualCompanyProfit = hq.manualCompanyProfit;
+            }
         }
 
         if (hasData) {

@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import {
     type DataStore, type DivisionCode, type MonthlyPLData, type MonthYear,
     calculateDerivedFields, createEmptyPLData, ALL_ITEMS_MAP,
-    DIVISIONS_WITH_TOTAL,
+    DIVISIONS_WITH_TOTAL, MXN_KRW_RATE,
 } from '../utils/dataModel';
 
 export type IntervalType = 'monthly' | 'quarterly' | 'semi' | 'yearly';
@@ -67,6 +67,14 @@ function aggregateMonthlyList(list: MonthlyPLData[]): MonthlyPLData {
         agg.operatingProfit = (agg.operatingProfit || 0) + (d.operatingProfit || 0);
         agg.ebt = (agg.ebt || 0) + (d.ebt || 0);
         agg.nonOpBalance = (agg.nonOpBalance || 0) + (d.nonOpBalance || 0);
+        // HQ 공통비 메타 필드 합산 (전사이익 역산용)
+        agg._hqCost = (agg._hqCost || 0) + (d._hqCost || 0);
+        agg._hqTechFee = (agg._hqTechFee || 0) + (d._hqTechFee || 0);
+        agg._hqNonOpRevenue = (agg._hqNonOpRevenue || 0) + (d._hqNonOpRevenue || 0);
+        agg._hqNonOpExpense = (agg._hqNonOpExpense || 0) + (d._hqNonOpExpense || 0);
+        if (d._hqManualCompanyProfit !== undefined) {
+            agg._hqManualCompanyProfit = (agg._hqManualCompanyProfit || 0) + d._hqManualCompanyProfit;
+        }
     });
 
     // count(인원), unit(원당매출액) 유형의 필드들은 합산된 값을 유효한 달 수로 나누어 평균값으로 변경
@@ -158,7 +166,13 @@ export function usePeriodData({
                     if (divD) {
                         const act = divD.monthly?.[month] || createEmptyPLData();
                         const targ = divD.targetMonthly?.[month] || createEmptyPLData();
-                        const rs = divD.exchangeRates?.[month] || { actual: 1, target: 1 };
+                        const rawRs = divD.exchangeRates?.[month] || { actual: 1, target: 1 };
+                        // 🇲🇽 멕시코: DB에 USD/MXN 환율이 잘못 들어가 있을 수 있으므로
+                        // consolidateAllDivisions과 동일하게 MXN_KRW_RATE 고정 환율 사용
+                        const isMexico = div.code === 'mexico';
+                        const rs = isMexico
+                            ? { actual: MXN_KRW_RATE, target: MXN_KRW_RATE }
+                            : rawRs;
                         
                         if (div.code === 'thailand' && month === 1 && act.revenue) {
                             console.log(`[검증 로그: 1월 태국 매출(THB) ${act.revenue} * 환율 ${rs.actual} = 원화(백만) ${(act.revenue * (rs.actual || 1)) / 1000000}]`);
@@ -189,18 +203,22 @@ export function usePeriodData({
                     }
                 });
                 
-                // === [전사 공통비] HQ 비용 차감 적용 ===
+                // === [전사 공통비] 세전이익(EBT)에만 반영 ===
+                // 영업이익·경비는 사업부 순수 합산 그대로 유지!
+                // 전사이익 = 사업부 세전이익 합계 - 공통비용 + 기술료 + 영외수익 - 영외비용
                 const hqYearData = store.hqCosts?.find(h => h.year === year);
                 if (hqYearData?.monthly[month]) {
                     const hq = hqYearData.monthly[month];
-                    // 경비에 본사 비용 가산
-                    combinedActual.overhead = (combinedActual.overhead || 0) + (hq.cost || 0);
-                    // 영업이익 차감
-                    combinedActual.operatingProfit = (combinedActual.operatingProfit || 0) - (hq.cost || 0);
-                    // 영외수지 조정
-                    combinedActual.nonOpBalance = (combinedActual.nonOpBalance || 0) + (hq.nonOpRevenue || 0) - (hq.nonOpExpense || 0);
-                    // 세전이익(EBT) 재산출
-                    combinedActual.ebt = (combinedActual.operatingProfit || 0) + (combinedActual.nonOpBalance || 0);
+                    // 세전이익(EBT)에서만 공통비 차감 + 기술료 상쇄 + 영외수지 조정
+                    combinedActual.ebt = (combinedActual.ebt || 0) - (hq.cost || 0) + (hq.techFee || 0) + (hq.nonOpRevenue || 0) - (hq.nonOpExpense || 0);
+                    // 전사이익 역산용 메타 필드 세팅
+                    combinedActual._hqCost = hq.cost || 0;
+                    combinedActual._hqTechFee = hq.techFee || 0;
+                    combinedActual._hqNonOpRevenue = hq.nonOpRevenue || 0;
+                    combinedActual._hqNonOpExpense = hq.nonOpExpense || 0;
+                    if (hq.manualCompanyProfit !== undefined) {
+                        combinedActual._hqManualCompanyProfit = hq.manualCompanyProfit;
+                    }
                 }
 
                 // 각 월별 합산 결과는 비율을 재계산(단월 보존)하여 목록에 추가
@@ -276,8 +294,12 @@ export function usePeriodData({
                 groupTargList.push(targ);
                 groupPrevList.push(prev);
 
-                const rsAct = divData?.exchangeRates?.[month] || { actual: 1, target: 1 };
-                const rsPrev = prevDivData?.exchangeRates?.[month] || { actual: 1, target: 1 };
+                const rawRsAct = divData?.exchangeRates?.[month] || { actual: 1, target: 1 };
+                const rawRsPrev = prevDivData?.exchangeRates?.[month] || { actual: 1, target: 1 };
+                // 🇲🇽 멕시코: MXN_KRW_RATE 고정 환율 사용
+                const isMexicoDual = selectedDivision === 'mexico';
+                const rsAct = isMexicoDual ? { actual: MXN_KRW_RATE, target: MXN_KRW_RATE } : rawRsAct;
+                const rsPrev = isMexicoDual ? { actual: MXN_KRW_RATE, target: MXN_KRW_RATE } : rawRsPrev;
 
                 // [듀얼 통화] 월별 현지통화 x 해당 월 환율 누적 (해외 사업부 원화 환산용)
                 const isKRW = divisionInfo.currency === 'KRW';

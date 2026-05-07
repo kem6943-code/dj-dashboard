@@ -1,7 +1,7 @@
 /**
  * 전사 공통비 관리 모달 (HQ Cost Modal)
  * - 월별 본사 비용, 영외수익, 영외비용을 입력/수정
- * - 전사이익 = 사업부 세전이익 합계 - 본사비용 + 영외수익 - 영외비용
+ * - 전사이익 = 사업부 세전이익 합계 - 본사비용 + 기술료 + 영외수익 - 영외비용
  */
 import { useState, useEffect } from 'react';
 import { X, Building2, Save, Info } from 'lucide-react';
@@ -35,7 +35,7 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
     const [monthlyData, setMonthlyData] = useState<{ [month: number]: HQMonthlyCost }>(() => {
         const initial: { [month: number]: HQMonthlyCost } = {};
         MONTHS.forEach(m => {
-            initial[m] = existingData?.monthly[m] || { cost: 0, nonOpRevenue: 0, nonOpExpense: 0 };
+            initial[m] = existingData?.monthly[m] || { cost: 0, techFee: 0, nonOpRevenue: 0, nonOpExpense: 0, manualCompanyProfit: 0 };
         });
         return initial;
     });
@@ -56,10 +56,12 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
     // 합계 계산
     const totals = MONTHS.reduce((acc, m) => {
         acc.cost += monthlyData[m]?.cost || 0;
+        acc.techFee += monthlyData[m]?.techFee || 0;
         acc.nonOpRevenue += monthlyData[m]?.nonOpRevenue || 0;
         acc.nonOpExpense += monthlyData[m]?.nonOpExpense || 0;
+        acc.manualCompanyProfit += monthlyData[m]?.manualCompanyProfit || 0;
         return acc;
-    }, { cost: 0, nonOpRevenue: 0, nonOpExpense: 0 });
+    }, { cost: 0, techFee: 0, nonOpRevenue: 0, nonOpExpense: 0, manualCompanyProfit: 0 });
 
     // 저장
     const handleSave = async () => {
@@ -81,7 +83,7 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl w-[900px] max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-2xl w-[1000px] max-h-[85vh] overflow-hidden flex flex-col">
                 {/* 헤더 */}
                 <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/30">
                     <div className="flex items-center gap-3">
@@ -102,7 +104,7 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                 <div className="mx-8 mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200/60 flex items-start gap-2.5">
                     <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div className="text-xs text-amber-800 leading-relaxed">
-                        <span className="font-bold">전사이익 계산식:</span> 사업부 세전이익 합계 <span className="font-bold text-red-600">− 본사 공통비</span> <span className="font-bold text-blue-600">+ 영외수익</span> <span className="font-bold text-red-600">− 영외비용</span>
+                        <span className="font-bold">전사이익 계산식:</span> 사업부 세전이익 합계 <span className="font-bold text-red-600">− 본사 공통비</span> <span className="font-bold text-emerald-600">+ 기술료</span> <span className="font-bold text-blue-600">+ 영외수익</span> <span className="font-bold text-red-600">− 영외비용</span>
                         <br />
                         모든 금액은 <span className="font-bold underline">백만원 단위</span>로 입력해 주세요. (예: 738 → 7억 3,800만원)
                     </div>
@@ -113,10 +115,14 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-slate-50">
-                                <th className="px-3 py-2.5 text-left text-xs font-bold text-slate-600 border-b border-slate-200 w-16">월</th>
+                                <th className="px-3 py-2.5 text-left text-xs font-bold text-slate-600 border-b border-slate-200 w-14">월</th>
                                 <th className="px-3 py-2.5 text-right text-xs font-bold text-red-600 border-b border-slate-200">
                                     본사 공통 비용
                                     <span className="block text-[10px] font-medium text-slate-400">(영업외비용 제외)</span>
+                                </th>
+                                <th className="px-3 py-2.5 text-right text-xs font-bold text-emerald-600 border-b border-slate-200">
+                                    기술료
+                                    <span className="block text-[10px] font-medium text-slate-400">(내부거래 상쇄)</span>
                                 </th>
                                 <th className="px-3 py-2.5 text-right text-xs font-bold text-blue-600 border-b border-slate-200">
                                     전사 영외수익
@@ -126,22 +132,26 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                 </th>
                                 <th className="px-3 py-2.5 text-right text-xs font-bold text-slate-600 border-b border-slate-200">
                                     순 영향액
-                                    <span className="block text-[10px] font-medium text-slate-400">(비용-수익+비용)</span>
+                                    <span className="block text-[10px] font-medium text-slate-400">(비용-기술료-수익+비용)</span>
+                                </th>
+                                <th className="px-3 py-2.5 text-right text-xs font-bold text-purple-600 border-b border-slate-200">
+                                    전사이익 수동입력
+                                    <span className="block text-[10px] font-medium text-slate-400">(자동계산 무시)</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {MONTHS.map(m => {
-                                const d = monthlyData[m] || { cost: 0, nonOpRevenue: 0, nonOpExpense: 0 };
-                                const netImpact = (d.cost || 0) - (d.nonOpRevenue || 0) + (d.nonOpExpense || 0);
-                                const hasData = d.cost > 0 || d.nonOpRevenue > 0 || d.nonOpExpense > 0;
+                                const d = monthlyData[m] || { cost: 0, techFee: 0, nonOpRevenue: 0, nonOpExpense: 0, manualCompanyProfit: 0 };
+                                const netImpact = (d.cost || 0) - (d.techFee || 0) - (d.nonOpRevenue || 0) + (d.nonOpExpense || 0);
+                                const hasData = d.cost > 0 || d.techFee > 0 || d.nonOpRevenue > 0 || d.nonOpExpense > 0 || d.manualCompanyProfit > 0;
                                 return (
                                     <tr key={m} className={`border-b border-slate-100 transition-colors ${hasData ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
                                         <td className="px-3 py-2 text-sm font-bold text-slate-700">{m}월</td>
                                         <td className="px-1 py-1.5">
                                             <input
                                                 type="number"
-                                                className="w-full px-3 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all bg-white hover:border-slate-300"
+                                                className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all bg-white hover:border-slate-300"
                                                 placeholder="0"
                                                 value={d.cost ? formatDisplay(d.cost) : ''}
                                                 onChange={e => updateCell(m, 'cost', e.target.value)}
@@ -150,7 +160,16 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                         <td className="px-1 py-1.5">
                                             <input
                                                 type="number"
-                                                className="w-full px-3 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white hover:border-slate-300"
+                                                className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all bg-white hover:border-slate-300"
+                                                placeholder="0"
+                                                value={d.techFee ? formatDisplay(d.techFee) : ''}
+                                                onChange={e => updateCell(m, 'techFee', e.target.value)}
+                                            />
+                                        </td>
+                                        <td className="px-1 py-1.5">
+                                            <input
+                                                type="number"
+                                                className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white hover:border-slate-300"
                                                 placeholder="0"
                                                 value={d.nonOpRevenue ? formatDisplay(d.nonOpRevenue) : ''}
                                                 onChange={e => updateCell(m, 'nonOpRevenue', e.target.value)}
@@ -159,7 +178,7 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                         <td className="px-1 py-1.5">
                                             <input
                                                 type="number"
-                                                className="w-full px-3 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all bg-white hover:border-slate-300"
+                                                className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all bg-white hover:border-slate-300"
                                                 placeholder="0"
                                                 value={d.nonOpExpense ? formatDisplay(d.nonOpExpense) : ''}
                                                 onChange={e => updateCell(m, 'nonOpExpense', e.target.value)}
@@ -174,6 +193,15 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                                 <span className="text-sm text-slate-300">-</span>
                                             )}
                                         </td>
+                                        <td className="px-1 py-1.5">
+                                            <input
+                                                type="number"
+                                                className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-purple-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition-all bg-purple-50/30 hover:border-purple-300"
+                                                placeholder="자동"
+                                                value={d.manualCompanyProfit ? formatDisplay(d.manualCompanyProfit) : ''}
+                                                onChange={e => updateCell(m, 'manualCompanyProfit', e.target.value)}
+                                            />
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -185,20 +213,26 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                     {totals.cost > 0 ? formatDisplay(totals.cost) : '-'}
                                 </td>
                                 <td className="px-3 py-3 text-right text-sm font-extrabold">
+                                    {totals.techFee > 0 ? formatDisplay(totals.techFee) : '-'}
+                                </td>
+                                <td className="px-3 py-3 text-right text-sm font-extrabold">
                                     {totals.nonOpRevenue > 0 ? formatDisplay(totals.nonOpRevenue) : '-'}
                                 </td>
                                 <td className="px-3 py-3 text-right text-sm font-extrabold">
                                     {totals.nonOpExpense > 0 ? formatDisplay(totals.nonOpExpense) : '-'}
                                 </td>
-                                <td className="px-3 py-3 text-right text-sm font-extrabold rounded-br-lg">
+                                <td className="px-3 py-3 text-right text-sm font-extrabold">
                                     {(() => {
-                                        const netTotal = totals.cost - totals.nonOpRevenue + totals.nonOpExpense;
+                                        const netTotal = totals.cost - totals.techFee - totals.nonOpRevenue + totals.nonOpExpense;
                                         return netTotal !== 0 ? (
                                             <span className={netTotal > 0 ? 'text-red-300' : 'text-blue-300'}>
                                                 {netTotal > 0 ? '-' : '+'}{formatDisplay(Math.abs(netTotal))}
                                             </span>
                                         ) : '-';
                                     })()}
+                                </td>
+                                <td className="px-3 py-3 text-right text-sm font-extrabold rounded-br-lg text-purple-300">
+                                    {totals.manualCompanyProfit > 0 ? formatDisplay(totals.manualCompanyProfit) : '-'}
                                 </td>
                             </tr>
                         </tfoot>

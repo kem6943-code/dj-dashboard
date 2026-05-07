@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -68,8 +68,6 @@ export function Dashboard() {
         dataType: 'actual' | 'target' | 'prevYear';
     } | null>(null);
 
-    // [본부장 지시사항] 기술료 제외 실질 영업이익 표시 토글 상태 (기본값: true - 기술료 제외)
-    const [excludeTechFee, setExcludeTechFee] = useState(true);
 
     // [전사 공통비] HQ 비용 입력 모달 상태
     const [showHQCostModal, setShowHQCostModal] = useState(false);
@@ -118,45 +116,8 @@ export function Dashboard() {
         }
     }, [rawStore, dateRange.end.year]);
 
-    // [전역 필터] 기술료 차감 로직 파이프라인
-    const store = useMemo(() => {
-        if (!rawStore || !excludeTechFee) return rawStore;
-
-        const newStore = JSON.parse(JSON.stringify(rawStore));
-        
-        const processMonthlyData = (monthlyObj: Record<string, any>) => {
-            if (!monthlyObj) return;
-            Object.values(monthlyObj).forEach((data: any) => {
-                if (data && typeof data.techFee === 'number' && data.techFee !== 0) {
-                    const fee = data.techFee;
-                    data.overhead = (data.overhead || 0) - fee;
-                    data.techFee = 0;
-                    data.operatingProfit = (data.operatingProfit || 0) + fee;
-                    data.ebt = (data.ebt || 0) + fee;
-                    
-                    if (data.revenue && data.revenue > 0) {
-                        data.overheadRatio = (data.overhead / data.revenue) * 100;
-                        data.operatingProfitRatio = (data.operatingProfit / data.revenue) * 100;
-                        data.ebtRatio = (data.ebt / data.revenue) * 100;
-                        if (data.techFeeRatio !== undefined) data.techFeeRatio = 0;
-                    }
-                }
-            });
-        };
-
-        newStore.divisions.forEach((div: any) => {
-            processMonthlyData(div.monthly);
-            processMonthlyData(div.targetMonthly);
-            if (div.subDivMonthly) {
-                Object.values(div.subDivMonthly).forEach((subObj: any) => processMonthlyData(subObj));
-            }
-            if (div.subDivTargetMonthly) {
-                Object.values(div.subDivTargetMonthly).forEach((subObj: any) => processMonthlyData(subObj));
-            }
-        });
-
-        return newStore;
-    }, [rawStore, excludeTechFee]);
+    // store는 rawStore 그대로 사용 (기술료 조정은 공통비 모달에서 전사이익으로 별도 표시)
+    const store = rawStore;
 
     // [전사 통합 합산 로직 강제 적용] 메인 화면(main) 요약 카드는 하위 탭 선택(selectedDivision)과 무관하게 
     // 무조건 'total'을 넘겨서 usePeriodData 내부의 .reduce() 로직을 가동, 진짜 전사 총합을 강제 생성.
@@ -315,16 +276,6 @@ export function Dashboard() {
                             <span className="text-[12px] font-semibold text-slate-500 group-hover:text-slate-700 hidden lg:inline">공통비 설정</span>
                         </button>
 
-                        {/* 실질 영업이익 토글 스위치 */}
-                        <label className="flex items-center gap-2.5 cursor-pointer bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-sm transition-all hover:bg-slate-50">
-                            <span className={`text-[13px] font-bold transition-colors ${!excludeTechFee ? 'text-blue-700' : 'text-slate-400'}`}>공식 영업이익</span>
-                            <div className="relative inline-block w-11 h-6">
-                                <input type="checkbox" className="sr-only" checked={excludeTechFee} onChange={(e) => setExcludeTechFee(e.target.checked)} />
-                                <div className={`block w-11 h-6 rounded-full transition-colors duration-300 ${excludeTechFee ? 'bg-indigo-600' : 'bg-slate-300'}`}></div>
-                                <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${excludeTechFee ? 'translate-x-5' : ''}`}></div>
-                            </div>
-                            <span className={`text-[13px] font-bold transition-colors ${excludeTechFee ? 'text-indigo-700' : 'text-slate-400'}`}>실질 영업이익 <span className="font-medium text-xs opacity-80">(기술료 제외)</span></span>
-                        </label>
 
                         <MonthPresetPicker
                             dateRange={dateRange}
@@ -341,7 +292,27 @@ export function Dashboard() {
                                     <BarChart3 className="text-blue-500 w-5 h-5" />전사 통합 경영실적 요약
                                     <span className="text-sm font-semibold text-slate-400 ml-1">(선택 기간 기준)</span>
                                 </h3>
-                                <KPICards data={aggregateData} target={aggregateTarget} divisionInfo={DIVISIONS_WITH_TOTAL.find(d => d.code === 'total')!} dataKRW={aggregateDataKRW} targetKRW={aggregateTargetKRW} />
+                                <KPICards
+                                    data={{
+                                        ...aggregateData,
+                                        // 세전이익 카드는 사업부 순수 합계를 보여줘야 하므로 공통비 조정 전 값으로 복원
+                                        ebt: (aggregateData.ebt || 0)
+                                            + (aggregateData._hqCost || 0)
+                                            - (aggregateData._hqTechFee || 0)
+                                            - (aggregateData._hqNonOpRevenue || 0)
+                                            + (aggregateData._hqNonOpExpense || 0),
+                                    }}
+                                    target={aggregateTarget}
+                                    divisionInfo={DIVISIONS_WITH_TOTAL.find(d => d.code === 'total')!}
+                                    dataKRW={aggregateDataKRW}
+                                    targetKRW={aggregateTargetKRW}
+                                    companyProfit={
+                                        aggregateData._hqManualCompanyProfit !== undefined 
+                                            ? aggregateData._hqManualCompanyProfit 
+                                            : (aggregateData.ebt || 0)
+                                    }
+                                    companyProfitTarget={aggregateTarget.ebt || 0}
+                                />
                             </div>
                             <div className="mb-8">
                                 <YearlyTargetCards store={store} year={dateRange.end.year} />
