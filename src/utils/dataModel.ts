@@ -549,11 +549,13 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     };
 
     // 영업이익 = 매출액 - 재료비 - 노무비 - 경비
-    if (isManual('operatingProfit') || (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0)) {
+    if (isManual('operatingProfit')) {
         // 수동 입력값 무조건 유지
     } else if (isManual('operatingProfitRatio') || (preserveAmounts && result.operatingProfitRatio !== undefined && result.operatingProfitRatio !== 0)) {
-        // [역산 로직] 영업이익(금액)은 안 쳤는데 영업이익률(%)만 친 경우
+        // [역산 로직] 영업이익률(%)이 있는 경우 최우선 역산 (과거 잘못된 DB 금액 무시)
         result.operatingProfit = revenue * (Number(result.operatingProfitRatio || 0) / 100);
+    } else if (preserveAmounts && result.operatingProfit !== undefined && result.operatingProfit !== 0) {
+        // 보존된 금액 유지
     } else {
         result.operatingProfit = Number(revenue) - Number(materialCost) - Number(result.laborCost || 0) - Number(result.overhead || 0);
     }
@@ -576,15 +578,17 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     }
 
     // 세전이익 = 영업이익 + 영외수지
-    if (isManual('ebt') || (preserveAmounts && result.ebt !== undefined && result.ebt !== 0)) {
-        // 수동 입력값 보존
+    if (isManual('ebt')) {
+        // 수동 입력값 무조건 유지
     } else if (isManual('ebtRatio') || (preserveAmounts && result.ebtRatio !== undefined && result.ebtRatio !== 0)) {
-        // [역산 로직] 세전이익(금액)은 안 쳤는데 세전이익률(%)만 친 경우
+        // [역산 로직] 세전이익률(%)이 있는 경우 최우선 역산 (과거 꼬여있던 DB ebt 쓰레기값 무시하고 새로 계산)
         result.ebt = revenue * (Number(result.ebtRatio || 0) / 100);
         // 만약 영외수지도 안 쳤다면, ebt - operatingProfit 으로 강제 역산해준다
         if (!isManual('nonOpBalance') && (!preserveAmounts || result.nonOpBalance === undefined || result.nonOpBalance === 0)) {
             result.nonOpBalance = result.ebt - Number(result.operatingProfit || 0);
         }
+    } else if (preserveAmounts && result.ebt !== undefined && result.ebt !== 0) {
+        // 보존된 금액 유지
     } else {
         result.ebt = Number(result.operatingProfit || 0) + Number(result.nonOpBalance || 0);
     }
