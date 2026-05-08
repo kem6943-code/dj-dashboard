@@ -44,6 +44,20 @@ function applyMigrations(store: DataStore): DataStore {
 
             }
         }
+
+        // 🚨 [데이터 파싱 전처리]: 멕시코 사업부 EBT(세전이익) 결측치 절대값 직접 계산
+        // (멕시코는 % 수치만 있고 절대값이 없어 환율이 비율에 곱해지는 오류의 근본 원인을 스토어 적재 단계에서 차단)
+        if (div.divisionCode === 'mexico') {
+            const fixEbt = (m: any) => {
+                if (m) {
+                    m.ebt = Number(m.operatingProfit || 0) + Number(m.nonOpBalance || 0);
+                }
+            };
+            Object.values(div.monthly).forEach(fixEbt);
+            Object.values(div.targetMonthly).forEach(fixEbt);
+            Object.values(div.subDivMonthly).forEach(sub => Object.values(sub as any).forEach(fixEbt));
+            Object.values(div.subDivTargetMonthly).forEach(sub => Object.values(sub as any).forEach(fixEbt));
+        }
     });
     store.divisions.forEach(div => {
         if (!store._migrated_v10) {

@@ -168,7 +168,7 @@ export function usePeriodData({
                         const targ = divD.targetMonthly?.[month] || createEmptyPLData();
                         const rawRs = divD.exchangeRates?.[month] || { actual: 1, target: 1 };
                         const rs = rawRs;
-                        
+
                         if (div.code === 'thailand' && month === 1 && act.revenue) {
                             console.log(`[검증 로그: 1월 태국 매출(THB) ${act.revenue} * 환율 ${rs.actual} = 원화(백만) ${(act.revenue * (rs.actual || 1)) / 1000000}]`);
                         }
