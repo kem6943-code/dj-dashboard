@@ -50,7 +50,8 @@ function applyMigrations(store: DataStore): DataStore {
         if (div.divisionCode === 'mexico') {
             const fixEbt = (m: any) => {
                 if (m) {
-                    m.ebt = Number(m.operatingProfit || 0) + Number(m.nonOpBalance || 0);
+                    // 화면 로직과 동일하게 EBT = 영업이익 + 영외수지 - 금융비용
+                    m.ebt = Number(m.operatingProfit || 0) + Number(m.nonOpBalance || 0) - Number(m.financeCost || 0);
                 }
             };
             Object.values(div.monthly).forEach(fixEbt);
