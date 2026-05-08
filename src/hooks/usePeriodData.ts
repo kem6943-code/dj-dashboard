@@ -184,12 +184,16 @@ export function usePeriodData({
 
                             if (typeof act[k] === 'number') {
                                 const valAct = act[k] as number;
-                                const convAct = div.currency === 'KRW' ? valAct : (valAct * (rs.actual || 1));
+                                let rate = rs.actual || 1;
+                                if (div.currency === 'MXN') rate = 1337 / rate; // 멕시코는 USD/MXN(17.67)로 들어오므로 1337(USD/KRW) / 17.67 = 75.6(MXN/KRW) 로 보정
+                                const convAct = div.currency === 'KRW' ? valAct : (valAct * rate);
                                 combinedActual[k] = ((combinedActual[k] as number) || 0) + convAct;
                             }
                             if (typeof targ[k] === 'number') {
                                 const valTarg = targ[k] as number;
-                                const convTarg = div.currency === 'KRW' ? valTarg : (valTarg * (rs.target || 1));
+                                let rate = rs.target || 1;
+                                if (div.currency === 'MXN') rate = 1337 / rate;
+                                const convTarg = div.currency === 'KRW' ? valTarg : (valTarg * rate);
                                 combinedTarget[k] = ((combinedTarget[k] as number) || 0) + convTarg;
                             }
                         });
@@ -294,8 +298,13 @@ export function usePeriodData({
 
                 // [듀얼 통화] 월별 현지통화 x 해당 월 환율 누적 (해외 사업부 원화 환산용)
                 const isKRW = divisionInfo.currency === 'KRW';
-                const actRate = isKRW ? 1 : (rsAct.actual || 1);
-                const targRate = isKRW ? 1 : (rsAct.target || 1);
+                let actRate = isKRW ? 1 : (rsAct.actual || 1);
+                let targRate = isKRW ? 1 : (rsAct.target || 1);
+                
+                if (divisionInfo.currency === 'MXN') {
+                    actRate = 1337 / actRate;
+                    targRate = 1337 / targRate;
+                }
                 
                 krwAct.revenue += (act.revenue || 0) * actRate;
                 krwAct.operatingProfit += (act.operatingProfit || 0) * actRate;
@@ -328,9 +337,15 @@ export function usePeriodData({
             const groupTarg = aggregateMonthlyList(groupTargList);
             const groupPrev = aggregateMonthlyList(groupPrevList);
             
-            const avgRateAct = rateCountAct > 0 ? rateSumAct / rateCountAct : 1;
-            const avgRateTarg = rateCountTarg > 0 ? rateSumTarg / rateCountTarg : 1;
-            const avgRatePrev = rateCountPrev > 0 ? rateSumPrev / rateCountPrev : 1;
+            let avgRateAct = rateCountAct > 0 ? rateSumAct / rateCountAct : 1;
+            let avgRateTarg = rateCountTarg > 0 ? rateSumTarg / rateCountTarg : 1;
+            let avgRatePrev = rateCountPrev > 0 ? rateSumPrev / rateCountPrev : 1;
+
+            if (divisionInfo.currency === 'MXN') {
+                avgRateAct = 1337 / avgRateAct;
+                avgRateTarg = 1337 / avgRateTarg;
+                avgRatePrev = 1337 / avgRatePrev;
+            }
 
             if (showYoY) {
                 periodData.push(groupPrev);
