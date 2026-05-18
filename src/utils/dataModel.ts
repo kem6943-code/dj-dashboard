@@ -222,7 +222,7 @@ export const VIETNAM_ITEMS: PLItem[] = [
     { key: 'operatingProfitRatio', label: '(%)', isHeader: false, indent: 0, isCalculated: true, section: '영업이익', type: 'ratio' },
 
     // ===== 영업외 수지차 =====
-    { key: 'interestIncome', label: '이자수입', isHeader: false, indent: 1, isCalculated: false, section: '영업외\n수지차' },
+    { key: 'interestIncome', label: '이자수익', isHeader: false, indent: 1, isCalculated: false, section: '영업외\n수지차' },
     { key: 'forexGain', label: '외환차익', isHeader: false, indent: 1, isCalculated: false, section: '영업외\n수지차' },
     { key: 'interestExpense', label: '이자비용', isHeader: false, indent: 1, isCalculated: false, section: '영업외\n수지차' },
     { key: 'forexLoss', label: '외환차손', isHeader: false, indent: 1, isCalculated: false, section: '영업외\n수지차' },
@@ -272,7 +272,8 @@ const MEXICO_COMMON_COSTS: PLItem[] = [
     { key: 'financeCost', label: '-금융비용', isHeader: false, indent: 1, isCalculated: false, section: '영외수지차' },
 
     // ===== 세전이익 =====
-    { key: 'ebtRatio', label: '세전이익(%)', isHeader: true, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
+    { key: 'ebt', label: '세전이익', isHeader: true, indent: 0, isCalculated: true, section: '세전이익' },
+    { key: 'ebtRatio', label: '(%)', isHeader: false, indent: 0, isCalculated: true, section: '세전이익', type: 'ratio' },
 ];
 
 const MEXICO_COMMON_SALES_HEADER: PLItem[] = [
@@ -541,10 +542,8 @@ export function calculateDerivedFields(data: MonthlyPLData, preserveAmounts: boo
     });
 
     // === 수동 오버라이드 검사 함수: manualOverrides 또는 데이터 내의 manualOverrides 배열 체크 ===
-    // [버그 방어] UI 모달에서 읽기 전용(isCalculated: true)인 항목이 실수로 manualOverrides에 들어온 것을 무시하고 항상 공식을 타도록 강제!
+    // 사용자가 값을 직접 입력해 manualOverrides에 등록된 항목은 무조건 수동값을 우선시함
     const isManual = (key: string) => {
-        const itemDef = ALL_ITEMS_MAP[key];
-        if (itemDef?.isCalculated) return false;
         return manualOverrides?.has(key) === true || result.manualOverrides?.includes(key) === true;
     };
 

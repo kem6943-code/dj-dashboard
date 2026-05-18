@@ -19,7 +19,9 @@ const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 // 백만원 단위 숫자를 포맷 (입력 시 표시용)
 function formatDisplay(val: number): string {
     if (val === 0) return '';
-    return (val / 1_000_000).toFixed(0);
+    const inMillions = val / 1_000_000;
+    // 소수점 이하 정확도 유지 (정수 강제 변환 방지)
+    return Number(inMillions.toFixed(3)).toString();
 }
 
 // 백만원 단위 입력을 원화로 변환
@@ -41,9 +43,14 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
     });
 
     const [isSaving, setIsSaving] = useState(false);
+    const [inputValues, setInputValues] = useState<Record<string, string>>({}); // 입력 필드의 raw string 값을 보존
 
     // 특정 셀 업데이트 핸들러
     const updateCell = (month: number, field: keyof HQMonthlyCost, value: string) => {
+        setInputValues(prev => ({
+            ...prev,
+            [`${month}-${field}`]: value
+        }));
         setMonthlyData(prev => ({
             ...prev,
             [month]: {
@@ -51,6 +58,13 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                 [field]: parseInput(value),
             }
         }));
+    };
+
+    // 입력 필드 표시용 값 가져오기
+    const getInputValue = (month: number, field: keyof HQMonthlyCost, actualValue: number) => {
+        const key = `${month}-${field}`;
+        if (inputValues[key] !== undefined) return inputValues[key];
+        return actualValue ? formatDisplay(actualValue) : '';
     };
 
     // 합계 계산
@@ -153,7 +167,8 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                                 type="number"
                                                 className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all bg-white hover:border-slate-300"
                                                 placeholder="0"
-                                                value={d.cost ? formatDisplay(d.cost) : ''}
+                                                step="any"
+                                                value={getInputValue(m, 'cost', d.cost)}
                                                 onChange={e => updateCell(m, 'cost', e.target.value)}
                                             />
                                         </td>
@@ -162,7 +177,8 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                                 type="number"
                                                 className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all bg-white hover:border-slate-300"
                                                 placeholder="0"
-                                                value={d.techFee ? formatDisplay(d.techFee) : ''}
+                                                step="any"
+                                                value={getInputValue(m, 'techFee', d.techFee)}
                                                 onChange={e => updateCell(m, 'techFee', e.target.value)}
                                             />
                                         </td>
@@ -171,7 +187,8 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                                 type="number"
                                                 className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white hover:border-slate-300"
                                                 placeholder="0"
-                                                value={d.nonOpRevenue ? formatDisplay(d.nonOpRevenue) : ''}
+                                                step="any"
+                                                value={getInputValue(m, 'nonOpRevenue', d.nonOpRevenue)}
                                                 onChange={e => updateCell(m, 'nonOpRevenue', e.target.value)}
                                             />
                                         </td>
@@ -180,7 +197,8 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                                 type="number"
                                                 className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all bg-white hover:border-slate-300"
                                                 placeholder="0"
-                                                value={d.nonOpExpense ? formatDisplay(d.nonOpExpense) : ''}
+                                                step="any"
+                                                value={getInputValue(m, 'nonOpExpense', d.nonOpExpense)}
                                                 onChange={e => updateCell(m, 'nonOpExpense', e.target.value)}
                                             />
                                         </td>
@@ -198,7 +216,8 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
                                                 type="number"
                                                 className="w-full px-2 py-2 text-right text-sm font-semibold rounded-lg border border-purple-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition-all bg-purple-50/30 hover:border-purple-300"
                                                 placeholder="자동"
-                                                value={d.manualCompanyProfit ? formatDisplay(d.manualCompanyProfit) : ''}
+                                                step="any"
+                                                value={getInputValue(m, 'manualCompanyProfit', d.manualCompanyProfit)}
                                                 onChange={e => updateCell(m, 'manualCompanyProfit', e.target.value)}
                                             />
                                         </td>

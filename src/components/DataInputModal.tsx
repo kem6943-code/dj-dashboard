@@ -77,19 +77,18 @@ export function DataInputModal({ divisionInfo, subDivision, year, month, dataTyp
         const isAmount = !item?.type || item.type === 'amount';
         const numValue = value === '' ? 0 : Number(value);
         if (!isNaN(numValue)) {
+            let nextOverrides = overrides;
             if (item?.isCalculated) {
-                setOverrides(prev => {
-                    const next = new Set(prev);
-                    if (value === '') next.delete(key);
-                    else next.add(key);
-                    return next;
-                });
+                nextOverrides = new Set(overrides);
+                if (value === '') nextOverrides.delete(key);
+                else nextOverrides.add(key);
+                setOverrides(nextOverrides);
             }
             // 금액인 경우에만 multiplier 적용
             setFormData(prev => ({
                 ...prev,
                 [key]: numValue * (isAmount ? multiplier : 1),
-                manualOverrides: Array.from(overrides) // 오버라이드 상태 변경 시 데이터에도 반영
+                manualOverrides: Array.from(nextOverrides) // 최신 오버라이드 상태 반영
             }));
         }
     };
