@@ -160,6 +160,15 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                         // 컬러코딩 대상
                         const isProfit = ['operatingProfit', 'ebt', 'nonOpBalance'].includes(item.key);
 
+                        let displayLabel = item.label;
+                        let displayIndent = item.indent;
+                        
+                        // [강제 매핑] 이자수입을 이자수익으로 변경하고 스타일 완벽 동일화
+                        if (item.key === 'interestIncome' || displayLabel === '이자수입') {
+                            displayLabel = '이자수익';
+                            displayIndent = 1; // 강제 들여쓰기 지정 (- 프리픽스 생성됨)
+                        }
+
                         return (
                             <tr key={item.key} className={item.isHeader ? 'row-header' : ''}>
                                 {/* 섹션 병합 셀 */}
@@ -193,11 +202,11 @@ export function PLTable({ items, labels, data, onEditMonth, showTarget, showYoY,
                                     position: 'sticky',
                                     left: 70,
                                     background: '#ffffff',
-                                    paddingLeft: `${8 + item.indent * 14}px`,
-                                    fontSize: item.indent > 0 ? '0.75rem' : undefined,
+                                    paddingLeft: `${8 + displayIndent * 14}px`,
+                                    fontSize: displayIndent > 0 ? '0.75rem' : undefined,
                                 }}>
-                                    {item.indent > 0 && <span style={{ color: 'var(--text-muted)' }}>- </span>}
-                                    {item.isHeader ? <strong>{item.label}</strong> : item.label}
+                                    {displayIndent > 0 && <span style={{ color: 'var(--text-muted)' }}>- </span>}
+                                    {item.isHeader ? <strong>{displayLabel}</strong> : displayLabel}
                                 </td>
 
                                 {/* 데이터 셀 */}

@@ -554,8 +554,9 @@ function autoRepairAggregations(store: DataStore): DataStore {
                         if (subData && Object.keys(subData).length > 0) {
                             hasData = true;
                             
-                            // 🚑 강제 힐링: 하위 서브데이터 자체에 대해서도 역산 공식(calculateDerivedFields) 적용
-                            Object.assign(subData, calculateDerivedFields(subData, true));
+                            // 재계산 시, 사용자가 수동으로 오버라이드한 항목은 그대로 유지하도록 Set 전달
+                            const overridesSet = subData.manualOverrides ? new Set(subData.manualOverrides as string[]) : undefined;
+                            Object.assign(subData, calculateDerivedFields(subData, true, overridesSet));
 
                             if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverrides.add(m));
                             Object.entries(subData).forEach(([k, val]) => {
@@ -582,7 +583,8 @@ function autoRepairAggregations(store: DataStore): DataStore {
                             hasData = true;
 
                             // 🚑 강제 힐링: 하위 서브데이터 자체에 대해서도 역산 공식 적용
-                            Object.assign(subData, calculateDerivedFields(subData, true));
+                            const overridesSetTarget = subData.manualOverrides ? new Set(subData.manualOverrides as string[]) : undefined;
+                            Object.assign(subData, calculateDerivedFields(subData, true, overridesSetTarget));
 
                             if (subData.manualOverrides) subData.manualOverrides.forEach(m => manualOverridesTarget.add(m));
                             Object.entries(subData).forEach(([k, val]) => {
@@ -616,11 +618,6 @@ function autoRepairAggregations(store: DataStore): DataStore {
  */
 function patchMexicoData(store: DataStore): DataStore {
     // 엑셀 원본 자동차 전체 재무 항목 (단위: 천 MXN, 정수 반올림)
-    // 항목: revenue(매출), rawMaterialCost(재료비), materialRatio(재료비율%),
-    //       laborCost(노무비), overhead(제조경비), techFee(기술료),
-    //       operatingProfit(영업이익), operatingProfitRatio(영업이익률%),
-    //       nonOpBalance(영외수지=영업수익-영업비용), financeCost(이자비용),
-    //       ebt(세전이익), ebtRatio(세전이익률%)
     const EXCEL_AUTO_DATA: Record<number, Record<number, Record<string, number>>> = {
         2025: {
             1: { revenue: 54886908, rawMaterialCost: 37677079, materialRatio: 68.64, laborCost: 19728284, overhead: 19002054, techFee: 1648240, operatingProfit: -21520509, operatingProfitRatio: -39.21, nonOpBalance: -2193603, financeCost: 1221122, ebt: -23714112, ebtRatio: -43.21 },
@@ -644,7 +641,6 @@ function patchMexicoData(store: DataStore): DataStore {
     };
 
     // 엑셀 원본 가전 전체 재무 항목 (단위: 천 MXN, 정수 반올림)
-    // 출처: (멕시코)경영실적 계산 세부_26년 3월.xlsx > 관리손익(가전)
     const EXCEL_HA_DATA: Record<number, Record<number, Record<string, number>>> = {
         2025: {
             1: { revenue: 34775146, rawMaterialCost: 24608735, materialRatio: 70.77, laborCost: 6329807, overhead: 5735968, techFee: 1049242, operatingProfit: -1899364, operatingProfitRatio: -5.46, nonOpBalance: -1196966, financeCost: 250217, ebt: -3096331, ebtRatio: -8.9 },
@@ -667,7 +663,6 @@ function patchMexicoData(store: DataStore): DataStore {
         },
     };
 
-    // 패치할 필드 목록 (ratio 포함)
     const PATCH_FIELDS = [
         'revenue', 'rawMaterialCost', 'materialRatio',
         'laborCost', 'overhead', 'techFee',
@@ -681,14 +676,14 @@ function patchMexicoData(store: DataStore): DataStore {
         const yearData = EXCEL_AUTO_DATA[div.year];
         if (!yearData) return;
 
-        // [자동차] 서브디비전 월별 데이터에 전체 항목 강제 적용
         const autoMonthly = div.subDivMonthly?.['automotive'];
         if (autoMonthly) {
             Object.entries(yearData).forEach(([mStr, excelValues]) => {
                 const m = Number(mStr);
                 if (autoMonthly[m]) {
+                    const manualOverrides = autoMonthly[m].manualOverrides || [];
                     PATCH_FIELDS.forEach(field => {
-                        if (excelValues[field] !== undefined) {
+                        if (excelValues[field] !== undefined && !manualOverrides.includes(field)) {
                             autoMonthly[m][field] = excelValues[field];
                         }
                     });
@@ -696,7 +691,6 @@ function patchMexicoData(store: DataStore): DataStore {
             });
         }
 
-        // [가전] 서브디비전 월별 데이터에 전체 항목 강제 적용
         const haYearData = EXCEL_HA_DATA[div.year];
         if (haYearData) {
             const haMonthly = div.subDivMonthly?.['homeAppliance'];
@@ -704,8 +698,9 @@ function patchMexicoData(store: DataStore): DataStore {
                 Object.entries(haYearData).forEach(([mStr, excelValues]) => {
                     const m = Number(mStr);
                     if (haMonthly[m]) {
+                        const manualOverrides = haMonthly[m].manualOverrides || [];
                         PATCH_FIELDS.forEach(field => {
-                            if (excelValues[field] !== undefined) {
+                            if (excelValues[field] !== undefined && !manualOverrides.includes(field)) {
                                 haMonthly[m][field] = excelValues[field];
                             }
                         });
@@ -724,17 +719,26 @@ function patchMexicoData(store: DataStore): DataStore {
             if (!haData && !autoData) continue;
             if (!div.monthly[month]) continue;
 
-            // 금액 필드 합산
+            // 금액 필드 합산 (수동 입력은 덮어쓰지 않음)
+            const manualOverrides = div.monthly[month].manualOverrides || [];
             SUM_FIELDS.forEach(field => {
-                div.monthly[month][field] = Number(haData?.[field] || 0) + Number(autoData?.[field] || 0);
+                if (!manualOverrides.includes(field)) {
+                    div.monthly[month][field] = Number(haData?.[field] || 0) + Number(autoData?.[field] || 0);
+                }
             });
 
             // 비율 필드 역산 (매출액 기준)
             const totalRev = Math.abs(Number(div.monthly[month].revenue || 0));
             if (totalRev > 0) {
-                div.monthly[month].materialRatio = (Number(div.monthly[month].rawMaterialCost || 0) / totalRev) * 100;
-                div.monthly[month].operatingProfitRatio = (Number(div.monthly[month].operatingProfit || 0) / totalRev) * 100;
-                div.monthly[month].ebtRatio = (Number(div.monthly[month].ebt || 0) / totalRev) * 100;
+                if (!manualOverrides.includes('materialRatio')) {
+                    div.monthly[month].materialRatio = (Number(div.monthly[month].rawMaterialCost || 0) / totalRev) * 100;
+                }
+                if (!manualOverrides.includes('operatingProfitRatio')) {
+                    div.monthly[month].operatingProfitRatio = (Number(div.monthly[month].operatingProfit || 0) / totalRev) * 100;
+                }
+                if (!manualOverrides.includes('ebtRatio')) {
+                    div.monthly[month].ebtRatio = (Number(div.monthly[month].ebt || 0) / totalRev) * 100;
+                }
             }
         }
     });
@@ -806,8 +810,12 @@ function patchThailandData(store: DataStore): DataStore {
         Object.entries(yearData).forEach(([mStr, patchValues]) => {
             const m = Number(mStr);
             if (div.monthly[m]) {
+                const manualOverrides = div.monthly[m].manualOverrides || [];
                 Object.entries(patchValues).forEach(([field, value]) => {
-                    div.monthly[m][field] = value;
+                    // 수동 오버라이드된 항목은 덮어쓰지 않음
+                    if (!manualOverrides.includes(field)) {
+                        div.monthly[m][field] = value;
+                    }
                 });
             }
         });
