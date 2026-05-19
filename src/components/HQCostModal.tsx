@@ -61,7 +61,7 @@ export function HQCostModal({ year, hqCosts, onSave, onClose }: HQCostModalProps
     };
 
     // 입력 필드 표시용 값 가져오기
-    const getInputValue = (month: number, field: keyof HQMonthlyCost, actualValue: number) => {
+    const getInputValue = (month: number, field: keyof HQMonthlyCost, actualValue?: number) => {
         const key = `${month}-${field}`;
         if (inputValues[key] !== undefined) return inputValues[key];
         return actualValue ? formatDisplay(actualValue) : '';
