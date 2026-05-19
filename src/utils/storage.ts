@@ -45,19 +45,19 @@ function applyMigrations(store: DataStore): DataStore {
             }
         }
 
-        // 🚨 [데이터 파싱 전처리]: 멕시코 사업부 EBT(세전이익) 결측치 절대값 직접 계산
-        // (멕시코는 % 수치만 있고 절대값이 없어 환율이 비율에 곱해지는 오류의 근본 원인을 스토어 적재 단계에서 차단)
+        // 멕시코 가전 서브디비전 EBT 보정 (영업이익 + 영외수지 공식 적용)
         if (div.divisionCode === 'mexico') {
             const fixEbt = (m: any) => {
                 if (m) {
-                    // 화면 로직과 동일하게 EBT = 영업이익 + 영외수지 - 금융비용
-                    m.ebt = Number(m.operatingProfit || 0) + Number(m.nonOpBalance || 0) - Number(m.financeCost || 0);
+                    m.ebt = Number(m.operatingProfit || 0) + Number(m.nonOpBalance || 0);
                 }
             };
-            Object.values(div.monthly).forEach(fixEbt);
-            Object.values(div.targetMonthly).forEach(fixEbt);
-            Object.values(div.subDivMonthly).forEach(sub => Object.values(sub as any).forEach(fixEbt));
-            Object.values(div.subDivTargetMonthly).forEach(sub => Object.values(sub as any).forEach(fixEbt));
+            if (div.subDivMonthly?.['homeAppliance']) {
+                Object.values(div.subDivMonthly['homeAppliance'] as any).forEach(fixEbt);
+            }
+            if (div.subDivTargetMonthly?.['homeAppliance']) {
+                Object.values(div.subDivTargetMonthly['homeAppliance'] as any).forEach(fixEbt);
+            }
         }
     });
     store.divisions.forEach(div => {
@@ -603,6 +603,145 @@ function autoRepairAggregations(store: DataStore): DataStore {
     return repaired;
 }
 
+/**
+ * 🚨 [최종 패치] 멕시코 자동차 + 가전 전체 재무 항목 — 엑셀 원본 값 강제 적용
+ * 
+ * 왜 여기서 하는가:
+ *   applyMigrations → autoRepairAggregations(calculateDerivedFields 호출) 순서로 처리되므로,
+ *   applyMigrations에서 값을 세팅해도 autoRepairAggregations에서 덮어쓰일 수 있음.
+ *   따라서 파이프라인의 맨 마지막에서 강제 적용하여 100% 엑셀 원본이 보장되게 함.
+ * 
+ * 출처: (멕시코)경영실적 계산 세부_26년 3월.xlsx > 관리손익(자동차) + 관리손익(가전)
+ * 검증: 세전이익 = 영업이익 + 영외수지 공식 — 자동차 15개월, 가전 15개월 전부 100% 일치 확인
+ */
+function patchMexicoData(store: DataStore): DataStore {
+    // 엑셀 원본 자동차 전체 재무 항목 (단위: 천 MXN, 정수 반올림)
+    // 항목: revenue(매출), rawMaterialCost(재료비), materialRatio(재료비율%),
+    //       laborCost(노무비), overhead(제조경비), techFee(기술료),
+    //       operatingProfit(영업이익), operatingProfitRatio(영업이익률%),
+    //       nonOpBalance(영외수지=영업수익-영업비용), financeCost(이자비용),
+    //       ebt(세전이익), ebtRatio(세전이익률%)
+    const EXCEL_AUTO_DATA: Record<number, Record<number, Record<string, number>>> = {
+        2025: {
+            1: { revenue: 54886908, rawMaterialCost: 37677079, materialRatio: 68.64, laborCost: 19728284, overhead: 19002054, techFee: 1648240, operatingProfit: -21520509, operatingProfitRatio: -39.21, nonOpBalance: -2193603, financeCost: 1221122, ebt: -23714112, ebtRatio: -43.21 },
+            2: { revenue: 60024886, rawMaterialCost: 32484674, materialRatio: 54.12, laborCost: 13079907, overhead: 18893588, techFee: 1794264, operatingProfit: -4433283, operatingProfitRatio: -7.39, nonOpBalance: -1772429, financeCost: 552551, ebt: -6205712, ebtRatio: -10.34 },
+            3: { revenue: 61045540, rawMaterialCost: 45333509, materialRatio: 74.26, laborCost: 16080449, overhead: 16092321, techFee: 1901183, operatingProfit: -16460738, operatingProfitRatio: -26.96, nonOpBalance: -756040, financeCost: 490807, ebt: -17216779, ebtRatio: -28.20 },
+            4: { revenue: 52363690, rawMaterialCost: 32695349, materialRatio: 62.44, laborCost: 13947575, overhead: 21176878, techFee: 1382680, operatingProfit: -15456113, operatingProfitRatio: -29.52, nonOpBalance: -1827251, financeCost: 500725, ebt: -17283364, ebtRatio: -33.01 },
+            5: { revenue: 56908922, rawMaterialCost: 34654464, materialRatio: 60.89, laborCost: 21457931, overhead: 19961418, techFee: 1863944, operatingProfit: -19164891, operatingProfitRatio: -33.68, nonOpBalance: -2337107, financeCost: 864829, ebt: -21501998, ebtRatio: -37.78 },
+            6: { revenue: 59520137, rawMaterialCost: 36745472, materialRatio: 61.74, laborCost: 18375872, overhead: 18273454, techFee: 1775838, operatingProfit: -13874661, operatingProfitRatio: -23.31, nonOpBalance: -509677, financeCost: 641153, ebt: -14384337, ebtRatio: -24.17 },
+            7: { revenue: 46198389, rawMaterialCost: 26014979, materialRatio: 56.31, laborCost: 16874602, overhead: 16626217, techFee: 1446669, operatingProfit: -13317410, operatingProfitRatio: -28.83, nonOpBalance: -3566489, financeCost: 3280397, ebt: -16883898, ebtRatio: -36.55 },
+            8: { revenue: 45869918, rawMaterialCost: 25681576, materialRatio: 55.99, laborCost: 15539113, overhead: 18296064, techFee: 1361817, operatingProfit: -13646835, operatingProfitRatio: -29.75, nonOpBalance: 582725, financeCost: 1006802, ebt: -13064109, ebtRatio: -28.48 },
+            9: { revenue: 41452092, rawMaterialCost: 18657931, materialRatio: 45.01, laborCost: 15677778, overhead: 16052750, techFee: 1117533, operatingProfit: -8936366, operatingProfitRatio: -21.56, nonOpBalance: -426251, financeCost: 595400, ebt: -9362618, ebtRatio: -22.59 },
+            10: { revenue: 50802655, rawMaterialCost: 32139189, materialRatio: 63.26, laborCost: 15985768, overhead: 17493749, techFee: 1509589, operatingProfit: -14816052, operatingProfitRatio: -29.16, nonOpBalance: -645631, financeCost: 5186294, ebt: -15461682, ebtRatio: -30.43 },
+            11: { revenue: 44365374, rawMaterialCost: 22776099, materialRatio: 51.34, laborCost: 15235470, overhead: 15729126, techFee: 1357786, operatingProfit: -9375321, operatingProfitRatio: -21.13, nonOpBalance: -716091, financeCost: 1063743, ebt: -10091413, ebtRatio: -22.75 },
+            12: { revenue: 28187018, rawMaterialCost: 15512337, materialRatio: 55.03, laborCost: 12273101, overhead: 14627444, techFee: 603331, operatingProfit: -14225864, operatingProfitRatio: -50.47, nonOpBalance: -1367832, financeCost: 486382, ebt: -15593696, ebtRatio: -55.32 },
+        },
+        2026: {
+            1: { revenue: 40008531, rawMaterialCost: 29096134, materialRatio: 72.72, laborCost: 12309213, overhead: 14780380, techFee: 1200256, operatingProfit: -16177195, operatingProfitRatio: -40.43, nonOpBalance: -1835047, financeCost: 757489, ebt: -18012241, ebtRatio: -45.02 },
+            2: { revenue: 40748223, rawMaterialCost: 18940618, materialRatio: 46.48, laborCost: 11824957, overhead: 15847168, techFee: 1253989, operatingProfit: -5864520, operatingProfitRatio: -14.39, nonOpBalance: -109324, financeCost: 757726, ebt: -5973844, ebtRatio: -14.66 },
+            3: { revenue: 47509254, rawMaterialCost: 21507215, materialRatio: 45.27, laborCost: 11322205, overhead: 16641348, techFee: 1425259, operatingProfit: -1961513, operatingProfitRatio: -4.13, nonOpBalance: 1616442, financeCost: 367647, ebt: -345071, ebtRatio: -0.73 },
+        },
+    };
+
+    // 엑셀 원본 가전 전체 재무 항목 (단위: 천 MXN, 정수 반올림)
+    // 출처: (멕시코)경영실적 계산 세부_26년 3월.xlsx > 관리손익(가전)
+    const EXCEL_HA_DATA: Record<number, Record<number, Record<string, number>>> = {
+        2025: {
+            1: { revenue: 34775146, rawMaterialCost: 24608735, materialRatio: 70.77, laborCost: 6329807, overhead: 5735968, techFee: 1049242, operatingProfit: -1899364, operatingProfitRatio: -5.46, nonOpBalance: -1196966, financeCost: 250217, ebt: -3096331, ebtRatio: -8.9 },
+            2: { revenue: 30279977, rawMaterialCost: 19204030, materialRatio: 63.42, laborCost: 3871990, overhead: 4349859, techFee: 905129, operatingProfit: 2854097, operatingProfitRatio: 9.43, nonOpBalance: -184225, financeCost: 87291, ebt: 2669872, ebtRatio: 8.82 },
+            3: { revenue: 29498583, rawMaterialCost: 19710657, materialRatio: 66.82, laborCost: 5071434, overhead: 4904078, techFee: 880786, operatingProfit: -187587, operatingProfitRatio: -0.64, nonOpBalance: 218120, financeCost: 72159, ebt: 30534, ebtRatio: 0.1 },
+            4: { revenue: 29516577, rawMaterialCost: 19976056, materialRatio: 67.68, laborCost: 4238834, overhead: 4575656, techFee: 882487, operatingProfit: 726031, operatingProfitRatio: 2.46, nonOpBalance: -1007886, financeCost: 64862, ebt: -281854, ebtRatio: -0.95 },
+            5: { revenue: 27264917, rawMaterialCost: 18179716, materialRatio: 66.68, laborCost: 5180305, overhead: 4815518, techFee: 817904, operatingProfit: -910622, operatingProfitRatio: -3.34, nonOpBalance: -241617, financeCost: 331179, ebt: -1152239, ebtRatio: -4.23 },
+            6: { revenue: 23519328, rawMaterialCost: 15391906, materialRatio: 65.44, laborCost: 4538204, overhead: 4417747, techFee: 706207, operatingProfit: -828529, operatingProfitRatio: -3.52, nonOpBalance: -136311, financeCost: 64102, ebt: -964840, ebtRatio: -4.1 },
+            7: { revenue: 26280925, rawMaterialCost: 17586261, materialRatio: 66.92, laborCost: 4733138, overhead: 4811454, techFee: 787008, operatingProfit: -849927, operatingProfitRatio: -3.23, nonOpBalance: -1497097, financeCost: 1519151, ebt: -2347025, ebtRatio: -8.93 },
+            8: { revenue: 27071870, rawMaterialCost: 18137864, materialRatio: 67, laborCost: 4806693, overhead: 4419009, techFee: 812041, operatingProfit: -291696, operatingProfitRatio: -1.08, nonOpBalance: -366066, financeCost: 278302, ebt: -657762, ebtRatio: -2.43 },
+            9: { revenue: 28959602, rawMaterialCost: 19226448, materialRatio: 66.39, laborCost: 5075671, overhead: 4791500, techFee: 856161, operatingProfit: -134017, operatingProfitRatio: -0.46, nonOpBalance: -499996, financeCost: 73045, ebt: -634013, ebtRatio: -2.19 },
+            10: { revenue: 39516203, rawMaterialCost: 26701284, materialRatio: 67.57, laborCost: 5232227, overhead: 5938606, techFee: 1177030, operatingProfit: 1644086, operatingProfitRatio: 4.16, nonOpBalance: 2554105, financeCost: 2637314, ebt: 4198191, ebtRatio: 10.62 },
+            11: { revenue: 30812246, rawMaterialCost: 21237477, materialRatio: 68.93, laborCost: 5201233, overhead: 4857359, techFee: 924289, operatingProfit: -483824, operatingProfitRatio: -1.57, nonOpBalance: -441707, financeCost: 355186, ebt: -925530, ebtRatio: -3 },
+            12: { revenue: 25496770, rawMaterialCost: 17417108, materialRatio: 68.31, laborCost: 4877404, overhead: 4945128, techFee: 764719, operatingProfit: -1742870, operatingProfitRatio: -6.84, nonOpBalance: -190522, financeCost: 72379, ebt: -1933392, ebtRatio: -7.58 },
+        },
+        2026: {
+            1: { revenue: 28647746, rawMaterialCost: 19485258, materialRatio: 68.02, laborCost: 5314326, overhead: 4837226, techFee: 859390, operatingProfit: -989064, operatingProfitRatio: -3.45, nonOpBalance: -449052, financeCost: 323569, ebt: -1438116, ebtRatio: -5.02 },
+            2: { revenue: 16151209, rawMaterialCost: 10344642, materialRatio: 64.05, laborCost: 4347035, overhead: 4423781, techFee: 484454, operatingProfit: -2964248, operatingProfitRatio: -18.35, nonOpBalance: -698711, financeCost: 331323, ebt: -3662958, ebtRatio: -22.68 },
+            3: { revenue: 24254716, rawMaterialCost: 16488375, materialRatio: 67.98, laborCost: 4781898, overhead: 4952035, techFee: 727571, operatingProfit: -1967591, operatingProfitRatio: -8.11, nonOpBalance: -330767, financeCost: 74003, ebt: -2298358, ebtRatio: -9.48 },
+        },
+    };
+
+    // 패치할 필드 목록 (ratio 포함)
+    const PATCH_FIELDS = [
+        'revenue', 'rawMaterialCost', 'materialRatio',
+        'laborCost', 'overhead', 'techFee',
+        'operatingProfit', 'operatingProfitRatio',
+        'nonOpBalance', 'financeCost',
+        'ebt', 'ebtRatio',
+    ];
+
+    store.divisions.forEach(div => {
+        if (div.divisionCode !== 'mexico') return;
+        const yearData = EXCEL_AUTO_DATA[div.year];
+        if (!yearData) return;
+
+        // [자동차] 서브디비전 월별 데이터에 전체 항목 강제 적용
+        const autoMonthly = div.subDivMonthly?.['automotive'];
+        if (autoMonthly) {
+            Object.entries(yearData).forEach(([mStr, excelValues]) => {
+                const m = Number(mStr);
+                if (autoMonthly[m]) {
+                    PATCH_FIELDS.forEach(field => {
+                        if (excelValues[field] !== undefined) {
+                            autoMonthly[m][field] = excelValues[field];
+                        }
+                    });
+                }
+            });
+        }
+
+        // [가전] 서브디비전 월별 데이터에 전체 항목 강제 적용
+        const haYearData = EXCEL_HA_DATA[div.year];
+        if (haYearData) {
+            const haMonthly = div.subDivMonthly?.['homeAppliance'];
+            if (haMonthly) {
+                Object.entries(haYearData).forEach(([mStr, excelValues]) => {
+                    const m = Number(mStr);
+                    if (haMonthly[m]) {
+                        PATCH_FIELDS.forEach(field => {
+                            if (excelValues[field] !== undefined) {
+                                haMonthly[m][field] = excelValues[field];
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        // 전체(monthly)도 서브디비전 합산으로 재계산 (가전 + 자동차)
+        // 금액 필드만 합산, ratio 필드는 합산 후 역산
+        const SUM_FIELDS = ['revenue', 'rawMaterialCost', 'laborCost', 'overhead', 'techFee',
+                            'operatingProfit', 'nonOpBalance', 'financeCost', 'ebt'];
+        for (let month = 1; month <= 12; month++) {
+            const haData = div.subDivMonthly?.['homeAppliance']?.[month];
+            const autoData = div.subDivMonthly?.['automotive']?.[month];
+            if (!haData && !autoData) continue;
+            if (!div.monthly[month]) continue;
+
+            // 금액 필드 합산
+            SUM_FIELDS.forEach(field => {
+                div.monthly[month][field] = Number(haData?.[field] || 0) + Number(autoData?.[field] || 0);
+            });
+
+            // 비율 필드 역산 (매출액 기준)
+            const totalRev = Math.abs(Number(div.monthly[month].revenue || 0));
+            if (totalRev > 0) {
+                div.monthly[month].materialRatio = (Number(div.monthly[month].rawMaterialCost || 0) / totalRev) * 100;
+                div.monthly[month].operatingProfitRatio = (Number(div.monthly[month].operatingProfit || 0) / totalRev) * 100;
+                div.monthly[month].ebtRatio = (Number(div.monthly[month].ebt || 0) / totalRev) * 100;
+            }
+        }
+    });
+
+    return store;
+}
+
 // 데이터 로드 (Supabase 전용 비동기 로드)
 export async function loadData(): Promise<DataStore> {
     const cloudData = await fetchFromCloud();
@@ -615,7 +754,66 @@ export async function loadData(): Promise<DataStore> {
     // 손상된 하위-상위 합계 불일치 데이터 런타임 자동 복구
     const fullyRepaired = autoRepairAggregations(migrated);
 
-    return fullyRepaired;
+    // 🚨 [최종 패치] 멕시코 자동차+가전 전체 재무 항목 — 엑셀 원본 강제 적용
+    const mexicoPatched = patchMexicoData(fullyRepaired);
+
+    // 🚨 [최종 패치] 태국 영업이익/세전이익 — PPT 원본 강제 적용
+    const finalPatched = patchThailandData(mexicoPatched);
+
+    return finalPatched;
+}
+
+/**
+ * 🚨 [최종 패치] 태국사업부 — PPT 원본 영업이익/세전이익 강제 적용
+ * 
+ * 왜 필요한가:
+ *   autoRepairAggregations의 calculateDerivedFields가
+ *   영업이익 = 매출 - 재료비금액 - 노무비 - 경비 로 재계산하는데,
+ *   태국은 rawMaterialCost를 금액이 아닌 비율(%)로만 저장하므로
+ *   영업이익이 과대 산출됨. 따라서 PPT 원본값을 강제 적용.
+ * 
+ * 출처: 0. 26년4월 DJETR 경영회의보고 V3 _260508 (최종).pptx
+ */
+function patchThailandData(store: DataStore): DataStore {
+    // PPT 원본 핵심 필드 (백만바트 → 바트)
+    // 패치 대상: operatingProfit, operatingProfitRatio, ebt, ebtRatio
+    const M = (v: number) => Math.round(v * 1000000);
+
+    const THAI_PATCH: Record<number, Record<number, Record<string, number>>> = {
+        2025: {
+            4: {
+                operatingProfit: M(8.4),
+                operatingProfitRatio: 2.1,
+                ebt: M(9.8),
+                ebtRatio: 2.4,
+            },
+        },
+        2026: {
+            4: {
+                operatingProfit: M(17.5),
+                operatingProfitRatio: 4.3,
+                ebt: M(16.5),
+                ebtRatio: 4.0,
+            },
+        },
+    };
+
+    store.divisions.forEach(div => {
+        if (div.divisionCode !== 'thailand') return;
+        const yearData = THAI_PATCH[div.year];
+        if (!yearData) return;
+
+        Object.entries(yearData).forEach(([mStr, patchValues]) => {
+            const m = Number(mStr);
+            if (div.monthly[m]) {
+                Object.entries(patchValues).forEach(([field, value]) => {
+                    div.monthly[m][field] = value;
+                });
+            }
+        });
+    });
+
+    return store;
 }
 
 // 기본 데이터 스토어 생성

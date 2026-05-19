@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DebugTable } from './DebugTable';
+
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -479,7 +479,7 @@ export function Dashboard() {
                         onClose={() => setShowHQCostModal(false)}
                     />
                 )}
-                {rawStore && <DebugTable store={rawStore} />}
+
             </main>
         </div>
     );
